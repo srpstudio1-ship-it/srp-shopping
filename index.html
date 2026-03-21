@@ -3,151 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP Shopping Home</title>
+    <title>SRP SHOPPING | Modern Marketplace</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #ffffff;
-            color: #000;
-        }
-        header {
-            background-color: #004aad;
-            color: #ffffff;
-            padding: 15px;
-            text-align: left;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background-color: #004aad;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .navbar button {
-            background: none;
-            border: none;
-            color: #ffffff;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .wallet-amount {
-            color: #ffffff;
-            font-size: 14px;
-        }
-        .main-content {
-            padding: 20px;
-            margin-top: 70px;
-        }
-        .search-bar {
-            margin-bottom: 20px;
-        }
-        .banner {
-            background-color: #004aad;
-            color: #ffffff;
-            padding: 20px;
-            text-align: center;
-            margin-top: 20px;
-            font-size: 18px;
-        }
-        .privacy {
-            margin-top: 20px;
-            font-size: 14px;
-            text-align: center;
-            color: #555;
-        }
+        :root { --main-blue: #004aad; --white: #ffffff; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 70px; }
+        
+        /* Top Navigation */
+        .navbar { background: var(--main-blue); color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; }
+        .logo-btn { background: none; border: none; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .search-container { flex: 1; margin: 0 15px; position: relative; }
+        .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: none; outline: none; }
+        
+        /* Auth Overlay */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .auth-card { width: 90%; max-width: 400px; text-align: center; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .auth-btn { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .btn-google { background: white; color: #444; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-primary { background: var(--main-blue); color: white; border: none; }
+
+        /* Banner & Products */
+        .banner { width: 95%; margin: 15px auto; height: 180px; background: linear-gradient(45deg, #004aad, #007bff); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; text-align: center; }
+        .categories { display: flex; overflow-x: auto; padding: 10px; gap: 15px; white-space: nowrap; }
+        .cat-item { padding: 8px 20px; background: white; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
+
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .product-card { background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .prod-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
+        .price-tag { color: var(--main-blue); font-weight: bold; font-size: 1.1em; }
+        .mrp { text-decoration: line-through; color: #888; font-size: 0.8em; margin-left: 5px; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #ddd; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-item { border: none; background: none; color: #555; text-align: center; font-size: 12px; cursor: pointer; flex: 1; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: var(--main-blue); }
+
+        /* Product Detail Modal */
+        #product-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 3000; overflow-y: auto; display: none; }
+        .slider { width: 100%; height: 300px; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
+        .slider img { width: 100%; flex-shrink: 0; scroll-snap-align: start; object-fit: contain; }
     </style>
 </head>
 <body>
-    <!-- Top Left SRP SHOPPING -->
-    <header onclick="reloadPage()">SRP SHOPPING</header>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Search Panel -->
-        <div class="search-bar">
-            <input type="text" placeholder="Search products..." style="width: 80%; padding: 10px;">
-            <button style="padding: 10px;">Search</button>
-        </div>
-
-        <!-- Wallet Amount -->
-        <div class="wallet-amount">
-            Wallet: ₹<span id="wallet-amount">0.00</span>
-        </div>
-
-        <!-- SRP Shopping Discount Banner -->
-        <div class="banner">
-            SRP SHOPPING DISCOUNT: Get 50% Off Today!
-        </div>
-
-        <!-- Privacy Policy Button -->
-        <div class="privacy">
-            <button onclick="openPrivacyPolicy()">Privacy Policy</button>
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2 style="color: var(--main-blue)">SRP SHOPPING</h2>
+            <p>Login to start your premium experience</p>
+            <input type="email" id="login-email" class="auth-btn" placeholder="Email Address" style="text-align: left">
+            <input type="password" id="login-pass" class="auth-btn" placeholder="Password" style="text-align: left">
+            <button class="auth-btn btn-primary" onclick="emailLogin()">Login / Create Account</button>
+            <div style="margin: 15px 0; color: #888;">OR</div>
+            <button class="auth-btn btn-google" onclick="googleLogin()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa/google.svg" width="20">
+                Continue with Google
+            </button>
         </div>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <div class="navbar">
-        <button onclick="goHome()">Home</button>
-        <button onclick="goToProfile()">Profile</button>
-        <button onclick="goToWallet()">Wallet</button>
-        <button onclick="goToSeller()">Seller Dashboard</button>
-        <button onclick="goToCart()">Cart</button>
-        <button onclick="openAI()">AI Assistant</button>
+    <nav class="navbar">
+        <button class="logo-btn" onclick="location.reload()">SRP SHOPPING</button>
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search 20,000+ products..." onkeyup="filterProducts(this.value)">
+        </div>
+        <div id="wallet-display" style="font-size: 14px; font-weight: bold;">₹0.00</div>
+    </nav>
+
+    <div class="banner">
+        <div>
+            <h1>SRP FESTIVAL SALE</h1>
+            <p>Up to 70% Discount on Electronics</p>
+            <button class="auth-btn btn-primary" style="width: auto; padding: 8px 20px;">Shop Now</button>
+        </div>
     </div>
 
-    <script>
-        function reloadPage() {
-            // Reload the website
-            location.reload();
-        }
+    <div class="categories" id="cat-bar">
+        <div class="cat-item" onclick="filterByCategory('All')">All</div>
+        <div class="cat-item" onclick="filterByCategory('Electronics')">Electronics</div>
+        <div class="cat-item" onclick="filterByCategory('Fashion')">Fashion</div>
+        <div class="cat-item" onclick="filterByCategory('Gadgets')">Gadgets</div>
+        <div class="cat-item" onclick="filterByCategory('Home')">Home</div>
+    </div>
 
-        function goHome() {
-            // Already home page
-            alert('You are on Home.');
-        }
+    <div class="product-grid" id="product-list">
+        </div>
 
-        function goToProfile() {
-            alert('Profile page (to be implemented).');
-        }
+    <div id="product-modal">
+        </div>
 
-        function goToWallet() {
-            alert('Wallet page (to be implemented).');
-        }
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="showHome()"><i class="fas fa-home"></i>Home</button>
+        <button class="nav-item" onclick="location.href='profile.html'"><i class="fas fa-user"></i>Account</button>
+        <button class="nav-item" onclick="location.href='profile.html#wallet'"><i class="fas fa-wallet"></i>Wallet</button>
+        <button class="nav-item" onclick="checkSellerAccess()"><i class="fas fa-store"></i>Seller</button>
+        <button class="nav-item" onclick="location.href='cart.html'"><i class="fas fa-shopping-cart"></i>Cart</button>
+        <button class="nav-item" onclick="openAI()"><i class="fas fa-robot"></i>SRP AI</button>
+    </div>
 
-        function goToSeller() {
-            // Admin check
-            const user = firebase.auth().currentUser;
-            if (user) {
-                const email = user.email;
-                if (email === 'Srpstudio1@gmail.com' || email === 'subhashrajpurohit10@gmail.com') {
-                    alert('Admin panel (password protected)'); 
-                    // Here, you would redirect to a password prompt page
-                } else {
-                    alert('You are not an admin.');
-                }
-            } else {
-                alert('Please log in as admin.');
-            }
-        }
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+        authDomain: "srp-shopping-54bbb.firebaseapp.com",
+        databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+        projectId: "srp-shopping-54bbb",
+        storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+        messagingSenderId: "491906168702",
+        appId: "1:491906168702:web:2873565fcd2d561077252f",
+        measurementId: "G-3S7X8V8EFQ"
+    };
 
-        function goToCart()
-      function goToCart() {
-            alert('Cart page (to be implemented).');
-        }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const rdb = firebase.database();
 
-        function openAI() {
-            alert('AI Assistant (to be implemented).');
-        }
+    let allProducts = [];
+    const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
 
-        function openPrivacyPolicy() {
-            alert('Privacy Policy page (to be implemented).');
+    // 1. AUTH LOGIC
+    function googleLogin() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).then(handlePostLogin);
+    }
+
+    function emailLogin() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-pass').value;
+        auth.createUserWithEmailAndPassword(email, pass)
+            .catch(() => auth.signInWithEmailAndPassword(email, pass))
+            .then(handlePostLogin)
+            .catch(err => alert(err.message));
+    }
+
+    function handlePostLogin(result) {
+        const user = result.user;
+        document.getElementById('auth-overlay').style.display = 'none';
+        
+        // Sync User Data
+        db.collection("users").doc(user.uid).set({
+            name: user.displayName || "User",
+            email: user.email,
+            lastLogin: new Date().toISOString()
+        }, { merge: true });
+
+        loadWallet();
+        loadProducts();
+    }
+
+    // 2. PRODUCT ENGINE
+    function loadProducts() {
+        // Example Array of 20 Real-Style Products
+        allProducts = [
+            { id: 1, name: "Premium Wireless Earbuds", price: 1499, mrp: 2999, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500", cat: "Electronics", rating: 4.5 },
+            { id: 2, name: "Smart Fitness Watch", price: 2499, mrp: 4999, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500", cat: "Gadgets", rating: 4.2 },
+            { id: 3, name: "Mechanical Gaming Keyboard", price: 3200, mrp: 5500, img: "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500", cat: "Electronics", rating: 4.8 },
+            { id: 4, name: "Minimalist Leather Wallet", price: 499, mrp: 1200, img: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500", cat: "Fashion", rating: 4.0 },
+            { id: 5, name: "Portable Bluetooth Speaker", price: 1899, mrp: 3500, img: "https://images.unsplash.com/photo-1608156639585-34a0a56ee6b9?w=500", cat: "Electronics", rating: 4.3 }
+            // Add 15 more products here...
+        ];
+        renderProducts(allProducts);
+    }
+
+    function renderProducts(items) {
+        const list = document.getElementById('product-list');
+        list.innerHTML = items.map(p => `
+            <div class="product-card" onclick="viewProduct(${p.id})">
+                <img src="${p.img}" class="prod-img">
+                <p style="font-weight:600; font-size:14px; margin:8px 0;">${p.name}</p>
+                <span class="price-tag">₹${p.price}</span>
+                <span class="mrp">₹${p.mrp}</span>
+                <div style="font-size:12px; color:#ffa41c; margin-top:5px;">
+                    ${'<i class="fas fa-star"></i>'.repeat(Math.floor(p.rating))} (${p.rating})
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 3. SEARCH & CATEGORY FILTERS
+    function filterProducts(query) {
+        const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+        renderProducts(filtered);
+    }
+
+    function filterByCategory(cat) {
+        if(cat === 'All') return renderProducts(allProducts);
+        const filtered = allProducts.filter(p => p.cat === cat);
+        renderProducts(filtered);
+    }
+
+    // 4. ADMIN & SELLER ACCESS
+    function checkSellerAccess() {
+        const user = auth.currentUser;
+        if(ADMIN_EMAILS.includes(user.email)) {
+            location.href = 'admin.html';
+        } else {
+            location.href = 'seller.html';
         }
-    </script>
+    }
+
+    function loadWallet() {
+        const user = auth.currentUser;
+        db.collection("users").doc(user.uid).onSnapshot(doc => {
+            const bal = doc.data()?.walletBalance || 0;
+            document.getElementById('wallet-display').innerText = `₹${bal.toFixed(2)}`;
+        });
+    }
+
+    function openAI() {
+        alert("SRP AI Assistant: How can I help you shop today?");
+    }
+</script>
 </body>
 </html>
