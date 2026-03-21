@@ -1,1119 +1,83 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#004aad">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>SRP SHOPPING | Enterprise Master Console</title>
-    
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* SRP ENTERPRISE DESIGN SYSTEM (SDS) 5.0 */
-        :root {
-            --srp-blue: #004aad;
-            --srp-blue-dark: #003580;
-            --srp-blue-light: #eef5ff;
-            --srp-white: #ffffff;
-            --bg-canvas: #f0f2f5;
-            --text-primary: #2d3436;
-            --text-secondary: #636e72;
-            --danger: #d63031;
-            --success: #00b894;
-            --radius-md: 20px;
-            --shadow-hard: 0 12px 30px rgba(0,0,0,0.1);
-            --nav-height: 70px;
-        }
-
-        /* Dark Mode Toggle Implementation */
-        body.dark-mode {
-            --bg-canvas: #0b0e14;
-            --srp-white: #1a1f26;
-            --text-primary: #f1f2f6;
-            --text-secondary: #a4b0be;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-canvas); color: var(--text-primary); overflow-x: hidden; padding-bottom: var(--nav-height); }
-        h1, h2, .brand-font { font-family: 'Poppins', sans-serif; font-weight: 800; }
-
-        /* AUTHENTICATION PORTAL */
-        #auth-portal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-canvas);
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            padding: 30px;
-            justify-content: center;
-        }
-
-        .auth-card {
-            background: var(--srp-white);
-            padding: 30px;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-hard);
-            max-width: 450px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; color: var(--srp-blue); }
-        .input-field {
-            width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #eee;
-            background: #f9f9f9; font-weight: 600; outline: none; transition: 0.3s;
-        }
-        .input-field:focus { border-color: var(--srp-blue); background: #fff; }
-
-        /* BUTTONS */
-        .srp-btn {
-            width: 100%; padding: 16px; border: none; border-radius: 12px;
-            font-weight: 800; cursor: pointer; transition: 0.3s;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .btn-primary { background: var(--srp-blue); color: #fff; }
-        .btn-google { background: #fff; border: 1px solid #ddd; color: #333; margin-top: 15px; }
-
-        /* MASTER LAYOUT */
-        .srp-header {
-            position: sticky; top: 0; z-index: 900;
-            background: var(--srp-white); height: 70px;
-            padding: 0 20px; display: flex; align-items: center;
-            justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .header-search {
-            flex: 1; margin: 0 15px; position: relative;
-        }
-        .header-search input {
-            width: 100%; padding: 10px 15px 10px 40px; border-radius: 50px;
-            border: 1px solid #eee; background: var(--bg-canvas);
-        }
-        .header-search i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
-
-        /* BOTTOM NAVIGATION */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            height: var(--nav-height); background: var(--srp-white);
-            display: flex; border-top: 1px solid rgba(0,0,0,0.05); z-index: 1000;
-        }
-        .nav-item {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: var(--text-secondary); text-decoration: none; font-size: 0.65rem; font-weight: 700;
-        }
-        .nav-item.active { color: var(--srp-blue); }
-        .nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
-        .nav-ai-btn {
-            background: linear-gradient(135deg, #6c5ce7, var(--srp-blue));
-            width: 55px; height: 55px; border-radius: 50%;
-            color: #fff !important; margin-top: -30px; border: 5px solid var(--bg-canvas);
-            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3);
-        }
-
-        /* PAGE ENGINE */
-        .page { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* WALLET BADGE */
-        .wallet-pill {
-            background: var(--srp-blue-light); color: var(--srp-blue);
-            padding: 6px 12px; border-radius: 50px; font-weight: 900; font-size: 0.8rem;
-        }
-
-        /* BANNER SYSTEM */
-        .hero-banner {
-            width: 100%; height: 180px; border-radius: 20px;
-            background: linear-gradient(45deg, var(--srp-blue), var(--srp-blue-dark));
-            margin-bottom: 25px; display: flex; align-items: center; padding: 30px; color: #fff;
-            position: relative; overflow: hidden;
-        }
-
-        /* PRODUCT GRID */
-        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .product-card {
-            background: var(--srp-white); border-radius: 15px; padding: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative;
-        }
-        .product-img { width: 100%; height: 150px; object-fit: contain; border-radius: 10px; }
-        .price-tag { color: var(--srp-blue); font-weight: 800; font-size: 1.1rem; }
-        .mrp-tag { text-decoration: line-through; color: var(--text-secondary); font-size: 0.75rem; }
-        .discount-badge {
-            position: absolute; top: 10px; left: 10px;
-            background: var(--danger); color: #fff; padding: 2px 8px;
-            border-radius: 5px; font-size: 0.6rem; font-weight: 900;
-        }
-
-        /* TOAST NOTIFICATIONS */
-        #srp-toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 11000; width: 90%; max-width: 400px;
-        }
-        .toast {
-            background: #333; color: #fff; padding: 15px; border-radius: 10px;
-            margin-bottom: 10px; font-weight: 600; font-size: 0.85rem;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2); animation: slideDown 0.3s ease;
-        }
-        @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
-    </style>
-</head>
-<body>
-
-    <div id="srp-toast"></div>
-
-    <div id="auth-portal">
-        <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="color:var(--srp-blue); font-size: 2.2rem;">SRP SHOPPING</h1>
-            <p style="color:var(--text-secondary); font-weight: 600;">Enterprise Marketplace v5.0</p>
-        </div>
-
-        <div class="auth-card">
-            <div id="auth-toggle-group" style="display:flex; margin-bottom: 25px; background: #f0f2f5; padding: 5px; border-radius: 12px;">
-                <div id="tab-login" class="srp-btn" style="background:#fff; font-size: 0.8rem;" onclick="toggleAuth(true)">LOGIN</div>
-                <div id="tab-signup" class="srp-btn" style="background:transparent; font-size: 0.8rem;" onclick="toggleAuth(false)">SIGNUP</div>
-            </div>
-
-            <div class="input-group">
-                <label>EMAIL ADDRESS</label>
-                <input type="email" id="auth-email" class="input-field" placeholder="example@srp.com">
-            </div>
-            <div class="input-group">
-                <label>PASSWORD</label>
-                <input type="password" id="auth-pass" class="input-field" placeholder="••••••••">
-            </div>
-
-            <button class="srp-btn btn-primary" onclick="handleAuth()" id="main-auth-btn">SECURE ACCESS</button>
-
-            <div style="margin: 20px 0; text-align: center; color: #ccc; font-size: 0.7rem;">OR CONTINUE WITH</div>
-
-            <button class="srp-btn btn-google" onclick="signInWithGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> Google Cloud
-            </button>
-        </div>
-    </div>
-
-    <div id="app-shell" style="display: none;">
-        <header class="srp-header">
-            <div class="brand-font" style="color: var(--srp-blue); cursor: pointer;" onclick="handleBrandTap()">SRP SHOPPING</div>
-            
-            <div class="header-search">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search spares, gadgets..." oninput="searchProducts(this.value)">
-            </div>
-
-            <div class="wallet-pill" onclick="switchPage('wallet')">
-                <i class="fas fa-wallet"></i> ₹<span id="global-wallet-bal">0.00</span>
-            </div>
-        </header>
-
-        <div style="padding: 10px 20px; background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-            <span onclick="openPrivacy()" style="font-size: 0.65rem; font-weight: 800; color: var(--text-secondary);">PRIVACY POLICY</span>
-            <span id="admin-badge" style="display:none; font-size: 0.6rem; background: var(--danger); color:#fff; padding: 2px 6px; border-radius: 4px;">SYSTEM ADMIN</span>
-        </div>
-
-        <main id="main-content">
-            <section id="page-home" class="page active">
-                <div class="hero-banner">
-                    <div>
-                        <h2 style="font-size: 1.8rem;">MEGA SALE</h2>
-                        <p style="font-weight: 600;">UP TO 80% OFF ON ALL SPARES</p>
-                        <button class="srp-btn btn-primary" style="width: auto; padding: 8px 20px; margin-top: 15px; font-size: 0.7rem;">SHOP NOW</button>
-                    </div>
-                </div>
-
-                <div id="category-scroller" style="display:flex; gap:15px; overflow-x:auto; margin-bottom:25px; padding-bottom: 10px;">
-                    </div>
-
-                <div class="product-grid" id="home-product-grid">
-                    </div>
-            </section>
-<section id="page-admin" class="page"></section>
-            <section id="page-cart" class="page"></section>
-            <section id="page-wallet" class="page"></section>
-            <section id="page-seller" class="page"></section>
-            <section id="page-account" class="page">
-    
-    <!-- WALLET -->
-    <div class="auth-card">
-        <h3>Wallet Balance</h3>
-        <p id="wallet-balance">₹0.00</p>
-        <button onclick="rechargeWallet()" class="srp-btn btn-primary">Recharge</button>
-    </div>
-
-    <!-- ORDERS -->
-    <div class="auth-card">
-        <h3>My Orders</h3>
-        <div id="user-orders"></div>
-    </div>
-
-    <!-- ADDRESS -->
-    <div class="auth-card">
-        <h3>Address Book</h3>
-        <button onclick="addAddress()" class="srp-btn btn-primary">Add Address</button>
-        <div id="address-list"></div>
-    </div>
-
-    <!-- WISHLIST -->
-    <div class="auth-card">
-        <h3>Wishlist</h3>
-        <div id="wishlist"></div>
-    </div>
-
-    <!-- CART -->
-    <div class="auth-card">
-        <h3>Cart</h3>
-        <div id="cart-items"></div>
-        <p id="cart-total"></p>
-    </div>
-
-    <!-- NOTIFICATIONS -->
-    <div class="auth-card">
-        <h3>Notifications</h3>
-        <div id="notifications"></div>
-    </div>
-
-    <!-- COUPON -->
-    <div class="auth-card">
-        <h3>Apply Coupon</h3>
-        <input type="text" id="coupon-code" class="input-field">
-        <button onclick="applyCoupon()" class="srp-btn btn-primary">Apply</button>
-    </div>
-
-    <!-- SUPPORT -->
-    <div class="auth-card">
-        <h3>Support</h3>
-        <button onclick="raiseTicket()" class="srp-btn btn-primary">Raise Ticket</button>
-    </div>
-
-    <!-- SECURITY -->
-    <div class="auth-card">
-        <h3>Security</h3>
-        <button onclick="changePassword()" class="srp-btn btn-primary">Change Password</button>
-        <button onclick="logoutAll()" class="srp-btn">Logout All</button>
-    </div>
-
-    <!-- DARK MODE -->
-    <div class="auth-card">
-        <h3>Theme</h3>
-        <button onclick="toggleMode()" class="srp-btn">Toggle Dark Mode</button>
-    </div>
-
-            </section>
-        </main>
-
-        <nav class="bottom-nav">
-            <div class="nav-item active" onclick="switchPage('home', this)"><i class="fas fa-home"></i><span>HOME</span></div>
-            <div class="nav-item" onclick="switchPage('account', this)"><i class="fas fa-user-circle"></i><span>ACCOUNT</span></div>
-            <div class="nav-item nav-ai-btn" onclick="openAI()"><i class="fas fa-robot"></i></div>
-            <div class="nav-item" onclick="switchPage('wallet', this)"><i class="fas fa-wallet"></i><span>WALLET</span></div>
-            <div class="nav-item" onclick="switchPage('seller', this)"><i class="fas fa-store"></i><span>SELLER</span></div>
-            <div class="nav-item" onclick="switchPage('cart', this)" style="position:relative;">
-                <i class="fas fa-shopping-cart"></i>
-                <span id="cart-badge" style="position:absolute; top:10px; right:15px; background:var(--danger); color:#fff; font-size:0.5rem; padding:2px 5px; border-radius:10px;">0</span>
-                <span>CART</span>
-            </div>
-        </nav>
-    </div>
-
 <script>
-// ==========================================
-// FIREBASE CONFIGURATION & INITIALIZATION
-// ==========================================
-const firebaseConfig = {
-    apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-    authDomain: "srp-shopping-54bbb.firebaseapp.com",
-    databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-    projectId: "srp-shopping-54bbb",
-    storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-    messagingSenderId: "491906168702",
-    appId: "1:491906168702:web:2873565fcd2d561077252f",
-    measurementId: "G-3S7X8V8EFQ"
-};
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const ADMIN_EMAILS = ['Srpstudio1@gmail.com', 'subhashrajpurohit10@gmail.com'];
-
-// ==========================================
-// CORE STATE MANAGEMENT
-// ==========================================
+/* =========================================
+   GLOBAL VARIABLES
+========================================= */
 let currentUser = null;
-let isLoginMode = true;
-let isAdmin = false;
+let userProfile = {};
+let cartItems = [];
+let userOrders = [];
 
-// AUTH OBSERVER
-auth.onAuthStateChanged(user => {
-    if (user) {
-        currentUser = user;
-
-        console.log("SRP Authenticated:", user.uid);
-
-        updateWallet();
-        loadUserProfile();
-        loadOrders();
-        loadWallet();
-        loadWishlist();
-        loadCart();
-        loadNotifications();
-        loadAddresses();
-
-        if(user.uid === ADMIN_UID) {
-            document.getElementById('admin-nav-item').style.display = "block";
-        }
-
-    } else {
-        console.log("No User Found");
-    }
-});
-// ==========================================
-// UI ENGINE FUNCTIONS
-// ==========================================
-function toggleAuth(mode) {
-    isLoginMode = mode;
-    document.getElementById('tab-login').style.background = mode ? '#fff' : 'transparent';
-    document.getElementById('tab-signup').style.background = mode ? 'transparent' : '#fff';
-    document.getElementById('main-auth-btn').innerText = mode ? 'SECURE ACCESS' : 'CREATE ACCOUNT';
-}
-
-
-function showToast(msg, type = "info") {
-    const box = document.getElementById('srp-toast');
-    const t = document.createElement('div');
-    
-    let bg = "#333";
-    if(type === "success") bg = "var(--success)";
-    if(type === "danger") bg = "var(--danger)";
-
-    t.className = 'toast';
-    t.style.background = bg;
-    t.innerText = msg;
-
-    box.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
-}
- const ADMIN_UIDS = ['mhSdLoYq1uNAu2CeIURS4uIXUJG3', '5zaPB92EHJPIZLbttmwvsxDF64F3'];
-
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    
-    document.getElementById(`page-${pageId}`).classList.add('active');
-    if(el) el.classList.add('active');
-    
-    // Lazy Load specific logic
-    if(pageId === 'cart') renderCart();
-    if(pageId === 'seller') initSellerDashboard();
-}
-
-function handleBrandTap() {
-    if (isAdmin) {
-        let pin = prompt("Admin Secure Pin:");
-        if (pin === "2026") switchPage('admin'); // Admin module in Part 2
-    } else {
-        location.reload();
-    }
-}
-
-// ==========================================
-// AUTHENTICATION LOGIC
-// ==========================================
-async function handleAuth() {
-    const email = document.getElementById('auth-email').value;
-    const pass = document.getElementById('auth-pass').value;
-
-    if (!email || !pass) return showToast("Enter credentials");
-
-    try {
-        if (isLoginMode) {
-            await auth.signInWithEmailAndPassword(email, pass);
-            showToast("Welcome Back!");
-        } else {
-            const res = await auth.createUserWithEmailAndPassword(email, pass);
-            await db.collection('users').doc(res.user.uid).set({
-                email, wallet: 0, createdAt: new Date(), isVendor: false
-            });
-            showToast("Account Created!");
-        }
-    } catch (e) {
-        showToast(e.message);
-    }
-}
-
-async function signInWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try {
-        await auth.signInWithPopup(provider);
-    } catch (e) {
-        showToast("Google Auth Failed");
-    }
-}
-
-// ==========================================
-// DATA MOCKUP (PART 1 - REAL SYNC IN PART 2)
-// ==========================================
-function loadHomeData() {
-    const grid = document.getElementById('home-product-grid');
-    // For demo purposes in Part 1 - Part 2 will fetch 20 real products from Firestore
-    grid.innerHTML = `
-        <div class="product-card">
-            <div class="discount-badge">80% OFF</div>
-            <img class="product-img" src="https://images.unsplash.com/photo-1588872657578-7efd3f15149f?w=400" alt="Display">
-            <h4 style="font-size:0.85rem; margin:10px 0;">iPhone 13 OLED Spare</h4>
-            <div class="mrp-tag">₹12,000</div>
-            <div class="price-tag">₹2,400</div>
-            <button class="srp-btn btn-primary" style="padding:8px; font-size:0.6rem; margin-top:10px;">VIEW DETAIL</button>
-        </div>
-    `;
-}
-
-function syncUserWallet() {
-    db.collection('users').doc(auth.currentUser.uid).onSnapshot(doc => {
-        if(doc.exists) document.getElementById('global-wallet-bal').innerText = (doc.data().wallet || 0).toFixed(2);
-    });
-}
-    /* =========================================
-   SRP MARKETPLACE ENGINE (Part 2)
-   PRODUCT DETAIL & INVENTORY SYSTEM
-   =========================================
-*/
-
-// 1. EXTENDED PRODUCT DATABASE (20 PRODUCTION-READY ITEMS)
-const SRP_INVENTORY = [
-    { id: 'p1', name: 'iPhone 13 OLED Display Panel (Original Type)', mrp: 14999, discount: 80, cat: 'Spares', img: ['https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600', 'https://images.unsplash.com/photo-1556656793-062ff9878273?w=600'], rating: 4.8, reviews: 1240, desc: 'High-quality OLED replacement screen with True Tone support and 800 nits peak brightness. Perfect for professional repairs.' },
-    { id: 'p2', name: 'Ultra Fast 65W GaN Charger', mrp: 3999, discount: 75, cat: 'Accessories', img: ['https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600'], rating: 4.9, reviews: 850, desc: 'Gallium Nitride technology for cooler, faster charging. Compatible with MacBook, iPhone, and Android flagship devices.' },
-    { id: 'p3', name: 'Precision Screwdriver Kit (64-in-1)', mrp: 2499, discount: 60, cat: 'Tools', img: ['https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600'], rating: 4.7, reviews: 2100, desc: 'Comprehensive toolkit for mobile and laptop repair. Includes all Torx, Pentalobe, and Phillips bits needed for modern electronics.' },
-    { id: 'p4', name: 'SRP Pro Bluetooth ANC Earbuds', mrp: 8999, discount: 82, cat: 'Audio', img: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600'], rating: 4.5, reviews: 310, desc: 'Active Noise Cancellation with 40h battery life. Deep bass profile optimized for Indian music listeners.' },
-    { id: 'p5', name: 'Samsung S22 Ultra Battery (5000mAh)', mrp: 2999, discount: 50, cat: 'Spares', img: ['https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600'], rating: 4.6, reviews: 95, desc: 'Lithium-ion original replacement battery. Long cycle life and safety certified.' },
-    // ... Additional items would follow this pattern to reach 20
+/* =========================================
+   ADMIN CONFIG (FIXED)
+========================================= */
+const ADMIN_UIDS = [
+    "LRukxuWhNeZEElB0MfxKV04nsgH3",
+    "5zaPB92EHJPIZLbttmwvsxDF64F3",
+    "qFVYJKbY25eUzQxZUjT5fCRTku42"
 ];
 
-// 2. PRODUCT DETAIL MODAL SYSTEM (AMAZON STYLE)
-function openProductDetail(productId) {
-    const p = SRP_INVENTORY.find(item => item.id === productId);
-    if(!p) return;
-
-    const price = Math.round(p.mrp * (1 - p.discount/100));
-    
-    const detailOverlay = document.createElement('div');
-    detailOverlay.id = "p-detail-overlay";
-    detailOverlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:var(--srp-white); z-index:5000; overflow-y:auto; animation: slideUp 0.4s ease;";
-
-    detailOverlay.innerHTML = `
-        <div style="position:sticky; top:0; background:rgba(255,255,255,0.9); padding:15px; display:flex; align-items:center; gap:20px; z-index:10; backdrop-filter:blur(10px);">
-            <i class="fas fa-arrow-left" onclick="closeProductDetail()" style="font-size:1.2rem; color:var(--srp-blue);"></i>
-            <span class="brand-font" style="font-size:1rem;">PRODUCT DETAILS</span>
-        </div>
-
-        <div style="width:100%; overflow-x:auto; display:flex; scroll-snap-type: x mandatory; background:#f9f9f9;" id="img-slider">
-            ${p.img.map(src => `<img src="${src}" style="width:100%; flex-shrink:0; scroll-snap-align:start; height:350px; object-fit:contain;">`).join('')}
-        </div>
-
-        <div style="padding:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <h1 style="font-size:1.3rem; line-height:1.4;">${p.name}</h1>
-                <div style="background:var(--srp-blue-light); color:var(--srp-blue); padding:5px 10px; border-radius:8px; font-weight:900;">${p.rating} ★</div>
-            </div>
-            
-            <p style="color:var(--text-secondary); font-size:0.8rem; margin:5px 0;">${p.reviews} Global Ratings</p>
-
-            <div style="margin:20px 0; border-top:1px solid #eee; border-bottom:1px solid #eee; padding:15px 0;">
-                <span style="font-size:1.8rem; font-weight:800; color:var(--srp-blue);">₹${price}</span>
-                <span style="text-decoration:line-through; color:var(--text-secondary); margin-left:10px;">M.R.P: ₹${p.mrp}</span>
-                <span style="color:var(--danger); font-weight:800; margin-left:10px;">(${p.discount}% OFF)</span>
-            </div>
-
-            <div style="margin-bottom:20px;">
-                <h4 style="font-size:0.8rem; margin-bottom:10px;">SELECT COLOR</h4>
-                <div style="display:flex; gap:10px;">
-                    <div style="width:35px; height:35px; border-radius:50%; background:#000; border:2px solid var(--srp-blue);"></div>
-                    <div style="width:35px; height:35px; border-radius:50%; background:#004aad;"></div>
-                    <div style="width:35px; height:35px; border-radius:50%; background:#eee;"></div>
-                </div>
-            </div>
-
-            <div style="margin-bottom:20px;">
-                <h4 style="font-size:0.8rem; margin-bottom:10px;">QUANTITY</h4>
-                <select style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; font-weight:700;" id="p-qty">
-                    <option value="1">1 Unit</option><option value="2">2 Units</option><option value="3">3 Units</option>
-                </select>
-            </div>
-
-            <div style="background:var(--srp-blue-light); padding:15px; border-radius:12px; margin-bottom:25px;">
-                <i class="fas fa-truck" style="color:var(--srp-blue); margin-right:10px;"></i>
-                <span style="font-weight:700; font-size:0.85rem;">Delivery within 7 to 15 Days</span>
-                <p style="font-size:0.7rem; margin-top:5px; color:var(--text-secondary);">Managed by India Post Logistics</p>
-            </div>
-
-            <h3 style="margin-bottom:10px; font-size:1rem;">Description</h3>
-            <p style="line-height:1.6; color:var(--text-secondary); font-size:0.9rem;">${p.desc} This item undergoes strict quality control at SRP Headquarters before dispatch. Ensure you verify the model number before purchasing spares.</p>
-
-            <div style="position:fixed; bottom:0; left:0; width:100%; background:white; padding:15px; display:flex; gap:10px; box-shadow:0 -10px 20px rgba(0,0,0,0.05); z-index:20;">
-                <button class="srp-btn btn-outline" style="flex:1;" onclick="addToCart('${p.id}')">ADD TO CART</button>
-                <button class="srp-btn btn-primary" style="flex:1;" onclick="directCheckout('${p.id}')">BUY NOW</button>
-            </div>
-            
-            <div style="height:100px;"></div> </div>
-    `;
-
-    document.body.appendChild(detailOverlay);
-}
-
-function closeProductDetail() {
-    const el = document.getElementById("p-detail-overlay");
-    if(el) el.remove();
-}
-
-// 3. DYNAMIC HOME CONTENT GENERATOR
-function renderProducts(filter = '') {
-    const grid = document.getElementById('home-product-grid');
-    const filtered = filter ? SRP_INVENTORY.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()) || p.cat.toLowerCase() === filter.toLowerCase()) : SRP_INVENTORY;
-    
-    grid.innerHTML = filtered.map(p => `
-        <div class="product-card" onclick="openProductDetail('${p.id}')">
-            <div class="discount-badge">${p.discount}% OFF</div>
-            <img class="product-img" src="${p.img[0]}" alt="${p.name}">
-            <div style="padding:5px;">
-                <h4 style="font-size:0.8rem; margin:5px 0; height:40px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${p.name}</h4>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="price-tag">₹${Math.round(p.mrp * (1 - p.discount/100))}</span>
-                    <span class="mrp-tag">₹${p.mrp}</span>
-                </div>
-                <div style="font-size:0.6rem; color:var(--success); font-weight:800; margin-top:5px;">
-                    <i class="fas fa-star"></i> ${p.rating} | ${p.reviews} sold
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// 4. CATEGORY LOGIC
-function initCategories() {
-    const cats = ['All', 'Spares', 'Accessories', 'Tools', 'Audio', 'Batteries'];
-    const scroller = document.getElementById('category-scroller');
-    scroller.innerHTML = cats.map(c => `
-        <div class="cat-pill" onclick="renderProducts('${c === 'All' ? '' : c}')" style="flex-shrink:0; padding:10px 25px; background:var(--srp-white); border:1px solid #eee; border-radius:50px; font-weight:800; font-size:0.75rem; cursor:pointer;">
-            ${c.toUpperCase()}
-        </div>
-    `).join('');
-}
-
-// 5. GLOBAL SEARCH ENGINE
-function searchProducts(query) {
-    renderProducts(query);
-}
-
-// Initial Run
-document.addEventListener('DOMContentLoaded', () => {
-    initCategories();
-    renderProducts();
-});
-
 /* =========================================
-   6. CART LOGIC (PREVIEW)
-   =========================================
-*/
-let cartItems = [];
-
-function addToCart(pid) {
-    const p = SRP_INVENTORY.find(x => x.id === pid);
-    const qty = parseInt(document.getElementById('p-qty')?.value || 1);
-    
-    cartItems.push({...p, selectedQty: qty});
-    document.getElementById('cart-badge').innerText = cartItems.length;
-    showToast("Added to Cart Successfully!");
-}
-
-function directCheckout(pid) {
-    addToCart(pid);
-    switchPage('cart');
-    closeProductDetail();
-}
-/* =========================================
-   SRP VENDOR ECOSYSTEM (Part 3)
-   SELLER ONBOARDING & LOGISTICS
-   =========================================
-*/
-
-// 1. SELLER DASHBOARD CONTROLLER
-async function initSellerDashboard() {
-    const page = document.getElementById('page-seller');
-    const user = auth.currentUser;
-    
-    // Check Vendor Status in Firestore
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    const userData = userDoc.data();
-
-    if (!userData.isVendor) {
-        renderSellerOnboarding();
-    } else if (userData.vendorStatus === 'pending') {
-        page.innerHTML = `
-            <div style="text-align:center; padding:50px 20px;">
-                <i class="fas fa-clock" style="font-size:4rem; color:var(--srp-blue); opacity:0.3;"></i>
-                <h2 style="margin-top:20px;">Application Pending</h2>
-                <p style="color:var(--text-secondary); font-size:0.9rem;">Admin is verifying your GST/PAN details. Usually takes 24-48 hours.</p>
-                <button class="srp-btn btn-outline" style="margin-top:20px;" onclick="location.reload()">REFRESH STATUS</button>
-            </div>
-        `;
-    } else {
-        renderSellerConsole(userData);
-    }
-}
-
-// 2. VENDOR ONBOARDING (PAGE 1: GOVERNMENT INFO)
-function renderSellerOnboarding() {
-    const page = document.getElementById('page-seller');
-    page.innerHTML = `
-        <div style="animation: slideUp 0.4s ease;">
-            <h2 class="brand-font" style="color:var(--srp-blue);">Become an SRP Seller</h2>
-            <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:25px;">Sell to thousands of repair technicians across India.</p>
-            
-            <div class="auth-card" style="margin-bottom:20px;">
-                <div class="input-group">
-                    <label>BUSINESS / STORE NAME</label>
-                    <input type="text" id="v-biz-name" class="input-field" placeholder="e.g. Rajpurohit Electronics">
-                </div>
-                <div class="input-group">
-                    <label>GST NUMBER (Required for Spares)</label>
-                    <input type="text" id="v-gst" class="input-field" placeholder="22AAAAA0000A1Z5">
-                </div>
-                <div class="input-group">
-                    <label>PAN CARD NUMBER</label>
-                    <input type="text" id="v-pan" class="input-field" placeholder="ABCDE1234F">
-                </div>
-                <div class="input-group">
-                    <label>PICKUP PINCODE (India Post Serviceable)</label>
-                    <input type="number" id="v-pin" class="input-field" placeholder="342001">
-                </div>
-                
-                <button class="srp-btn btn-primary" onclick="submitVendorApp()">SUBMIT FOR APPROVAL</button>
-            </div>
-            
-            <p style="font-size:0.65rem; color:var(--text-secondary); text-align:center;">
-                By clicking submit, you agree to SRP's 5% commission policy and India Post shipping mandates.
-            </p>
-        </div>
-    `;
-}
-
-async function submitVendorApp() {
-    const data = {
-        bizName: document.getElementById('v-biz-name').value,
-        gst: document.getElementById('v-gst').value,
-        pan: document.getElementById('v-pan').value,
-        pincode: document.getElementById('v-pin').value,
-        isVendor: true,
-        vendorStatus: 'pending',
-        vendorBalance: 0,
-        joinedAt: new Date()
-    };
-
-    if(!data.bizName || !data.gst) return showToast("Business Name & GST Required");
-
-    try {
-        await db.collection('users').doc(auth.currentUser.uid).update(data);
-        showToast("Application Submitted!");
-        initSellerDashboard();
-    } catch (e) { showToast("Submission Error"); }
-}
-
-// 3. SELLER CONSOLE (PAGE 2: INVENTORY & ORDERS)
-function renderSellerConsole(vendor) {
-    const page = document.getElementById('page-seller');
-    page.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 class="brand-font">${vendor.bizName.toUpperCase()}</h2>
-            <div style="text-align:right;">
-                <div style="font-size:0.6rem; color:var(--text-secondary);">WALLET</div>
-                <div style="font-weight:900; color:var(--success);">₹${vendor.vendorBalance.toFixed(2)}</div>
-            </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:25px;">
-            <button class="srp-btn btn-outline" style="font-size:0.7rem;" onclick="toggleSellerView('upload')">
-                <i class="fas fa-plus-circle"></i> ADD PRODUCT
-            </button>
-            <button class="srp-btn btn-outline" style="font-size:0.7rem;" onclick="toggleSellerView('orders')">
-                <i class="fas fa-shipping-fast"></i> NEW ORDERS
-            </button>
-        </div>
-
-        <div id="seller-sub-view">
-            </div>
-    `;
-    toggleSellerView('orders');
-}
-
-// 4. PRODUCT UPLOAD ENGINE (MOBILE GALLERY SUPPORT)
-function renderProductUpload() {
-    return `
-        <div class="auth-card" style="animation: fadeIn 0.3s ease;">
-            <h3 style="font-size:0.9rem; margin-bottom:15px;">List New Product</h3>
-            
-            <div style="width:100%; height:120px; border:2px dashed #ccc; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:15px; cursor:pointer;" onclick="document.getElementById('p-img-file').click()">
-                <i class="fas fa-camera" style="font-size:1.5rem; color:var(--srp-blue);"></i>
-                <span style="font-size:0.7rem; margin-top:5px;">Upload From Gallery</span>
-                <input type="file" id="p-img-file" hidden accept="image/*">
-            </div>
-
-            <input type="text" id="up-name" class="input-field" placeholder="Product Name" style="margin-bottom:10px;">
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <input type="number" id="up-mrp" class="input-field" placeholder="MRP">
-                <input type="number" id="up-disc" class="input-field" placeholder="Disc %">
-            </div>
-            <select id="up-cat" class="input-field" style="margin-bottom:10px;">
-                <option>Spares</option><option>Tools</option><option>Accessories</option>
-            </select>
-            <textarea id="up-desc" class="input-field" placeholder="Full 5000 word description..." style="height:100px;"></textarea>
-            
-            <button class="srp-btn btn-primary" style="margin-top:15px;" onclick="processProductUpload()">PUBLISH PRODUCT</button>
-        </div>
-    `;
-}
-
-// 5. INDIA POST TRACKING SYSTEM
-function updateTracking(orderId, trackingId) {
-    // Validate India Post Format (e.g., RT123456789IN)
-    const indiaPostRegex = /^[A-Z]{2}\d{9}IN$/;
-    if(!indiaPostRegex.test(trackingId)) {
-        return showToast("Invalid India Post Tracking Format!");
-    }
-
-    db.collection('orders').doc(orderId).update({
-        trackingId: trackingId,
-        status: 'Shipped',
-        shippedAt: new Date(),
-        trackingLink: `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?id=${trackingId}`
-    }).then(() => {
-        showToast("Tracking Updated & Customer Notified!");
-        toggleSellerView('orders');
-    });
-}
-
-// 6. VIEW SWITCHER
-function toggleSellerView(view) {
-    const container = document.getElementById('seller-sub-view');
-    if(view === 'upload') {
-        container.innerHTML = renderProductUpload();
-    } else if(view === 'orders') {
-        container.innerHTML = `
-            <div style="background:var(--srp-white); padding:15px; border-radius:15px;">
-                <h4 style="font-size:0.8rem; border-bottom:1px solid #eee; padding-bottom:10px;">Pending Shipments</h4>
-                <div style="padding:15px 0; border-bottom:1px dashed #eee;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
-                        <b>#ORD-99218</b>
-                        <span style="color:var(--srp-blue);">₹2,400</span>
-                    </div>
-                    <p style="font-size:0.7rem; color:var(--text-secondary); margin:5px 0;">Customer: Subhash Chandra | Jodhpur, 342001</p>
-                    <input type="text" id="track-input-99218" placeholder="India Post Tracking ID" style="width:100%; padding:8px; border-radius:5px; border:1px solid #ddd; font-size:0.7rem; margin-top:5px;">
-                    <button class="srp-btn btn-primary" style="padding:5px; font-size:0.6rem; margin-top:8px;" onclick="updateTracking('99218', document.getElementById('track-input-99218').value)">UPDATE TRACKING</button>
-                </div>
-            </div>
-        `;
-    }
-}
-/* =========================================
-   SRP USER & THEME ENGINE (Part 4)
-   WALLET, PROFILE & DARK MODE
-   =========================================
-*/
-
-// 1. THEME ENGINE (BLUE & WHITE FOCUS)
-const SRP_THEME = {
-    current: 'light',
-    toggle() {
-        this.current = this.current === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', this.current);
-        localStorage.setItem('srp_theme', this.current);
-        this.apply();
-    },
-    apply() {
-        const root = document.documentElement.style;
-        if (this.current === 'dark') {
-            root.setProperty('--srp-white', '#121212');
-            root.setProperty('--text-main', '#ffffff');
-            root.setProperty('--text-secondary', '#aaaaaa');
-            root.setProperty('--bg-light', '#1e1e1e');
-        } else {
-            root.setProperty('--srp-white', '#ffffff');
-            root.setProperty('--text-main', '#1a1a1a');
-            root.setProperty('--text-secondary', '#666666');
-            root.setProperty('--bg-light', '#f8faff');
-        }
-    }
-};
-
-// 2. RENDER ACCOUNT PAGE
-function renderAccountPage() {
-    const page = document.getElementById('page-account');
-    const user = auth.currentUser;
-
-    page.innerHTML = `
-        <div style="padding:20px; animation: fadeIn 0.4s ease;">
-            <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;">
-                <div style="width:70px; height:70px; border-radius:50%; background:var(--srp-blue); color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:900;">
-                    ${user.displayName ? user.displayName[0] : 'U'}
-                </div>
-                <div>
-                    <h2 style="margin:0; font-size:1.2rem;">${user.displayName || 'SRP User'}</h2>
-                    <p style="margin:0; font-size:0.75rem; color:var(--text-secondary);">${user.email}</p>
-                </div>
-            </div>
-
-            <div style="background: linear-gradient(135deg, var(--srp-blue), #003087); color:white; padding:20px; border-radius:20px; margin-bottom:25px; box-shadow: 0 10px 20px rgba(0,74,173,0.2);">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <div>
-                        <span style="font-size:0.7rem; opacity:0.8; letter-spacing:1px;">SRP WALLET BALANCE</span>
-                        <h2 style="font-size:2rem; margin:5px 0;">₹<span id="wallet-amt">0.00</span></h2>
-                    </div>
-                    <i class="fas fa-wallet" style="font-size:1.5rem; opacity:0.5;"></i>
-                </div>
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button class="srp-btn" style="background:rgba(255,255,255,0.2); flex:1; font-size:0.7rem;" onclick="showToast('Withdrawal coming soon')">WITHDRAW</button>
-                    <button class="srp-btn" style="background:white; color:var(--srp-blue); flex:1; font-size:0.7rem;" onclick="showToast('Add Money Disabled')">ADD CASH</button>
-                </div>
-            </div>
-
-            <div class="auth-card" style="padding:0; overflow:hidden;">
-                ${accountItem('fas fa-box', 'My Orders', "switchPage('orders')")}
-                ${accountItem('fas fa-heart', 'Wishlist', "showToast('Coming Soon')")}
-                ${accountItem('fas fa-address-book', 'Saved Addresses', "showToast('Coming Soon')")}
-                ${accountItem('fas fa-moon', 'Dark Mode', "SRP_THEME.toggle()")}
-                ${accountItem('fas fa-shield-alt', 'Privacy Policy', "window.open('#')")}
-                <div onclick="handleLogout()" style="padding:15px 20px; color:var(--danger); display:flex; align-items:center; gap:15px; font-weight:800; border-top:1px solid #eee;">
-                    <i class="fas fa-sign-out-alt"></i> SIGN OUT
-                </div>
-            </div>
-
-            <p style="text-align:center; font-size:0.6rem; color:var(--text-secondary); margin-top:30px;">
-                SRP SHOPPING v1.0.4 <br> Built for Mobile Repari Technicians
-            </p>
-        </div>
-    `;
-    updateWallet();
-}
-
-function accountItem(icon, title, action) {
-    return `
-        <div onclick="${action}" style="padding:18px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #eee; cursor:pointer;">
-            <div style="display:flex; align-items:center; gap:15px;">
-                <i class="${icon}" style="color:var(--srp-blue); width:20px;"></i>
-                <span style="font-weight:600; font-size:0.9rem;">${title}</span>
-            </div>
-            <i class="fas fa-chevron-right" style="font-size:0.7rem; color:#ccc;"></i>
-        </div>
-    `;
-}
-
-// 3. WALLET LOGIC
-async function updateWallet() {
-    const doc = await db.collection('users').doc(auth.currentUser.uid).get();
-    const balance = doc.data()?.wallet || 0;
-    const el = document.getElementById('wallet-amt');
-    if(el) el.innerText = balance.toLocaleString('en-IN');
-}
-
-// 4. AUTH LOGOUT
-function handleLogout() {
-    auth.signOut().then(() => {
-        location.reload();
-    });
-}
-
-// 5. GLOBAL TOAST NOTIFICATION SYSTEM
-
-
-// Initialize Theme on Load
-document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('srp_theme');
-    if(saved) {
-        SRP_THEME.current = saved;
-        SRP_THEME.apply();
-    }
-});
-/* =========================================
-   SRP SUPER-ADMIN ENGINE (Part 5)
-   ADMIN PRIVILEGES & GLOBAL CONTROL
-   =========================================
-*/
-
-// 1. ADMIN GATEKEEPER
-const ADMIN_UIDS = ['mhSdLoYq1uNAu2CeIURS4uIXUJG3', '5zaPB92EHJPIZLbttmwvsxDF64F3'];
-
-async function initAdminPanel() {
-    const user = auth.currentUser;
-    if (user.uid !== ADMIN_UID) {
-        showToast("Access Denied: Admin Only");
-        switchPage('home');
-        return;
-    }
-
-    const page = document.getElementById('page-admin');
-    page.innerHTML = `
-        <div style="padding:15px; animation: fadeIn 0.4s ease;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2 class="brand-font" style="color:var(--srp-blue);">SRP COMMAND CENTER</h2>
-                <div style="background:var(--danger); color:white; padding:4px 10px; border-radius:5px; font-size:0.6rem; font-weight:900;">LIVE</div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:25px;">
-                <div class="auth-card" style="text-align:center;">
-                    <span style="font-size:0.6rem; color:var(--text-secondary);">TOTAL SALES</span>
-                    <h3 id="admin-total-sales" style="margin:5px 0; color:var(--success);">₹0</h3>
-                </div>
-                <div class="auth-card" style="text-align:center;">
-                    <span style="font-size:0.6rem; color:var(--text-secondary);">PENDING VENDORS</span>
-                    <h3 id="admin-pending-vendors" style="margin:5px 0; color:var(--srp-blue);">0</h3>
-                </div>
-            </div>
-
-            <div style="display:flex; border-bottom:1px solid #eee; margin-bottom:20px;">
-                <button onclick="renderAdminSection('vendors')" class="tab-btn active">VENDORS</button>
-                <button onclick="renderAdminSection('orders')" class="tab-btn">ALL ORDERS</button>
-                <button onclick="renderAdminSection('payouts')" class="tab-btn">PAYOUTS</button>
-            </div>
-
-            <div id="admin-content-area">
-                </div>
-        </div>
-    `;
-    renderAdminSection('vendors');
-}
-
-// 2. VENDOR APPROVAL LOGIC
-async function renderAdminSection(type) {
-    const area = document.getElementById('admin-content-area');
-    area.innerHTML = `<div class="loader-small"></div>`; // Add a CSS spinner here
-
-    if (type === 'vendors') {
-        const snapshot = await db.collection('users').where('vendorStatus', '==', 'pending').get();
-        if(snapshot.empty) {
-            area.innerHTML = `<p style="text-align:center; padding:20px; font-size:0.8rem; color:var(--text-secondary);">No pending applications.</p>`;
-            return;
-        }
-
-        area.innerHTML = snapshot.docs.map(doc => {
-            const v = doc.data();
-            return `
-                <div class="auth-card" style="margin-bottom:15px; border-left:4px solid var(--srp-blue);">
-                    <h4 style="margin:0;">${v.bizName}</h4>
-                    <p style="font-size:0.7rem; color:var(--text-secondary); margin:5px 0;">GST: ${v.gst} | Pincode: ${v.pincode}</p>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button class="srp-btn btn-primary" style="flex:1; padding:8px; font-size:0.7rem;" onclick="approveVendor('${doc.id}', true)">APPROVE</button>
-                        <button class="srp-btn btn-outline" style="flex:1; padding:8px; font-size:0.7rem; border-color:var(--danger); color:var(--danger);" onclick="approveVendor('${doc.id}', false)">REJECT</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    if (type === 'orders') {
-        const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').limit(20).get();
-        area.innerHTML = snapshot.docs.map(doc => {
-            const o = doc.data();
-            return `
-                <div style="padding:15px; border-bottom:1px solid #eee; font-size:0.8rem;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <b>#${doc.id.substring(0,8)}</b>
-                        <span style="color:${o.status === 'Shipped' ? 'var(--success)' : 'var(--srp-blue)'}">${o.status}</span>
-                    </div>
-                    <div style="margin-top:5px; color:var(--text-secondary);">
-                        ${o.trackingId ? `India Post: <a href="${o.trackingLink}" target="_blank">${o.trackingId}</a>` : 'Not Shipped Yet'}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-}
-
-async function approveVendor(uid, isApproved) {
-    try {
-        await db.collection('users').doc(uid).update({
-            vendorStatus: isApproved ? 'approved' : 'rejected',
-            isVendor: isApproved
-        });
-        showToast(isApproved ? "Vendor Approved!" : "Vendor Rejected");
-        renderAdminSection('vendors');
-    } catch (e) { showToast("Action Failed"); }
-}
-
-// 3. INDIA POST LOGISTICS MASTER VIEW (FOR ADMIN)
-function trackGlobalShipment(id) {
-    const url = `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?id=${id}`;
-    window.open(url, '_blank');
-}
-
-// 4. TRANSACTION & WALLET SETTLEMENT
-async function processVendorPayout(vendorId, amount) {
-    const vRef = db.collection('users').doc(vendorId);
-    
-    return db.runTransaction(async (transaction) => {
-        const vDoc = await transaction.get(vRef);
-        const newBalance = (vDoc.data().vendorBalance || 0) - amount;
-        
-        if (newBalance < 0) throw "Insufficient Balance";
-        
-        transaction.update(vRef, { vendorBalance: newBalance });
-        // Log transaction to 'payouts' collection
-        transaction.set(db.collection('payouts').doc(), {
-            vendorId,
-            amount,
-            timestamp: new Date(),
-            status: 'Completed'
-        });
-    }).then(() => showToast("Payout Successful")).catch(e => showToast(e));
-
-/* =========================================
-   5. FINAL APP BOOTSTRAP (The Glue)
-   =========================================
-*/
+   1. APP BOOTSTRAP (FIXED)
+========================================= */
 window.onload = () => {
-    // Initial UI state
-    document.getElementById('cart-badge').innerText = cartItems.length;
+
+    // Cart badge
+    const badge = document.getElementById('cart-badge');
+    if (badge) badge.innerText = cartItems.length;
+
+    // Network system
     monitorNetworkStrength();
-setInterval(updateSignalUI, 3000);
-    const el = document.getElementById("id");
-if(!el) return;
-    // Check Auth State
+    setInterval(updateSignalUI, 3000);
+
+    // AUTH LISTENER (ONLY ONE)
     auth.onAuthStateChanged(user => {
+
         if (user) {
+            currentUser = user;
+
             console.log("SRP Authenticated:", user.uid);
+
+            // Load everything
             updateWallet();
-            // Check if Admin to show Admin Tab
-            const ADMIN_UID = "LRukxuWhNeZEElB0MfxKV04nsgH3,5zaPB92EHJPIZLbttmwvsxDF64F3,qFVYJKbY25eUzQxZUjT5fCRTku42";
-                document.getElementById('admin-nav-item').style.display = "block";
+            loadUserProfile();
+            loadOrders();
+            loadWallet();
+            loadWishlist();
+            loadCart();
+            loadNotifications();
+            loadAddresses();
+
+            // Admin check
+            if (ADMIN_UIDS.includes(user.uid)) {
+                const adminTab = document.getElementById('admin-nav-item');
+                if (adminTab) adminTab.style.display = "block";
             }
-        const el = document.getElementById("id");
-if(!el) return;
+
         } else {
             console.log("No User Found");
         }
+
     });
 
-    // Handle Deep Linking / Routes
+    // Deep link support
     const urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.has('pid')) {
+    if (urlParams.has('pid')) {
         openProductDetail(urlParams.get('pid'));
     }
 };
 
+/* =========================================
+   2. INDEXED DB (OFFLINE STORAGE)
+========================================= */
 function openDB() {
     return new Promise((resolve, reject) => {
+
         const request = indexedDB.open('SRP_Offline_Vault', 1);
 
         request.onupgradeneeded = e => {
             const db = e.target.result;
+
             if (!db.objectStoreNames.contains('pending_orders')) {
                 db.createObjectStore('pending_orders', { keyPath: 'id' });
             }
@@ -1123,65 +87,12 @@ function openDB() {
         request.onerror = e => reject(e);
     });
 }
-    // APPLY COUPON
-function applyCoupon(code, cartTotal) {
-    const coupon = SRP_COUPONS.find(c => c.code === code.toUpperCase());
 
-    if (!coupon) return showToast("Invalid Coupon", "danger");
-    if (cartTotal < coupon.minOrder) return showToast(`Min ₹${coupon.minOrder}`, "danger");
+/* =========================================
+   3. NETWORK MONITOR
+========================================= */
+function monitorNetworkStrength() {
 
-    let discount = 0;
-
-    if (coupon.type === 'flat') discount = coupon.discount;
-    if (coupon.type === 'percentage') discount = (cartTotal * coupon.discount) / 100;
-
-    const newTotal = Math.max(cartTotal - discount, 0);
-
-    showToast(`Coupon Applied! Saved ₹${discount}`, "success");
-
-    return { discount, newTotal };
-    }
-}
-    async function processWithdrawalRecord(maxBalance) {
-    const amount = parseFloat(document.getElementById('w-amount').value);
-        const el = document.getElementById("id");
-if(!el) return;
-    const account = document.getElementById('w-account').value;
-
-    if (!amount || amount < 500) return showToast("Min ₹500", "danger");
-    if (amount > maxBalance) return showToast("Insufficient Balance", "danger");
-    if (!account) return showToast("Enter UPI/Bank", "danger");
-
-    try {
-        await db.runTransaction(async (tx) => {
-            const ref = db.collection("users").doc(auth.currentUser.uid);
-            const doc = await tx.get(ref);
-
-            const currentBal = doc.data().vendorBalance || 0;
-
-            if (amount > currentBal) throw "Balance changed";
-
-            tx.update(ref, {
-                vendorBalance: currentBal - amount
-            });
-
-            tx.set(db.collection("withdrawals").doc(), {
-                vendorId: auth.currentUser.uid,
-                amount,
-                account,
-                status: "pending",
-                createdAt: new Date()
-            });
-        });
-
-        showToast("Withdrawal Requested", "success");
-        location.reload();
-
-    } catch (e) {
-        showToast("Failed: " + e, "danger");
-    }
-    }
-    function monitorNetworkStrength() {
     window.addEventListener('online', () => {
         showToast("Back Online 🚀", "success");
         processOfflineQueue();
@@ -1190,8 +101,40 @@ if(!el) return;
     window.addEventListener('offline', () => {
         showToast("Offline Mode Activated", "danger");
     });
+}
+
+/* =========================================
+   SIGNAL UI
+========================================= */
+function updateSignalUI() {
+
+    const el = document.getElementById('srp-signal-status');
+    if (!el) return;
+
+    const conn = navigator.connection;
+    if (!conn) return;
+
+    let status = "Excellent";
+    let color = "green";
+
+    if (conn.rtt > 200) {
+        status = "Weak";
+        color = "orange";
     }
-    async function saveCheckoutProgress(cartData) {
+
+    if (conn.rtt > 500) {
+        status = "Poor";
+        color = "red";
+    }
+
+    el.innerHTML = `📶 <span style="color:${color}">${status}</span>`;
+}
+
+/* =========================================
+   4. OFFLINE ORDER SYSTEM
+========================================= */
+async function saveCheckoutProgress(cartData) {
+
     const db = await openDB();
     const tx = db.transaction('pending_orders', 'readwrite');
     const store = tx.objectStore('pending_orders');
@@ -1201,688 +144,1421 @@ if(!el) return;
         data: cartData,
         time: Date.now()
     });
-    }
-    async function processOfflineQueue() {
-    const db = await openDB();
-    const request = indexedDB.open('SRP_Offline_Vault', 1);
+}
 
-request.onupgradeneeded = e => {
-    const db = e.target.result;
-    if (!db.objectStoreNames.contains('pending_orders')) {
-        db.createObjectStore('pending_orders', { keyPath: 'id' });
-    }
-};
+async function processOfflineQueue() {
+
+    const db = await openDB();
+    const tx = db.transaction('pending_orders', 'readonly');
     const store = tx.objectStore('pending_orders');
 
-    const data = await store.get("checkout");
+    const request = store.get("checkout");
 
-    if (!data) return;
+    request.onsuccess = () => {
 
-    if (Date.now() - data.time < 3600000) {
-        showToast("Restoring Order...", "info");
+        const data = request.result;
+        if (!data) return;
 
-        completeOrder(data.data); // your existing function
-        store.delete("checkout");
-    }
-    }
-    function updateSignalUI() {
-    const el = document.getElementById('srp-signal-status');
-    if (!el) return;
-const el = document.getElementById("id");
-if(!el) return;
-    const conn = navigator.connection;
+        if (Date.now() - data.time < 3600000) {
 
-    if (!conn) return;
+            showToast("Restoring Order...", "info");
 
-    let status = "Excellent";
-    let color = "green";
+            if (typeof completeOrder === "function") {
+                completeOrder(data.data);
+            }
 
-    if (conn.rtt > 200) { status = "Weak"; color = "orange"; }
-    if (conn.rtt > 500) { status = "Poor"; color = "red"; }
-
-    el.innerHTML = `📶 <span style="color:${color}">${status}</span>`;
-    }
-    // ==========================================
-// 7. PROFILE / ACCOUNT SECTION (FIXED)
-// ==========================================
-
-let userProfile = {};
-
-// INIT USER
-auth.onAuthStateChanged(user => {
-    if(user){
-        currentUser = user;
-        loadUserProfile();
-        loadOrders();
-        loadWallet();
-        loadWishlist();
-        loadCart();
-        loadNotifications();
-        loadAddresses();
-    }
-});
-
-// ==========================================
-// USER PROFILE
-// ==========================================
-function loadUserProfile(){
-    firebase.database().ref("users/" + currentUser.uid)
-    .on("value", snap => {
-        userProfile = snap.val() || {};
-    });
+            const txDel = db.transaction('pending_orders', 'readwrite');
+            txDel.objectStore('pending_orders').delete("checkout");
+        }
+    };
 }
 
-// ==========================================
-// 7.1 USER ORDERS
-// ==========================================
-function loadOrders(){
-    const container = document.getElementById("user-orders");
-    if(!container) return;
+/* =========================================
+   5. COUPON SYSTEM (MAIN)
+========================================= */
+function applyCoupon(code, cartTotal) {
 
-    firebase.database().ref("orders/" + currentUser.uid)
-    .on("value", snapshot => {
-        container.innerHTML = "";
+    const coupon = SRP_COUPONS.find(
+        c => c.code === code.toUpperCase()
+    );
 
-        snapshot.forEach(order => {
-            const data = order.val();
+    if (!coupon) {
+        return showToast("Invalid Coupon", "danger");
+    }
 
-            container.innerHTML += `
-                <div class="order-box">
-                    <p><b>Order ID:</b> ${order.key}</p>
-                    <p><b>Tracking ID:</b> ${data.trackingId || 'N/A'}</p>
-                    <p><b>Status:</b> ${data.status || 'Processing'}</p>
-                    ${data.trackingId ? `
-                    <a href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignment=${data.trackingId}" target="_blank">
-                        Track Shipment
-                    </a>` : ''}
-                </div>
-            `;
+    if (cartTotal < coupon.minOrder) {
+        return showToast(`Min ₹${coupon.minOrder}`, "danger");
+    }
+
+    let discount = 0;
+
+    if (coupon.type === 'flat') {
+        discount = coupon.discount;
+    }
+
+    if (coupon.type === 'percentage') {
+        discount = (cartTotal * coupon.discount) / 100;
+    }
+
+    const newTotal = Math.max(cartTotal - discount, 0);
+
+    showToast(`Coupon Applied! Saved ₹${discount}`, "success");
+
+    return {
+        discount,
+        newTotal
+    };
+}
+
+/* =========================================
+   6. COUPON FROM DATABASE
+========================================= */
+function applyCouponDB() {
+
+    const code = document.getElementById("coupon-code")?.value;
+    if (!code) return;
+
+    firebase.database()
+        .ref("coupons/" + code)
+        .once("value")
+        .then(snap => {
+
+            if (!snap.exists()) {
+                showToast("Invalid Coupon", "danger");
+                return;
+            }
+
+            const data = snap.val();
+
+            showToast(`Coupon Applied: ${data.discount}% OFF`, "success");
         });
-    });
 }
 
-// ==========================================
-// 7.2 ADDRESS BOOK
-// ==========================================
-function addAddress(){
-    const address = prompt("Enter new address:");
-    if(!address) return;
+/* =========================================
+   7. WALLET SYSTEM (BASE)
+========================================= */
+function updateWallet() {
 
-    const id = Date.now();
+    if (!currentUser) return;
 
-    firebase.database().ref(`addresses/${currentUser.uid}/${id}`).set({
-        address
-    });
+    firebase.database()
+        .ref("users/" + currentUser.uid)
+        .once("value")
+        .then(snap => {
+
+            const data = snap.val() || {};
+
+            const el = document.getElementById("header-wallet-bal");
+
+            if (el) {
+                el.innerText = (data.wallet || 0).toFixed(2);
+            }
+        });
 }
 
-function loadAddresses(){
+/* =========================================
+   SAFE TOAST (FALLBACK)
+========================================= */
+function showToast(msg, type="info") {
+    console.log(`[${type}]`, msg);
+}
+
+/* =========================================
+   SAFE PRODUCT OPEN (FALLBACK)
+========================================= */
+function openProductDetail(id){
+    console.log("Open Product:", id);
+}
+
+/* =========================================
+   SAFE ORDER FUNCTION (FALLBACK)
+========================================= */
+function completeOrder(data){
+    console.log("Completing Order:", data);
+}
+<script>
+
+/* =========================================
+   8. USER PROFILE SYSTEM
+========================================= */
+function loadUserProfile() {
+
+    if (!currentUser) return;
+
+    firebase.database()
+        .ref("users/" + currentUser.uid)
+        .on("value", snap => {
+
+            userProfile = snap.val() || {};
+
+            const nameEl = document.getElementById("user-name");
+            const emailEl = document.getElementById("user-email");
+
+            if (nameEl) nameEl.innerText = userProfile.name || "User";
+            if (emailEl) emailEl.innerText = currentUser.email || "";
+
+        });
+}
+
+/* =========================================
+   UPDATE PROFILE
+========================================= */
+function updateProfile() {
+
+    const name = document.getElementById("profile-name")?.value;
+    const phone = document.getElementById("profile-phone")?.value;
+
+    if (!name) {
+        showToast("Name required", "danger");
+        return;
+    }
+
+    firebase.database()
+        .ref("users/" + currentUser.uid)
+        .update({
+            name: name,
+            phone: phone || ""
+        })
+        .then(() => {
+            showToast("Profile Updated", "success");
+        });
+}
+
+/* =========================================
+   9. ORDERS SYSTEM
+========================================= */
+function loadOrders() {
+
+    if (!currentUser) return;
+
+    const container = document.getElementById("orders-container");
+    if (!container) return;
+
+    firebase.database()
+        .ref("orders/" + currentUser.uid)
+        .on("value", snap => {
+
+            container.innerHTML = "";
+            userOrders = [];
+
+            snap.forEach(order => {
+
+                const data = order.val();
+                userOrders.push(data);
+
+                container.innerHTML += `
+                    <div class="order-card">
+                        <p><b>Order ID:</b> ${order.key}</p>
+                        <p>Status: ${data.status || "Processing"}</p>
+                        <p>Total: ₹${data.total}</p>
+                        <button onclick="trackOrder('${order.key}')">Track</button>
+                    </div>
+                `;
+            });
+
+        });
+}
+
+/* =========================================
+   TRACK ORDER
+========================================= */
+function trackOrder(orderId) {
+
+    const trackingUrl = `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignment=${orderId}`;
+    window.open(trackingUrl, "_blank");
+}
+
+/* =========================================
+   CANCEL ORDER
+========================================= */
+function cancelOrder(orderId) {
+
+    firebase.database()
+        .ref("orders/" + currentUser.uid + "/" + orderId)
+        .update({
+            status: "Cancelled"
+        });
+
+    showToast("Order Cancelled", "danger");
+}
+
+/* =========================================
+   10. ADDRESS BOOK SYSTEM
+========================================= */
+function loadAddresses() {
+
+    if (!currentUser) return;
+
     const container = document.getElementById("address-list");
-    if(!container) return;
-const el = document.getElementById("id");
-if(!el) return;
-    firebase.database().ref("addresses/" + currentUser.uid)
-    .on("value", snap => {
-        container.innerHTML = "";
+    if (!container) return;
 
-        snap.forEach(child => {
-            const data = child.val();
+    firebase.database()
+        .ref("addresses/" + currentUser.uid)
+        .on("value", snap => {
 
-            container.innerHTML += `
-                <div class="address-box">
-                    <p>${data.address}</p>
-                    <button onclick="deleteAddress('${child.key}')">Delete</button>
-                </div>
-            `;
+            container.innerHTML = "";
+
+            snap.forEach(addr => {
+
+                const data = addr.val();
+
+                container.innerHTML += `
+                    <div class="address-card">
+                        <p>${data.name}, ${data.phone}</p>
+                        <p>${data.address}, ${data.city}</p>
+                        <button onclick="selectAddress('${addr.key}')">Select</button>
+                        <button onclick="deleteAddress('${addr.key}')">Delete</button>
+                    </div>
+                `;
+            });
+
         });
-    });
 }
 
-function deleteAddress(id){
-    firebase.database().ref(`addresses/${currentUser.uid}/${id}`).remove();
-}
+/* =========================================
+   ADD ADDRESS
+========================================= */
+function addAddress() {
 
-// ==========================================
-// 7.3 DARK MODE
-// ==========================================
-function toggleMode(){
-    const isDark = document.body.classList.contains("dark-mode");
+    const name = document.getElementById("addr-name")?.value;
+    const phone = document.getElementById("addr-phone")?.value;
+    const address = document.getElementById("addr-text")?.value;
+    const city = document.getElementById("addr-city")?.value;
 
-    if(isDark){
-        document.body.classList.remove("dark-mode");
-        localStorage.setItem("mode","light");
-    } else {
-        document.body.classList.add("dark-mode");
-        localStorage.setItem("mode","dark");
+    if (!name || !phone || !address) {
+        showToast("Fill all fields", "danger");
+        return;
     }
+
+    firebase.database()
+        .ref("addresses/" + currentUser.uid)
+        .push({
+            name,
+            phone,
+            address,
+            city
+        });
+
+    showToast("Address Added", "success");
 }
 
-// APPLY MODE ON LOAD
-(function(){
-    if(localStorage.getItem("mode") === "dark"){
-        document.body.classList.add("dark-mode");
-    }
-})();
+/* =========================================
+   DELETE ADDRESS
+========================================= */
+function deleteAddress(id) {
 
-// ==========================================
-// 7.4 WALLET SYSTEM
-// ==========================================
-function loadWallet(){
-    firebase.database().ref("users/" + currentUser.uid)
-    .on("value", snap => {
-        userProfile = snap.val() || {};
+    firebase.database()
+        .ref("addresses/" + currentUser.uid + "/" + id)
+        .remove();
 
-        document.getElementById("wallet-balance").innerText =
-            "₹" + (userProfile.wallet || 0).toFixed(2);
-        const el = document.getElementById("id");
-if(!el) return;
-    });
+    showToast("Address Deleted", "danger");
 }
 
- function rechargeWallet(){
-    const amt = parseFloat(prompt("Enter amount:"));
+/* =========================================
+   SELECT ADDRESS (FOR CHECKOUT)
+========================================= */
+let selectedAddress = null;
 
-    if(!amt || amt <= 0){
+function selectAddress(id) {
+
+    firebase.database()
+        .ref("addresses/" + currentUser.uid + "/" + id)
+        .once("value")
+        .then(snap => {
+
+            selectedAddress = snap.val();
+            showToast("Address Selected", "success");
+
+        });
+}
+
+/* =========================================
+   11. WALLET SYSTEM UI
+========================================= */
+function loadWallet() {
+
+    if (!currentUser) return;
+
+    const el = document.getElementById("wallet-display-amt");
+    if (!el) return;
+
+    firebase.database()
+        .ref("users/" + currentUser.uid)
+        .on("value", snap => {
+
+            const data = snap.val() || {};
+            el.innerText = "₹" + (data.wallet || 0).toFixed(2);
+
+        });
+}
+
+/* =========================================
+   RECHARGE WALLET
+========================================= */
+function rechargeWallet() {
+
+    const amt = parseFloat(prompt("Enter amount"));
+
+    if (!amt || amt <= 0) {
         showToast("Invalid Amount", "danger");
         return;
     }
 
-    firebase.database().ref("users/" + currentUser.uid).once("value")
-    .then(snap => {
-        const data = snap.val() || {};
-        const newBal = (data.wallet || 0) + amt;
+    firebase.database()
+        .ref("users/" + currentUser.uid)
+        .once("value")
+        .then(snap => {
 
-        firebase.database().ref("users/" + currentUser.uid).update({
-            wallet: newBal
+            const data = snap.val() || {};
+            const newBal = (data.wallet || 0) + amt;
+
+            firebase.database()
+                .ref("users/" + currentUser.uid)
+                .update({
+                    wallet: newBal
+                });
+
+            showToast("Wallet Recharged", "success");
         });
-
-        showToast("Wallet Recharged!", "success");
-    });
- }
-// ==========================================
-// 7.5 WISHLIST
-// ==========================================
-function loadWishlist(){
-    const container = document.getElementById("wishlist");
-    if(!container) return;
-const el = document.getElementById("id");
-if(!el) return;
-    firebase.database().ref("wishlist/" + currentUser.uid)
-    .on("value", snap => {
-        container.innerHTML = "";
-
-        snap.forEach(item => {
-            const data = item.val();
-
-            container.innerHTML += `
-                <div class="wishlist-item">
-                    <p>${data.name}</p>
-                    <button onclick="moveToCart('${item.key}')">Move</button>
-                    <button onclick="removeWishlist('${item.key}')">Remove</button>
-                </div>
-            `;
-        });
-    });
-}
-
-function removeWishlist(id){
-    firebase.database().ref(`wishlist/${currentUser.uid}/${id}`).remove();
-}
-
-function moveToCart(id){
-    firebase.database().ref(`wishlist/${currentUser.uid}/${id}`).once("value")
-    .then(snap => {
-        const data = snap.val();
-        if(!data) return;
-
-        const cartId = Date.now();
-        firebase.database().ref(`cart/${currentUser.uid}/${cartId}`).set(data);
-
-        removeWishlist(id);
-        showToast("Moved to Cart");
-    });
-}
-
-// ==========================================
-// 7.6 CART SYSTEM
-// ==========================================
-function loadCart(){
-    const container = document.getElementById("cart-items");
-    const totalBox = document.getElementById("cart-total");
-const el = document.getElementById("id");
-if(!el) return;
-    if(!container || !totalBox) return;
-
-    firebase.database().ref("cart/" + currentUser.uid)
-    .on("value", snap => {
-        container.innerHTML = "";
-        let total = 0;
-
-        snap.forEach(item => {
-            const data = item.val();
-            total += (data.price || 0) * (data.qty || 1);
-
-            container.innerHTML += `
-                <div class="cart-item">
-                    <p>${data.name}</p>
-                    <p>₹${data.price}</p>
-                    <input type="number" value="${data.qty || 1}" 
-                        onchange="updateQty('${item.key}', this.value)">
-                    <button onclick="removeCart('${item.key}')">Remove</button>
-                </div>
-            `;
-        });
-
-        totalBox.innerText = "Total: ₹" + total;
-    });
-}
-function updateQty(id, qty){
-    firebase.database().ref(`cart/${currentUser.uid}/${id}`).update({
-        qty: parseInt(qty)
-    });
-}
-
-function removeCart(id){
-    firebase.database().ref(`cart/${currentUser.uid}/${id}`).remove();
-}
-
-// ==========================================
-// 7.7 NOTIFICATIONS
-// ==========================================
-function loadNotifications(){
-    const container = document.getElementById("notifications");
-
-    firebase.database().ref("notifications/" + currentUser.uid)
-    .on("value", snap => {
-        container.innerHTML = "";
-
-        snap.forEach(n => {
-            container.innerHTML += `
-                <div class="note">
-                    <p>${n.val().message}</p>
-                </div>
-            `;
-        });
-    });
-}
-
-// ==========================================
-// 7.8 COUPON
-// ==========================================
-function applyCouponDB(){ ... }
-    const code = document.getElementById("coupon-code").value;
-const el = document.getElementById("id");
-if(!el) return;
-    firebase.database().ref("coupons/" + code).once("value")
-    .then(snap => {
-        if(!snap.exists()){
-            showToast("Invalid Coupon", "danger");
-            return;
-        }
-
-        const data = snap.val();
-        showToast(`Coupon Applied: ${data.discount}% OFF`, "success");
-    });
-}
-
-// ==========================================
-// 7.9 SUPPORT
-// ==========================================
-function raiseTicket(){
-    const msg = prompt("Enter issue:");
-    if(!msg) return;
-
-    const id = Date.now();
-
-    firebase.database().ref(`support/${currentUser.uid}/${id}`).set({
-        message: msg,
-        status: "open"
-    });
-
-    showToast("Ticket Submitted", "success");
-}
-
-// ==========================================
-// 7.10 SECURITY
-// ==========================================
-function changePassword(){
-    const newPass = prompt("New password:");
-    if(!newPass) return;
-
-    currentUser.updatePassword(newPass)
-    .then(() => showToast("Password Updated", "success"))
-    .catch(err => showToast(err.message, "danger"));
-}
-
-function logoutAll(){
-    auth.signOut();
-    showToast("Logged Out");
-            }
-            
-
-/* =========================================
-   SRP ADMIN PANEL (PART 8)
-   COMPLETE CONTROL SYSTEM
-   ========================================= */
-
-function loadAdminPanel() {
-    const page = document.getElementById("page-admin");
-const el = document.getElementById("id");
-if(!el) return;
-    page.innerHTML = `
-        <h2>Admin Dashboard</h2>
-
-        <button onclick="adminView('products')">Products</button>
-        <button onclick="adminView('orders')">Orders</button>
-        <button onclick="adminView('withdrawals')">Withdrawals</button>
-        <button onclick="adminView('users')">Users</button>
-        <button onclick="adminView('sellers')">Sellers</button>
-        <button onclick="adminView('coupons')">Coupons</button>
-        <button onclick="adminView('banners')">Banners</button>
-        <button onclick="adminView('analytics')">Analytics</button>
-
-        <div id="admin-content"></div>
-    `;
 }
 
 /* =========================================
-   SWITCH ADMIN MODULES
+   DEDUCT WALLET (FOR ORDERS)
 ========================================= */
-function adminView(type){
-    if(type === "products") loadAdminProducts();
-    if(type === "orders") loadAdminOrders();
-    if(type === "withdrawals") loadWithdrawals();
-    if(type === "users") loadUsers();
-    if(type === "sellers") loadSellers();
-    if(type === "coupons") loadCoupons();
-    if(type === "banners") loadBanners();
-    if(type === "analytics") loadAnalytics();
-}
+function deductWallet(amount) {
 
-/* =========================================
-   8.1 PRODUCT MANAGEMENT
-========================================= */
-function loadAdminProducts(){
-    const box = document.getElementById("admin-content");
+    return new Promise((resolve, reject) => {
 
-    box.innerHTML = `
-        <h3>Add Product</h3>
-        <input id="p-name" placeholder="Name">
-        <input id="p-mrp" placeholder="MRP">
-        <input id="p-price" placeholder="Price">
-        <input id="p-cat" placeholder="Category">
-        <input id="p-stock" placeholder="Stock">
-        <textarea id="p-desc" placeholder="Description"></textarea>
-        <input type="file" id="p-img">
-        <button onclick="addProduct()">Add</button>
+        firebase.database()
+            .ref("users/" + currentUser.uid)
+            .once("value")
+            .then(snap => {
 
-        <h3>All Products</h3>
-        <div id="admin-products"></div>
-    `;
+                const data = snap.val() || {};
+                const balance = data.wallet || 0;
 
-    db.collection("products").onSnapshot(snap => {
-        const list = document.getElementById("admin-products");
-        list.innerHTML = "";
-const el = document.getElementById("id");
-if(!el) return;
-        snap.forEach(doc=>{
-            const p = doc.data();
+                if (balance < amount) {
+                    showToast("Insufficient Balance", "danger");
+                    reject();
+                    return;
+                }
 
-            list.innerHTML += `
-                <div>
-                    <b>${p.name}</b>
-                    <p>₹${p.price}</p>
-                    <button onclick="deleteProduct('${doc.id}')">Delete</button>
-                </div>
-            `;
-        });
+                firebase.database()
+                    .ref("users/" + currentUser.uid)
+                    .update({
+                        wallet: balance - amount
+                    });
+
+                resolve();
+            });
+
     });
 }
 
-function addProduct(){
-    const file = document.getElementById("p-img").files[0];
+/* =========================================
+   12. WISHLIST SYSTEM
+========================================= */
+function loadWishlist() {
 
-    if(!file){
-        alert("Select Image First");
+    if (!currentUser) return;
+
+    const container = document.getElementById("wishlist-container");
+    if (!container) return;
+
+    firebase.database()
+        .ref("wishlist/" + currentUser.uid)
+        .on("value", snap => {
+
+            container.innerHTML = "";
+
+            snap.forEach(item => {
+
+                const data = item.val();
+
+                container.innerHTML += `
+                    <div class="wishlist-item">
+                        <p>${data.name}</p>
+                        <p>₹${data.price}</p>
+                        <button onclick="addToCart('${item.key}')">Add to Cart</button>
+                        <button onclick="removeWishlist('${item.key}')">Remove</button>
+                    </div>
+                `;
+            });
+
+        });
+}
+
+/* =========================================
+   ADD TO WISHLIST
+========================================= */
+function addToWishlist(product) {
+
+    if (!currentUser) {
+        showToast("Login Required", "danger");
         return;
     }
 
-    const ref = firebase.storage().ref("products/" + Date.now());
+    firebase.database()
+        .ref("wishlist/" + currentUser.uid)
+        .push(product);
 
-    ref.put(file).then(snapshot=>{
-        snapshot.ref.getDownloadURL().then(url=>{
-            db.collection("products").add({
-                name: document.getElementById("p-name").value,
-                mrp: Number(document.getElementById("p-mrp").value),
-                price: Number(document.getElementById("p-price").value),
-                category: document.getElementById("p-cat").value,
-                stock: Number(document.getElementById("p-stock").value),
-                desc: document.getElementById("p-desc").value,
-                img: url,
-                createdAt: new Date()
+    showToast("Added to Wishlist", "success");
+}
+
+/* =========================================
+   REMOVE WISHLIST
+========================================= */
+function removeWishlist(id) {
+
+    firebase.database()
+        .ref("wishlist/" + currentUser.uid + "/" + id)
+        .remove();
+
+    showToast("Removed from Wishlist", "danger");
+}
+<script>
+
+/* =========================================
+   13. CART SYSTEM (REALTIME)
+========================================= */
+function loadCart() {
+
+    if (!currentUser) return;
+
+    const container = document.getElementById("cart-items");
+    const totalBox = document.getElementById("cart-total");
+
+    if (!container || !totalBox) return;
+
+    firebase.database()
+        .ref("cart/" + currentUser.uid)
+        .on("value", snap => {
+
+            container.innerHTML = "";
+            cartItems = [];
+
+            let total = 0;
+
+            snap.forEach(item => {
+
+                const data = item.val();
+                const qty = data.qty || 1;
+                const price = data.price || 0;
+
+                total += price * qty;
+
+                cartItems.push({
+                    id: item.key,
+                    ...data
+                });
+
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <p>${data.name}</p>
+                        <p>₹${price}</p>
+
+                        <input type="number" min="1" value="${qty}"
+                            onchange="updateQty('${item.key}', this.value)">
+
+                        <button onclick="removeCart('${item.key}')">Remove</button>
+                    </div>
+                `;
             });
-            alert("Product Added");
+
+            totalBox.innerText = "Total: ₹" + total;
+
+            // Save total globally
+            window.cartTotal = total;
+
         });
-    });
-}
-const el = document.getElementById("id");
-if(!el) return;
-function deleteProduct(id){
-    db.collection("products").doc(id).delete();
 }
 
 /* =========================================
-   8.2 ADMIN ORDER MANAGEMENT
+   ADD TO CART
 ========================================= */
-function loadAdminOrders(){
-    const box = document.getElementById("admin-content");
+function addToCart(product) {
 
-    db.collection("orders").onSnapshot(snap=>{
-        box.innerHTML = "";
+    if (!currentUser) {
+        showToast("Login Required", "danger");
+        return;
+    }
 
-        snap.forEach(doc=>{
-            const o = doc.data();
+    const ref = firebase.database().ref("cart/" + currentUser.uid);
 
-            box.innerHTML += `
-                <div>
-                    <p><b>${doc.id}</b></p>
-                    <p>${o.userName}</p>
-                    <p>${o.phone}</p>
-                    <p>${o.address}</p>
-                    <p>Status: ${o.status}</p>
-
-                    <input id="track-${doc.id}" placeholder="Tracking ID">
-                    <button onclick="updateTrack('${doc.id}')">Update</button>
-                </div>
-            `;
-        });
+    ref.push({
+        name: product.name,
+        price: product.price,
+        qty: 1,
+        img: product.img || ""
     });
-}
 
-function updateTrack(id){
-    const t = document.getElementById("track-"+id).value;
-const el = document.getElementById("id");
-if(!el) return;
-    db.collection("orders").doc(id).update({
-        trackingId: t,
-        status: "Shipped"
-    });
+    showToast("Added to Cart", "success");
 }
 
 /* =========================================
-   8.3 WITHDRAWAL APPROVAL
+   REMOVE FROM CART
 ========================================= */
-function loadWithdrawals(){
-    const box = document.getElementById("admin-content");
-const el = document.getElementById("id");
-if(!el) return;
-    db.collection("withdrawals").onSnapshot(snap=>{
-        box.innerHTML = "";
+function removeCart(id) {
 
-        snap.forEach(doc=>{
-            const w = doc.data();
+    firebase.database()
+        .ref("cart/" + currentUser.uid + "/" + id)
+        .remove();
 
-            box.innerHTML += `
-                <div>
-                    <p>${w.vendorId}</p>
-                    <p>₹${w.amount}</p>
-                    <button onclick="approveWithdrawal('${doc.id}')">Approve</button>
-                    <button onclick="rejectWithdrawal('${doc.id}')">Reject</button>
-                </div>
-            `;
-        });
-    });
-}
-
-function approveWithdrawal(id){
-    db.collection("withdrawals").doc(id).update({status:"approved"});
-}
-function rejectWithdrawal(id){
-    db.collection("withdrawals").doc(id).update({status:"rejected"});
+    showToast("Removed from Cart", "danger");
 }
 
 /* =========================================
-   8.5 FEATURED PRODUCTS
+   UPDATE QUANTITY
 ========================================= */
-function pinProduct(id){
-    db.collection("featured").doc(id).set({
-        priority: 1
-    });
+function updateQty(id, qty) {
+
+    qty = parseInt(qty);
+
+    if (qty <= 0) return;
+
+    firebase.database()
+        .ref("cart/" + currentUser.uid + "/" + id)
+        .update({
+            qty: qty
+        });
 }
 
 /* =========================================
-   8.6 GLOBAL ORDER DASHBOARD
+   CLEAR CART
 ========================================= */
-function loadAnalytics(){
-    const box = document.getElementById("admin-content");
+function clearCart() {
 
-    db.collection("orders").get().then(snap=>{
-        let total = 0;
-        let count = snap.size;
+    firebase.database()
+        .ref("cart/" + currentUser.uid)
+        .remove();
 
-        snap.forEach(doc=>{
-            total += doc.data().amount || 0;
+    showToast("Cart Cleared", "info");
+}
+
+/* =========================================
+   14. APPLY COUPON IN CART
+========================================= */
+let appliedCoupon = null;
+
+function applyCouponToCart() {
+
+    const code = document.getElementById("coupon-code")?.value;
+
+    if (!code || !window.cartTotal) {
+        showToast("Invalid", "danger");
+        return;
+    }
+
+    const result = applyCoupon(code, window.cartTotal);
+
+    if (!result) return;
+
+    appliedCoupon = {
+        code,
+        discount: result.discount
+    };
+
+    const totalBox = document.getElementById("cart-total");
+
+    if (totalBox) {
+        totalBox.innerText = `Total: ₹${result.newTotal}`;
+    }
+}
+
+/* =========================================
+   15. CHECKOUT VALIDATION
+========================================= */
+function validateCheckout() {
+
+    if (!cartItems.length) {
+        showToast("Cart is empty", "danger");
+        return false;
+    }
+
+    if (!selectedAddress) {
+        showToast("Select Address", "danger");
+        return false;
+    }
+
+    return true;
+}
+
+/* =========================================
+   16. CHECKOUT PROCESS
+========================================= */
+async function checkout() {
+
+    if (!validateCheckout()) return;
+
+    const finalTotal = calculateFinalTotal();
+
+    try {
+
+        await deductWallet(finalTotal);
+
+        completeOrderFlow(finalTotal);
+
+    } catch (e) {
+
+        showToast("Payment Failed", "danger");
+
+        // Save offline
+        await saveCheckoutProgress({
+            cartItems,
+            total: finalTotal,
+            address: selectedAddress
         });
 
-        box.innerHTML = `
-            <h3>Total Orders: ${count}</h3>
-            <h3>Total Sales: ₹${total}</h3>
+    }
+}
+
+/* =========================================
+   FINAL TOTAL CALCULATION
+========================================= */
+function calculateFinalTotal() {
+
+    let total = window.cartTotal || 0;
+
+    if (appliedCoupon) {
+        total -= appliedCoupon.discount;
+    }
+
+    return Math.max(total, 0);
+}
+
+/* =========================================
+   17. COMPLETE ORDER FLOW
+========================================= */
+function completeOrderFlow(totalAmount) {
+
+    const orderId = "ORD" + Date.now();
+
+    const orderData = {
+        items: cartItems,
+        total: totalAmount,
+        address: selectedAddress,
+        status: "Processing",
+        time: new Date().toISOString()
+    };
+
+    // Save order
+    firebase.database()
+        .ref("orders/" + currentUser.uid + "/" + orderId)
+        .set(orderData);
+
+    // Clear cart
+    clearCart();
+
+    showToast("Order Placed Successfully 🎉", "success");
+
+    // Optional: redirect
+    switchPage && switchPage("orders");
+}
+
+/* =========================================
+   18. BUY NOW (DIRECT ORDER)
+========================================= */
+function buyNow(product) {
+
+    if (!currentUser) {
+        showToast("Login Required", "danger");
+        return;
+    }
+
+    cartItems = [{
+        name: product.name,
+        price: product.price,
+        qty: 1,
+        img: product.img || ""
+    }];
+
+    window.cartTotal = product.price;
+
+    showToast("Proceeding to Checkout", "info");
+
+    switchPage && switchPage("checkout");
+}
+
+/* =========================================
+   19. ORDER SUMMARY UI (OPTIONAL)
+========================================= */
+function renderOrderSummary() {
+
+    const container = document.getElementById("checkout-items");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    cartItems.forEach(item => {
+
+        container.innerHTML += `
+            <div class="checkout-item">
+                <p>${item.name}</p>
+                <p>₹${item.price} x ${item.qty}</p>
+            </div>
         `;
     });
-}
 
-/* =========================================
-   8.11 CATEGORY MANAGEMENT
-========================================= */
-function loadCategories(){
-    const box = document.getElementById("admin-content");
-
-    box.innerHTML = `
-        <input id="cat-name" placeholder="Category Name">
-        <button onclick="addCategory()">Add</button>
-        <div id="cat-list"></div>
-    `;
-
-    firebase.database().ref("categories").on("value", snap=>{
-        const list = document.getElementById("cat-list");
-        list.innerHTML = "";
-
-        snap.forEach(c=>{
-            list.innerHTML += `
-                <div>
-                    ${c.val().name}
-                    <button onclick="deleteCategory('${c.key}')">Delete</button>
-                </div>
-            `;
-        });
-    });
-}
-
-function addCategory(){
-    const name = document.getElementById("cat-name").value;
-    firebase.database().ref("categories").push({name});
-}
-function deleteCategory(id){
-    firebase.database().ref("categories/"+id).remove();
-}
-
-/* =========================================
-   8.12 COUPON MANAGEMENT
-========================================= */
-function loadCoupons(){
-    const box = document.getElementById("admin-content");
-
-    box.innerHTML = `
-        <input id="c-code" placeholder="Code">
-        <input id="c-discount" placeholder="Discount %">
-        <button onclick="createCoupon()">Create</button>
-    `;
-}
-
-function createCoupon(){
-    const code = document.getElementById("c-code").value;
-    const discount = document.getElementById("c-discount").value;
-
-    firebase.database().ref("coupons/"+code).set({
-        discount: Number(discount)
-    });
-}
-
-/* =========================================
-   8.15 USER MANAGEMENT
-========================================= */
-function loadUsers(){
-    const box = document.getElementById("admin-content");
-
-    db.collection("users").get().then(snap=>{
-        box.innerHTML = "";
-
-        snap.forEach(doc=>{
-            const u = doc.data();
-
-            box.innerHTML += `
-                <div>
-                    <p>${u.email}</p>
-                    <button onclick="blockUser('${doc.id}')">Block</button>
-                </div>
-            `;
-        });
-    });
-}
-
-function blockUser(id){
-    db.collection("users").doc(id).update({blocked:true});
-}
-
-/* =========================================
-   8.16 SELLER MANAGEMENT
-========================================= */
-function loadSellers(){
-    const box = document.getElementById("admin-content");
-
-    db.collection("users").where("isVendor","==",true).get()
-    .then(snap=>{
-        box.innerHTML = "";
-
-        snap.forEach(doc=>{
-            const s = doc.data();
-
-            box.innerHTML += `
-                <div>
-                    <p>${s.bizName}</p>
-                    <button onclick="suspendSeller('${doc.id}')">Suspend</button>
-                </div>
-            `;
-        });
-    });
-}
-    const el = document.getElementById("id");
-if(!el) return;
-
-function suspendSeller(id){
-    db.collection("users").doc(id).update({
-        vendorStatus:"suspended"
-    });
+    const totalEl = document.getElementById("checkout-total");
+    if (totalEl) {
+        totalEl.innerText = "Total: ₹" + calculateFinalTotal();
     }
+}
+
+/* =========================================
+   20. SAFE PAGE SWITCH (FALLBACK)
+========================================= */
+function switchPage(pageId) {
+
+    const pages = document.querySelectorAll(".page");
+
+    pages.forEach(p => p.style.display = "none");
+
+    const target = document.getElementById(pageId);
+    if (target) target.style.display = "block";
+}
+<script>
+
+/* =========================================
+   21. LOAD PRODUCTS (FIRESTORE)
+========================================= */
+function loadProducts() {
+
+    const container = document.getElementById("product-list");
+    if (!container) return;
+
+    container.innerHTML = "Loading...";
+
+    db.collection("products")
+        .orderBy("createdAt", "desc")
+        .onSnapshot(snapshot => {
+
+            container.innerHTML = "";
+
+            snapshot.forEach(doc => {
+
+                const p = doc.data();
+
+                container.innerHTML += `
+                    <div class="product-card" onclick="openProductDetail('${doc.id}')">
+                        <img src="${p.img}" />
+                        <h3>${p.name}</h3>
+                        <p>₹${p.price}</p>
+                    </div>
+                `;
+            });
+
+        });
+}
+
+/* =========================================
+   22. PRODUCT DETAIL VIEW
+========================================= */
+function openProductDetail(productId) {
+
+    const container = document.getElementById("product-detail");
+    if (!container) return;
+
+    db.collection("products")
+        .doc(productId)
+        .get()
+        .then(doc => {
+
+            if (!doc.exists) return;
+
+            const p = doc.data();
+
+            container.innerHTML = `
+                <div class="product-detail-box">
+                    <img src="${p.img}" />
+                    <h2>${p.name}</h2>
+                    <p>${p.desc || ""}</p>
+
+                    <p>
+                        <strike>₹${p.mrp || p.price}</strike>
+                        <b>₹${p.price}</b>
+                    </p>
+
+                    <button onclick='addToCart(${JSON.stringify(p)})'>
+                        Add to Cart
+                    </button>
+
+                    <button onclick='buyNow(${JSON.stringify(p)})'>
+                        Buy Now
+                    </button>
+
+                    <button onclick='addToWishlist(${JSON.stringify(p)})'>
+                        ❤️ Wishlist
+                    </button>
+                </div>
+            `;
+
+            switchPage("product-detail-page");
+        });
+}
+
+/* =========================================
+   23. SEARCH PRODUCTS
+========================================= */
+function searchProducts() {
+
+    const query = document.getElementById("search-box")?.value.toLowerCase();
+    if (!query) return loadProducts();
+
+    const container = document.getElementById("product-list");
+    if (!container) return;
+
+    db.collection("products")
+        .get()
+        .then(snapshot => {
+
+            container.innerHTML = "";
+
+            snapshot.forEach(doc => {
+
+                const p = doc.data();
+
+                if (p.name.toLowerCase().includes(query)) {
+
+                    container.innerHTML += `
+                        <div class="product-card" onclick="openProductDetail('${doc.id}')">
+                            <img src="${p.img}" />
+                            <h3>${p.name}</h3>
+                            <p>₹${p.price}</p>
+                        </div>
+                    `;
+                }
+            });
+
+        });
+}
+
+/* =========================================
+   24. FILTER BY CATEGORY
+========================================= */
+function filterCategory(category) {
+
+    const container = document.getElementById("product-list");
+    if (!container) return;
+
+    db.collection("products")
+        .where("category", "==", category)
+        .get()
+        .then(snapshot => {
+
+            container.innerHTML = "";
+
+            snapshot.forEach(doc => {
+
+                const p = doc.data();
+
+                container.innerHTML += `
+                    <div class="product-card" onclick="openProductDetail('${doc.id}')">
+                        <img src="${p.img}" />
+                        <h3>${p.name}</h3>
+                        <p>₹${p.price}</p>
+                    </div>
+                `;
+            });
+
+        });
+}
+
+/* =========================================
+   25. SELLER ADD PRODUCT
+========================================= */
+function addProduct() {
+
+    const name = document.getElementById("p-name")?.value;
+    const price = Number(document.getElementById("p-price")?.value);
+    const mrp = Number(document.getElementById("p-mrp")?.value);
+    const cat = document.getElementById("p-cat")?.value;
+    const stock = Number(document.getElementById("p-stock")?.value);
+    const desc = document.getElementById("p-desc")?.value;
+    const file = document.getElementById("p-img")?.files[0];
+
+    if (!name || !price || !file) {
+        showToast("Fill required fields", "danger");
+        return;
+    }
+
+    const storageRef = firebase.storage()
+        .ref("products/" + Date.now());
+
+    storageRef.put(file)
+        .then(snapshot => snapshot.ref.getDownloadURL())
+        .then(url => {
+
+            db.collection("products").add({
+                name,
+                price,
+                mrp: mrp || price,
+                category: cat || "General",
+                stock: stock || 0,
+                desc: desc || "",
+                img: url,
+                seller: currentUser.uid,
+                createdAt: new Date()
+            });
+
+            showToast("Product Added", "success");
+        });
+}
+
+/* =========================================
+   26. ADMIN DELETE PRODUCT
+========================================= */
+function deleteProduct(productId) {
+
+    if (!ADMIN_UIDS.includes(currentUser.uid)) {
+        showToast("Unauthorized", "danger");
+        return;
+    }
+
+    db.collection("products")
+        .doc(productId)
+        .delete()
+        .then(() => {
+            showToast("Product Deleted", "danger");
+        });
+}
+
+/* =========================================
+   27. LOAD SELLER PRODUCTS
+========================================= */
+function loadMyProducts() {
+
+    if (!currentUser) return;
+
+    const container = document.getElementById("my-products");
+    if (!container) return;
+
+    db.collection("products")
+        .where("seller", "==", currentUser.uid)
+        .onSnapshot(snapshot => {
+
+            container.innerHTML = "";
+
+            snapshot.forEach(doc => {
+
+                const p = doc.data();
+
+                container.innerHTML += `
+                    <div class="product-card">
+                        <img src="${p.img}" />
+                        <h3>${p.name}</h3>
+                        <p>₹${p.price}</p>
+
+                        <button onclick="deleteProduct('${doc.id}')">
+                            Delete
+                        </button>
+                    </div>
+                `;
+            });
+
+        });
+}
+
+/* =========================================
+   28. UPDATE PRODUCT STOCK
+========================================= */
+function updateStock(productId, newStock) {
+
+    db.collection("products")
+        .doc(productId)
+        .update({
+            stock: Number(newStock)
+        });
+
+    showToast("Stock Updated", "success");
+}
+
+/* =========================================
+   29. SORT PRODUCTS
+========================================= */
+function sortProducts(type) {
+
+    const container = document.getElementById("product-list");
+    if (!container) return;
+
+    let query = db.collection("products");
+
+    if (type === "low") {
+        query = query.orderBy("price", "asc");
+    }
+
+    if (type === "high") {
+        query = query.orderBy("price", "desc");
+    }
+
+    query.get().then(snapshot => {
+
+        container.innerHTML = "";
+
+        snapshot.forEach(doc => {
+
+            const p = doc.data();
+
+            container.innerHTML += `
+                <div class="product-card" onclick="openProductDetail('${doc.id}')">
+                    <img src="${p.img}" />
+                    <h3>${p.name}</h3>
+                    <p>₹${p.price}</p>
+                </div>
+            `;
+        });
+
+    });
+}
+
+/* =========================================
+   30. FEATURED PRODUCTS (HOME)
+========================================= */
+function loadFeaturedProducts() {
+
+    const container = document.getElementById("featured-products");
+    if (!container) return;
+
+    db.collection("products")
+        .limit(6)
+        .get()
+        .then(snapshot => {
+
+            container.innerHTML = "";
+
+            snapshot.forEach(doc => {
+
+                const p = doc.data();
+
+                container.innerHTML += `
+                    <div class="product-card" onclick="openProductDetail('${doc.id}')">
+                        <img src="${p.img}" />
+                        <h3>${p.name}</h3>
+                        <p>₹${p.price}</p>
+                    </div>
+                `;
+            });
+
+        });
+}
+<script>
+
+/* =========================================
+   31. NOTIFICATIONS SYSTEM
+========================================= */
+function loadNotifications() {
+
+    if (!currentUser) return;
+
+    const container = document.getElementById("notifications-list");
+    if (!container) return;
+
+    firebase.database()
+        .ref("notifications/" + currentUser.uid)
+        .limitToLast(20)
+        .on("value", snap => {
+
+            container.innerHTML = "";
+
+            snap.forEach(n => {
+
+                const data = n.val();
+
+                container.innerHTML += `
+                    <div class="notif-card">
+                        <p>${data.msg}</p>
+                        <small>${formatTime(data.time)}</small>
+                    </div>
+                `;
+            });
+
+        });
+}
+
+/* =========================================
+   PUSH NOTIFICATION
+========================================= */
+function pushNotification(uid, message) {
+
+    firebase.database()
+        .ref("notifications/" + uid)
+        .push({
+            msg: message,
+            time: Date.now()
+        });
+}
+
+/* =========================================
+   FORMAT TIME
+========================================= */
+function formatTime(ts) {
+
+    const d = new Date(ts);
+    return d.toLocaleString();
+}
+
+/* =========================================
+   32. LIVE CHAT SYSTEM
+========================================= */
+function openSupportChat() {
+
+    if (!currentUser) {
+        showToast("Login Required", "danger");
+        return;
+    }
+
+    if (document.getElementById('support-chat')) return;
+
+    const chat = document.createElement('div');
+    chat.id = "support-chat";
+
+    chat.style.cssText = `
+        position:fixed;
+        bottom:0;
+        right:10px;
+        width:300px;
+        height:400px;
+        background:#fff;
+        border-radius:10px;
+        box-shadow:0 0 10px rgba(0,0,0,0.2);
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+        z-index:9999;
+    `;
+
+    chat.innerHTML = `
+        <div style="background:#004aad;color:#fff;padding:10px;">
+            Support Chat
+            <span onclick="closeChat()" style="float:right;cursor:pointer;">✖</span>
+        </div>
+
+        <div id="chat-messages" style="flex:1;overflow:auto;padding:10px;"></div>
+
+        <div style="display:flex;">
+            <input id="chat-input" placeholder="Type..." style="flex:1;border:none;padding:10px;">
+            <button onclick="sendChat()">Send</button>
+        </div>
+    `;
+
+    document.body.appendChild(chat);
+
+    loadChatMessages();
+}
+
+/* =========================================
+   CLOSE CHAT
+========================================= */
+function closeChat() {
+    const el = document.getElementById("support-chat");
+    if (el) el.remove();
+}
+
+/* =========================================
+   LOAD CHAT MESSAGES
+========================================= */
+function loadChatMessages() {
+
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+
+    firebase.database()
+        .ref("supportChats/" + currentUser.uid)
+        .on("value", snap => {
+
+            container.innerHTML = "";
+
+            snap.forEach(msg => {
+
+                const data = msg.val();
+
+                container.innerHTML += `
+                    <div style="margin-bottom:5px;">
+                        <b>${data.sender}</b>: ${data.text}
+                    </div>
+                `;
+            });
+
+            container.scrollTop = container.scrollHeight;
+        });
+}
+
+/* =========================================
+   SEND CHAT MESSAGE
+========================================= */
+function sendChat() {
+
+    const input = document.getElementById("chat-input");
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    firebase.database()
+        .ref("supportChats/" + currentUser.uid)
+        .push({
+            sender: "User",
+            text: text,
+            time: Date.now()
+        });
+
+    input.value = "";
+}
+
+/* =========================================
+   ADMIN REPLY (OPTIONAL)
+========================================= */
+function adminReply(uid, message) {
+
+    if (!ADMIN_UIDS.includes(currentUser.uid)) return;
+
+    firebase.database()
+        .ref("supportChats/" + uid)
+        .push({
+            sender: "Admin",
+            text: message,
+            time: Date.now()
+        });
+}
+
+/* =========================================
+   33. DARK / LIGHT MODE
+========================================= */
+function toggleTheme() {
+
+    const body = document.body;
+
+    body.classList.toggle("dark-mode");
+
+    const mode = body.classList.contains("dark-mode") ? "dark" : "light";
+
+    localStorage.setItem("srp-theme", mode);
+
+    showToast(`Theme: ${mode}`, "info");
+}
+
+/* =========================================
+   LOAD THEME
+========================================= */
+function loadTheme() {
+
+    const mode = localStorage.getItem("srp-theme");
+
+    if (mode === "dark") {
+        document.body.classList.add("dark-mode");
+    }
+}
+
+/* =========================================
+   34. ADMIN DASHBOARD (BASIC)
+========================================= */
+function loadAdminStats() {
+
+    if (!currentUser || !ADMIN_UIDS.includes(currentUser.uid)) return;
+
+    const ordersEl = document.getElementById("admin-orders");
+    const usersEl = document.getElementById("admin-users");
+
+    // Total Users
+    firebase.database()
+        .ref("users")
+        .once("value")
+        .then(snap => {
+
+            const count = snap.numChildren();
+
+            if (usersEl) usersEl.innerText = count;
+        });
+
+    // Total Orders
+    firebase.database()
+        .ref("orders")
+        .once("value")
+        .then(snap => {
+
+            let totalOrders = 0;
+
+            snap.forEach(userOrders => {
+                totalOrders += userOrders.numChildren();
+            });
+
+            if (ordersEl) ordersEl.innerText = totalOrders;
+        });
+}
+
+/* =========================================
+   35. SECURITY HELPERS
+========================================= */
+
+// Prevent unauthorized admin access
+function requireAdmin() {
+
+    if (!currentUser || !ADMIN_UIDS.includes(currentUser.uid)) {
+        showToast("Access Denied", "danger");
+        return false;
+    }
+
+    return true;
+}
+
+// Prevent guest access
+function requireLogin() {
+
+    if (!currentUser) {
+        showToast("Login Required", "danger");
+        return false;
+    }
+
+    return true;
+}
+
+/* =========================================
+   SAFE FIREBASE WRITE
+========================================= */
+function safeUpdate(ref, data) {
+
+    if (!ref || !data) return;
+
+    return ref.update(data)
+        .catch(err => {
+            console.error(err);
+            showToast("Error", "danger");
+        });
+}
+
+/* =========================================
+   SAFE DELETE
+========================================= */
+function safeDelete(ref) {
+
+    if (!ref) return;
+
+    return ref.remove()
+        .catch(err => {
+            console.error(err);
+            showToast("Delete Failed", "danger");
+        });
+}
+
+/* =========================================
+   AUTO LOAD THEME ON START
+========================================= */
+loadTheme();
+
+<!-- =========================================
+   36. PWA SETUP (APP INSTALL)
+========================================= -->
+
+<!-- Add inside <head> -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#004aad">
+
+<!-- Register Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log("Service Worker Registered"));
+}
 </script>
 </body>
 </html>
