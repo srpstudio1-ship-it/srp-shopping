@@ -616,7 +616,7 @@ function removeWishlist(id) {
 
     showToast("Removed from Wishlist", "danger");
 }
-<script>
+
 
 /* =========================================
    13. CART SYSTEM (REALTIME)
@@ -917,7 +917,7 @@ function switchPage(pageId) {
     const target = document.getElementById(pageId);
     if (target) target.style.display = "block";
 }
-<script>
+
 
 /* =========================================
    21. LOAD PRODUCTS (FIRESTORE)
@@ -1241,7 +1241,7 @@ function loadFeaturedProducts() {
 
         });
 }
-<script>
+
 
 /* =========================================
    31. NOTIFICATIONS SYSTEM
@@ -1554,7 +1554,7 @@ loadTheme();
 <meta name="theme-color" content="#004aad">
 
 <!-- Register Service Worker -->
-<script>
+
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log("Service Worker Registered"));
