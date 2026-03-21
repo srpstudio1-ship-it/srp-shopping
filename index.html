@@ -256,3 +256,250 @@ container.innerHTML+=`
 });
 }
     </script>
+    <script>
+/* ================= PRODUCT PAGE ================= */
+function openProduct(id){
+    hideAll();
+    document.getElementById("product-page").classList.remove("hidden");
+    let p = ALL_PRODUCTS.find(x=>x.id===id);
+    if(!p) return;
+
+    document.getElementById("p-name").innerText = p.name;
+    document.getElementById("p-desc").innerText = p.desc;
+    document.getElementById("priceBox").innerHTML = `<span class="line-through text-gray-400">₹${p.mrp}</span> <span class="text-blue-700 font-bold">₹${p.price}</span>`;
+    document.getElementById("qty").value = 1;
+    document.getElementById("slider").innerHTML = p.img.map(img=>`<img src="${img}" class="h-40 w-40 object-cover rounded mr-2">`).join("");
+    document.getElementById("p-rating").innerText = `⭐ ${p.rating}`;
+}
+
+/* ================= CART / WISHLIST ================= */
+let CART = JSON.parse(localStorage.getItem("cart")||"[]");
+let WISHLIST = JSON.parse(localStorage.getItem("wishlist")||"[]");
+
+function addToCart(){
+    let pName = document.getElementById("p-name").innerText;
+    let qty = parseInt(document.getElementById("qty").value) || 1;
+    let product = ALL_PRODUCTS.find(x=>x.name===pName);
+    if(!product) return;
+
+    let cartItem = CART.find(x=>x.id===product.id);
+    if(cartItem){
+        cartItem.qty += qty;
+    }else{
+        CART.push({id:product.id,name:product.name,price:product.price,qty:qty});
+    }
+    localStorage.setItem("cart",JSON.stringify(CART));
+    alert("Added to cart!");
+}
+
+function addToWishlist(){
+    let pName = document.getElementById("p-name").innerText;
+    let product = ALL_PRODUCTS.find(x=>x.name===pName);
+    if(!product) return;
+
+    if(!WISHLIST.find(x=>x.id===product.id)){
+        WISHLIST.push({id:product.id,name:product.name,price:product.price});
+        localStorage.setItem("wishlist",JSON.stringify(WISHLIST));
+        alert("Added to wishlist!");
+    }else{
+        alert("Already in wishlist");
+    }
+}
+
+function buyNow(){
+    addToCart();
+    showCart();
+}
+
+/* ================= SHOW CART PAGE ================= */
+function showCart(){
+    hideAll();
+    if(!document.getElementById("cart-page")){
+        let div = document.createElement("div");
+        div.id = "cart-page";
+        div.className = "p-3 bg-white";
+        document.body.appendChild(div);
+    }
+    document.getElementById("cart-page").classList.remove("hidden");
+    renderCart();
+}
+
+function renderCart(){
+    let container = document.getElementById("cart-page");
+    container.innerHTML = "<h2 class='text-xl font-bold mb-2'>Your Cart</h2>";
+    if(CART.length===0){
+        container.innerHTML += "<p>Cart is empty</p>";
+        return;
+    }
+    CART.forEach(item=>{
+        container.innerHTML += `
+        <div class="flex justify-between items-center border p-2 mb-2">
+            <div>${item.name} x ${item.qty}</div>
+            <div>₹${item.price*item.qty}</div>
+            <button onclick="removeFromCart('${item.id}')" class="bg-red-500 p-1 rounded text-white">Remove</button>
+        </div>
+        `;
+    });
+    container.innerHTML += `<button onclick="checkout()" class="btn w-full mt-2 bg-green-600">Checkout</button>`;
+}
+
+function removeFromCart(id){
+    CART = CART.filter(x=>x.id!==id);
+    localStorage.setItem("cart",JSON.stringify(CART));
+    renderCart();
+}
+
+function checkout(){
+    alert("Checkout functionality coming soon!");
+}
+
+/* ================= WALLET ================= */
+let walletAmount = 0;
+function loadWallet(){
+    // Example placeholder wallet load
+    document.getElementById("wallet-amt").innerText = `₹${walletAmount}`;
+}
+function addMoney(amount){
+    walletAmount += amount;
+    loadWallet();
+}
+
+/* ================= PROFILE PAGE ================= */
+function showProfile(){
+    hideAll();
+    if(!document.getElementById("profile-page")){
+        let div = document.createElement("div");
+        div.id = "profile-page";
+        div.className = "p-3 bg-white";
+        document.body.appendChild(div);
+    }
+    document.getElementById("profile-page").classList.remove("hidden");
+    renderProfile();
+}
+
+function renderProfile(){
+    let container = document.getElementById("profile-page");
+    container.innerHTML = `
+    <h2 class="text-xl font-bold mb-2">Profile</h2>
+    <p>Email: ${auth.currentUser?auth.currentUser.email:"Guest"}</p>
+    <button onclick="logout()" class="btn mt-2 bg-red-600">Logout</button>
+    `;
+}
+
+function logout(){
+    auth.signOut();
+}
+
+/* ================= SELLER PAGE ================= */
+function showSeller(){
+    hideAll();
+    if(!document.getElementById("seller-page")){
+        let div = document.createElement("div");
+        div.id = "seller-page";
+        div.className = "p-3 bg-white";
+        document.body.appendChild(div);
+    }
+    document.getElementById("seller-page").classList.remove("hidden");
+    renderSeller();
+}
+
+function renderSeller(){
+    let container = document.getElementById("seller-page");
+    container.innerHTML = "<h2 class='text-xl font-bold mb-2'>Seller Dashboard</h2>";
+    container.innerHTML += "<p>Sales statistics coming soon</p>";
+}
+
+/* ================= AI PAGE ================= */
+function showAI(){
+    hideAll();
+    if(!document.getElementById("ai-page")){
+        let div = document.createElement("div");
+        div.id = "ai-page";
+        div.className = "p-3 bg-white";
+        document.body.appendChild(div);
+    }
+    document.getElementById("ai-page").classList.remove("hidden");
+    document.getElementById("ai-page").innerHTML = "<h2 class='text-xl font-bold mb-2'>AI Assistant</h2><p>Chat with AI here...</p>";
+}
+
+/* ================= SEARCH / FILTER ================= */
+function searchProducts(){
+    let query = document.getElementById("searchBox").value.toLowerCase();
+    let filtered = ALL_PRODUCTS.filter(p=>p.name.toLowerCase().includes(query));
+    let container = document.getElementById("products");
+    container.innerHTML = "";
+    filtered.forEach(p=>{
+        container.innerHTML+=`
+        <div onclick="openProduct('${p.id}')" class="bg-white p-2 rounded shadow cursor-pointer product-card">
+            <img src="${p.img[0]}" class="h-32 w-full object-cover rounded">
+            <div class="font-bold mt-1">${p.name}</div>
+            <div class="text-gray-400 line-through">₹${p.mrp}</div>
+            <div class="text-blue-700 font-bold">₹${p.price}</div>
+            <div class="text-yellow-500">⭐ ${p.rating}</div>
+        </div>
+        `;
+    });
+}
+
+function filterCat(cat){
+    let filtered = cat==="All"?ALL_PRODUCTS:ALL_PRODUCTS.filter(p=>p.cat===cat);
+    let container = document.getElementById("products");
+    container.innerHTML="";
+    filtered.forEach(p=>{
+        container.innerHTML+=`
+        <div onclick="openProduct('${p.id}')" class="bg-white p-2 rounded shadow cursor-pointer product-card">
+            <img src="${p.img[0]}" class="h-32 w-full object-cover rounded">
+            <div class="font-bold mt-1">${p.name}</div>
+            <div class="text-gray-400 line-through">₹${p.mrp}</div>
+            <div class="text-blue-700 font-bold">₹${p.price}</div>
+            <div class="text-yellow-500">⭐ ${p.rating}</div>
+        </div>
+        `;
+    });
+}
+
+/* ================= DARK / LIGHT MODE ================= */
+let darkMode = false;
+function toggleDarkMode(){
+    darkMode = !darkMode;
+    if(darkMode){
+        document.body.classList.add("bg-gray-900","text-white");
+    }else{
+        document.body.classList.remove("bg-gray-900","text-white");
+    }
+}
+
+/* ================= ADDRESS BOOK ================= */
+let ADDRESSES = JSON.parse(localStorage.getItem("addresses")||"[]");
+function addAddress(addr){
+    ADDRESSES.push(addr);
+    localStorage.setItem("addresses",JSON.stringify(ADDRESSES));
+}
+
+function editAddress(index, addr){
+    ADDRESSES[index]=addr;
+    localStorage.setItem("addresses",JSON.stringify(ADDRESSES));
+}
+
+function deleteAddress(index){
+    ADDRESSES.splice(index,1);
+    localStorage.setItem("addresses",JSON.stringify(ADDRESSES));
+}
+
+/* ================= ORDERS ================= */
+let ORDERS = JSON.parse(localStorage.getItem("orders")||"[]");
+function placeOrder(cartItems){
+    ORDERS.push({items:cartItems,date:new Date().toLocaleString(),status:"Processing"});
+    localStorage.setItem("orders",JSON.stringify(ORDERS));
+    CART=[];
+    localStorage.setItem("cart",JSON.stringify(CART));
+    alert("Order Placed!");
+}
+
+/* ================= INITIAL LOAD ================= */
+window.onload = ()=>{
+    loadProducts();
+    loadWallet();
+};
+    </script>
+    
