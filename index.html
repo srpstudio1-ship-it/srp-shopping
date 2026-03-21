@@ -1,1564 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SRP SHOPPING</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+margin:0;
+font-family:Poppins;
+background:#f1f5f9;
+}
+
+header{
+background:#004aad;
+color:#fff;
+padding:15px;
+display:flex;
+justify-content:space-between;
+}
+
+.container{
+padding:15px;
+}
+
+button{
+padding:10px;
+border:none;
+border-radius:6px;
+background:#004aad;
+color:white;
+}
+
+input{
+padding:10px;
+margin:5px 0;
+width:100%;
+}
+
+.card{
+background:#fff;
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
+}
+
+.dark-mode{
+background:#111;
+color:#fff;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+<h2>SRP SHOPPING</h2>
+<div id="cart-badge">0</div>
+</header>
+
+<div class="container">
+
+<div id="auth-section">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<button onclick="register()">Register</button>
+</div>
+
+<div id="home-section" style="display:none;">
+<h3>Products</h3>
+<div id="products"></div>
+</div>
+
+<div id="cart-section">
+<h3>Cart</h3>
+<div id="cart-items"></div>
+<div id="cart-total"></div>
+<button onclick="checkout()">Checkout</button>
+</div>
+
+<div id="wishlist">
+<h3>Wishlist</h3>
+</div>
+
+<div id="user-orders"></div>
+
+<div id="address-list"></div>
+
+<div id="notifications"></div>
+
+<div id="wallet-balance"></div>
+
+</div>
+
 <script>
 
-/* =========================================
-   GLOBAL VARIABLES
-========================================= */
-let currentUser = null;
-let userProfile = {};
-let cartItems = [];
-let userOrders = [];
-
-/* =========================================
-   ADMIN CONFIG (FIXED)
-========================================= */
-const ADMIN_UIDS = [
-    "LRukxuWhNeZEElB0MfxKV04nsgH3",
-    "5zaPB92EHJPIZLbttmwvsxDF64F3",
-    "qFVYJKbY25eUzQxZUjT5fCRTku42"
-];
-
-/* =========================================
-   1. APP BOOTSTRAP (FIXED)
-========================================= */
-window.onload = () => {
-
-    // Cart badge
-    const badge = document.getElementById('cart-badge');
-    if (badge) badge.innerText = cartItems.length;
-
-    // Network system
-    monitorNetworkStrength();
-    setInterval(updateSignalUI, 3000);
-
-    // AUTH LISTENER (ONLY ONE)
-    auth.onAuthStateChanged(user => {
-
-        if (user) {
-            currentUser = user;
-
-            console.log("SRP Authenticated:", user.uid);
-
-            // Load everything
-            updateWallet();
-            loadUserProfile();
-            loadOrders();
-            loadWallet();
-            loadWishlist();
-            loadCart();
-            loadNotifications();
-            loadAddresses();
-
-            // Admin check
-            if (ADMIN_UIDS.includes(user.uid)) {
-                const adminTab = document.getElementById('admin-nav-item');
-                if (adminTab) adminTab.style.display = "block";
-            }
-
-        } else {
-            console.log("No User Found");
-        }
-
-    });
-
-    // Deep link support
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('pid')) {
-        openProductDetail(urlParams.get('pid'));
-    }
+const firebaseConfig = {
+apiKey: "YOUR_KEY",
+authDomain: "YOUR_DOMAIN",
+projectId: "YOUR_ID",
+storageBucket: "YOUR_BUCKET",
+messagingSenderId: "YOUR_MSG",
+appId: "YOUR_APP"
 };
 
-/* =========================================
-   2. INDEXED DB (OFFLINE STORAGE)
-========================================= */
-function openDB() {
-    return new Promise((resolve, reject) => {
+firebase.initializeApp(firebaseConfig);
 
-        const request = indexedDB.open('SRP_Offline_Vault', 1);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-        request.onupgradeneeded = e => {
-            const db = e.target.result;
+let currentUser = null;
+let cartItems = [];
 
-            if (!db.objectStoreNames.contains('pending_orders')) {
-                db.createObjectStore('pending_orders', { keyPath: 'id' });
-            }
-        };
-
-        request.onsuccess = e => resolve(e.target.result);
-        request.onerror = e => reject(e);
-    });
-}
-
-/* =========================================
-   3. NETWORK MONITOR
-========================================= */
-function monitorNetworkStrength() {
-
-    window.addEventListener('online', () => {
-        showToast("Back Online 🚀", "success");
-        processOfflineQueue();
-    });
-
-    window.addEventListener('offline', () => {
-        showToast("Offline Mode Activated", "danger");
-    });
-}
-
-/* =========================================
-   SIGNAL UI
-========================================= */
-function updateSignalUI() {
-
-    const el = document.getElementById('srp-signal-status');
-    if (!el) return;
-
-    const conn = navigator.connection;
-    if (!conn) return;
-
-    let status = "Excellent";
-    let color = "green";
-
-    if (conn.rtt > 200) {
-        status = "Weak";
-        color = "orange";
-    }
-
-    if (conn.rtt > 500) {
-        status = "Poor";
-        color = "red";
-    }
-
-    el.innerHTML = `📶 <span style="color:${color}">${status}</span>`;
-}
-
-/* =========================================
-   4. OFFLINE ORDER SYSTEM
-========================================= */
-async function saveCheckoutProgress(cartData) {
-
-    const db = await openDB();
-    const tx = db.transaction('pending_orders', 'readwrite');
-    const store = tx.objectStore('pending_orders');
-
-    store.put({
-        id: "checkout",
-        data: cartData,
-        time: Date.now()
-    });
-}
-
-async function processOfflineQueue() {
-
-    const db = await openDB();
-    const tx = db.transaction('pending_orders', 'readonly');
-    const store = tx.objectStore('pending_orders');
-
-    const request = store.get("checkout");
-
-    request.onsuccess = () => {
-
-        const data = request.result;
-        if (!data) return;
-
-        if (Date.now() - data.time < 3600000) {
-
-            showToast("Restoring Order...", "info");
-
-            if (typeof completeOrder === "function") {
-                completeOrder(data.data);
-            }
-
-            const txDel = db.transaction('pending_orders', 'readwrite');
-            txDel.objectStore('pending_orders').delete("checkout");
-        }
-    };
-}
-
-/* =========================================
-   5. COUPON SYSTEM (MAIN)
-========================================= */
-function applyCoupon(code, cartTotal) {
-
-    const coupon = SRP_COUPONS.find(
-        c => c.code === code.toUpperCase()
-    );
-
-    if (!coupon) {
-        return showToast("Invalid Coupon", "danger");
-    }
-
-    if (cartTotal < coupon.minOrder) {
-        return showToast(`Min ₹${coupon.minOrder}`, "danger");
-    }
-
-    let discount = 0;
-
-    if (coupon.type === 'flat') {
-        discount = coupon.discount;
-    }
-
-    if (coupon.type === 'percentage') {
-        discount = (cartTotal * coupon.discount) / 100;
-    }
-
-    const newTotal = Math.max(cartTotal - discount, 0);
-
-    showToast(`Coupon Applied! Saved ₹${discount}`, "success");
-
-    return {
-        discount,
-        newTotal
-    };
-}
-
-/* =========================================
-   6. COUPON FROM DATABASE
-========================================= */
-function applyCouponDB() {
-
-    const code = document.getElementById("coupon-code")?.value;
-    if (!code) return;
-
-    firebase.database()
-        .ref("coupons/" + code)
-        .once("value")
-        .then(snap => {
-
-            if (!snap.exists()) {
-                showToast("Invalid Coupon", "danger");
-                return;
-            }
-
-            const data = snap.val();
-
-            showToast(`Coupon Applied: ${data.discount}% OFF`, "success");
-        });
-}
-
-/* =========================================
-   7. WALLET SYSTEM (BASE)
-========================================= */
-function updateWallet() {
-
-    if (!currentUser) return;
-
-    firebase.database()
-        .ref("users/" + currentUser.uid)
-        .once("value")
-        .then(snap => {
-
-            const data = snap.val() || {};
-
-            const el = document.getElementById("header-wallet-bal");
-
-            if (el) {
-                el.innerText = (data.wallet || 0).toFixed(2);
-            }
-        });
-}
-
-/* =========================================
-   SAFE TOAST (FALLBACK)
-========================================= */
-function showToast(msg, type="info") {
-    console.log(`[${type}]`, msg);
-}
-
-/* =========================================
-   SAFE PRODUCT OPEN (FALLBACK)
-========================================= */
-function openProductDetail(id){
-    console.log("Open Product:", id);
-}
-
-/* =========================================
-   SAFE ORDER FUNCTION (FALLBACK)
-========================================= */
-function completeOrder(data){
-    console.log("Completing Order:", data);
-}
-
-
-/* =========================================
-   8. USER PROFILE SYSTEM
-========================================= */
-function loadUserProfile() {
-
-    if (!currentUser) return;
-
-    firebase.database()
-        .ref("users/" + currentUser.uid)
-        .on("value", snap => {
-
-            userProfile = snap.val() || {};
-
-            const nameEl = document.getElementById("user-name");
-            const emailEl = document.getElementById("user-email");
-
-            if (nameEl) nameEl.innerText = userProfile.name || "User";
-            if (emailEl) emailEl.innerText = currentUser.email || "";
-
-        });
-}
-
-/* =========================================
-   UPDATE PROFILE
-========================================= */
-function updateProfile() {
-
-    const name = document.getElementById("profile-name")?.value;
-    const phone = document.getElementById("profile-phone")?.value;
-
-    if (!name) {
-        showToast("Name required", "danger");
-        return;
-    }
-
-    firebase.database()
-        .ref("users/" + currentUser.uid)
-        .update({
-            name: name,
-            phone: phone || ""
-        })
-        .then(() => {
-            showToast("Profile Updated", "success");
-        });
-}
-
-/* =========================================
-   9. ORDERS SYSTEM
-========================================= */
-function loadOrders() {
-
-    if (!currentUser) return;
-
-    const container = document.getElementById("orders-container");
-    if (!container) return;
-
-    firebase.database()
-        .ref("orders/" + currentUser.uid)
-        .on("value", snap => {
-
-            container.innerHTML = "";
-            userOrders = [];
-
-            snap.forEach(order => {
-
-                const data = order.val();
-                userOrders.push(data);
-
-                container.innerHTML += `
-                    <div class="order-card">
-                        <p><b>Order ID:</b> ${order.key}</p>
-                        <p>Status: ${data.status || "Processing"}</p>
-                        <p>Total: ₹${data.total}</p>
-                        <button onclick="trackOrder('${order.key}')">Track</button>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   TRACK ORDER
-========================================= */
-function trackOrder(orderId) {
-
-    const trackingUrl = `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignment=${orderId}`;
-    window.open(trackingUrl, "_blank");
-}
-
-/* =========================================
-   CANCEL ORDER
-========================================= */
-function cancelOrder(orderId) {
-
-    firebase.database()
-        .ref("orders/" + currentUser.uid + "/" + orderId)
-        .update({
-            status: "Cancelled"
-        });
-
-    showToast("Order Cancelled", "danger");
-}
-
-/* =========================================
-   10. ADDRESS BOOK SYSTEM
-========================================= */
-function loadAddresses() {
-
-    if (!currentUser) return;
-
-    const container = document.getElementById("address-list");
-    if (!container) return;
-
-    firebase.database()
-        .ref("addresses/" + currentUser.uid)
-        .on("value", snap => {
-
-            container.innerHTML = "";
-
-            snap.forEach(addr => {
-
-                const data = addr.val();
-
-                container.innerHTML += `
-                    <div class="address-card">
-                        <p>${data.name}, ${data.phone}</p>
-                        <p>${data.address}, ${data.city}</p>
-                        <button onclick="selectAddress('${addr.key}')">Select</button>
-                        <button onclick="deleteAddress('${addr.key}')">Delete</button>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   ADD ADDRESS
-========================================= */
-function addAddress() {
-
-    const name = document.getElementById("addr-name")?.value;
-    const phone = document.getElementById("addr-phone")?.value;
-    const address = document.getElementById("addr-text")?.value;
-    const city = document.getElementById("addr-city")?.value;
-
-    if (!name || !phone || !address) {
-        showToast("Fill all fields", "danger");
-        return;
-    }
-
-    firebase.database()
-        .ref("addresses/" + currentUser.uid)
-        .push({
-            name,
-            phone,
-            address,
-            city
-        });
-
-    showToast("Address Added", "success");
-}
-
-/* =========================================
-   DELETE ADDRESS
-========================================= */
-function deleteAddress(id) {
-
-    firebase.database()
-        .ref("addresses/" + currentUser.uid + "/" + id)
-        .remove();
-
-    showToast("Address Deleted", "danger");
-}
-
-/* =========================================
-   SELECT ADDRESS (FOR CHECKOUT)
-========================================= */
-let selectedAddress = null;
-
-function selectAddress(id) {
-
-    firebase.database()
-        .ref("addresses/" + currentUser.uid + "/" + id)
-        .once("value")
-        .then(snap => {
-
-            selectedAddress = snap.val();
-            showToast("Address Selected", "success");
-
-        });
-}
-
-/* =========================================
-   11. WALLET SYSTEM UI
-========================================= */
-function loadWallet() {
-
-    if (!currentUser) return;
-
-    const el = document.getElementById("wallet-display-amt");
-    if (!el) return;
-
-    firebase.database()
-        .ref("users/" + currentUser.uid)
-        .on("value", snap => {
-
-            const data = snap.val() || {};
-            el.innerText = "₹" + (data.wallet || 0).toFixed(2);
-
-        });
-}
-
-/* =========================================
-   RECHARGE WALLET
-========================================= */
-function rechargeWallet() {
-
-    const amt = parseFloat(prompt("Enter amount"));
-
-    if (!amt || amt <= 0) {
-        showToast("Invalid Amount", "danger");
-        return;
-    }
-
-    firebase.database()
-        .ref("users/" + currentUser.uid)
-        .once("value")
-        .then(snap => {
-
-            const data = snap.val() || {};
-            const newBal = (data.wallet || 0) + amt;
-
-            firebase.database()
-                .ref("users/" + currentUser.uid)
-                .update({
-                    wallet: newBal
-                });
-
-            showToast("Wallet Recharged", "success");
-        });
-}
-
-/* =========================================
-   DEDUCT WALLET (FOR ORDERS)
-========================================= */
-function deductWallet(amount) {
-
-    return new Promise((resolve, reject) => {
-
-        firebase.database()
-            .ref("users/" + currentUser.uid)
-            .once("value")
-            .then(snap => {
-
-                const data = snap.val() || {};
-                const balance = data.wallet || 0;
-
-                if (balance < amount) {
-                    showToast("Insufficient Balance", "danger");
-                    reject();
-                    return;
-                }
-
-                firebase.database()
-                    .ref("users/" + currentUser.uid)
-                    .update({
-                        wallet: balance - amount
-                    });
-
-                resolve();
-            });
-
-    });
-}
-
-/* =========================================
-   12. WISHLIST SYSTEM
-========================================= */
-function loadWishlist() {
-
-    if (!currentUser) return;
-
-    const container = document.getElementById("wishlist-container");
-    if (!container) return;
-
-    firebase.database()
-        .ref("wishlist/" + currentUser.uid)
-        .on("value", snap => {
-
-            container.innerHTML = "";
-
-            snap.forEach(item => {
-
-                const data = item.val();
-
-                container.innerHTML += `
-                    <div class="wishlist-item">
-                        <p>${data.name}</p>
-                        <p>₹${data.price}</p>
-                        <button onclick="addToCart('${item.key}')">Add to Cart</button>
-                        <button onclick="removeWishlist('${item.key}')">Remove</button>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   ADD TO WISHLIST
-========================================= */
-function addToWishlist(product) {
-
-    if (!currentUser) {
-        showToast("Login Required", "danger");
-        return;
-    }
-
-    firebase.database()
-        .ref("wishlist/" + currentUser.uid)
-        .push(product);
-
-    showToast("Added to Wishlist", "success");
-}
-
-/* =========================================
-   REMOVE WISHLIST
-========================================= */
-function removeWishlist(id) {
-
-    firebase.database()
-        .ref("wishlist/" + currentUser.uid + "/" + id)
-        .remove();
-
-    showToast("Removed from Wishlist", "danger");
-}
-
-
-/* =========================================
-   13. CART SYSTEM (REALTIME)
-========================================= */
-function loadCart() {
-
-    if (!currentUser) return;
-
-    const container = document.getElementById("cart-items");
-    const totalBox = document.getElementById("cart-total");
-
-    if (!container || !totalBox) return;
-
-    firebase.database()
-        .ref("cart/" + currentUser.uid)
-        .on("value", snap => {
-
-            container.innerHTML = "";
-            cartItems = [];
-
-            let total = 0;
-
-            snap.forEach(item => {
-
-                const data = item.val();
-                const qty = data.qty || 1;
-                const price = data.price || 0;
-
-                total += price * qty;
-
-                cartItems.push({
-                    id: item.key,
-                    ...data
-                });
-
-                container.innerHTML += `
-                    <div class="cart-item">
-                        <p>${data.name}</p>
-                        <p>₹${price}</p>
-
-                        <input type="number" min="1" value="${qty}"
-                            onchange="updateQty('${item.key}', this.value)">
-
-                        <button onclick="removeCart('${item.key}')">Remove</button>
-                    </div>
-                `;
-            });
-
-            totalBox.innerText = "Total: ₹" + total;
-
-            // Save total globally
-            window.cartTotal = total;
-
-        });
-}
-
-/* =========================================
-   ADD TO CART
-========================================= */
-function addToCart(product) {
-
-    if (!currentUser) {
-        showToast("Login Required", "danger");
-        return;
-    }
-
-    const ref = firebase.database().ref("cart/" + currentUser.uid);
-
-    ref.push({
-        name: product.name,
-        price: product.price,
-        qty: 1,
-        img: product.img || ""
-    });
-
-    showToast("Added to Cart", "success");
-}
-
-/* =========================================
-   REMOVE FROM CART
-========================================= */
-function removeCart(id) {
-
-    firebase.database()
-        .ref("cart/" + currentUser.uid + "/" + id)
-        .remove();
-
-    showToast("Removed from Cart", "danger");
-}
-
-/* =========================================
-   UPDATE QUANTITY
-========================================= */
-function updateQty(id, qty) {
-
-    qty = parseInt(qty);
-
-    if (qty <= 0) return;
-
-    firebase.database()
-        .ref("cart/" + currentUser.uid + "/" + id)
-        .update({
-            qty: qty
-        });
-}
-
-/* =========================================
-   CLEAR CART
-========================================= */
-function clearCart() {
-
-    firebase.database()
-        .ref("cart/" + currentUser.uid)
-        .remove();
-
-    showToast("Cart Cleared", "info");
-}
-
-/* =========================================
-   14. APPLY COUPON IN CART
-========================================= */
-let appliedCoupon = null;
-
-function applyCouponToCart() {
-
-    const code = document.getElementById("coupon-code")?.value;
-
-    if (!code || !window.cartTotal) {
-        showToast("Invalid", "danger");
-        return;
-    }
-
-    const result = applyCoupon(code, window.cartTotal);
-
-    if (!result) return;
-
-    appliedCoupon = {
-        code,
-        discount: result.discount
-    };
-
-    const totalBox = document.getElementById("cart-total");
-
-    if (totalBox) {
-        totalBox.innerText = `Total: ₹${result.newTotal}`;
-    }
-}
-
-/* =========================================
-   15. CHECKOUT VALIDATION
-========================================= */
-function validateCheckout() {
-
-    if (!cartItems.length) {
-        showToast("Cart is empty", "danger");
-        return false;
-    }
-
-    if (!selectedAddress) {
-        showToast("Select Address", "danger");
-        return false;
-    }
-
-    return true;
-}
-
-/* =========================================
-   16. CHECKOUT PROCESS
-========================================= */
-async function checkout() {
-
-    if (!validateCheckout()) return;
-
-    const finalTotal = calculateFinalTotal();
-
-    try {
-
-        await deductWallet(finalTotal);
-
-        completeOrderFlow(finalTotal);
-
-    } catch (e) {
-
-        showToast("Payment Failed", "danger");
-
-        // Save offline
-        await saveCheckoutProgress({
-            cartItems,
-            total: finalTotal,
-            address: selectedAddress
-        });
-
-    }
-}
-
-/* =========================================
-   FINAL TOTAL CALCULATION
-========================================= */
-function calculateFinalTotal() {
-
-    let total = window.cartTotal || 0;
-
-    if (appliedCoupon) {
-        total -= appliedCoupon.discount;
-    }
-
-    return Math.max(total, 0);
-}
-
-/* =========================================
-   17. COMPLETE ORDER FLOW
-========================================= */
-function completeOrderFlow(totalAmount) {
-
-    const orderId = "ORD" + Date.now();
-
-    const orderData = {
-        items: cartItems,
-        total: totalAmount,
-        address: selectedAddress,
-        status: "Processing",
-        time: new Date().toISOString()
-    };
-
-    // Save order
-    firebase.database()
-        .ref("orders/" + currentUser.uid + "/" + orderId)
-        .set(orderData);
-
-    // Clear cart
-    clearCart();
-
-    showToast("Order Placed Successfully 🎉", "success");
-
-    // Optional: redirect
-    switchPage && switchPage("orders");
-}
-
-/* =========================================
-   18. BUY NOW (DIRECT ORDER)
-========================================= */
-function buyNow(product) {
-
-    if (!currentUser) {
-        showToast("Login Required", "danger");
-        return;
-    }
-
-    cartItems = [{
-        name: product.name,
-        price: product.price,
-        qty: 1,
-        img: product.img || ""
-    }];
-
-    window.cartTotal = product.price;
-
-    showToast("Proceeding to Checkout", "info");
-
-    switchPage && switchPage("checkout");
-}
-
-/* =========================================
-   19. ORDER SUMMARY UI (OPTIONAL)
-========================================= */
-function renderOrderSummary() {
-
-    const container = document.getElementById("checkout-items");
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    cartItems.forEach(item => {
-
-        container.innerHTML += `
-            <div class="checkout-item">
-                <p>${item.name}</p>
-                <p>₹${item.price} x ${item.qty}</p>
-            </div>
-        `;
-    });
-
-    const totalEl = document.getElementById("checkout-total");
-    if (totalEl) {
-        totalEl.innerText = "Total: ₹" + calculateFinalTotal();
-    }
-}
-
-/* =========================================
-   20. SAFE PAGE SWITCH (FALLBACK)
-========================================= */
-function switchPage(pageId) {
-
-    const pages = document.querySelectorAll(".page");
-
-    pages.forEach(p => p.style.display = "none");
-
-    const target = document.getElementById(pageId);
-    if (target) target.style.display = "block";
-}
-
-
-/* =========================================
-   21. LOAD PRODUCTS (FIRESTORE)
-========================================= */
-function loadProducts() {
-
-    const container = document.getElementById("product-list");
-    if (!container) return;
-
-    container.innerHTML = "Loading...";
-
-    db.collection("products")
-        .orderBy("createdAt", "desc")
-        .onSnapshot(snapshot => {
-
-            container.innerHTML = "";
-
-            snapshot.forEach(doc => {
-
-                const p = doc.data();
-
-                container.innerHTML += `
-                    <div class="product-card" onclick="openProductDetail('${doc.id}')">
-                        <img src="${p.img}" />
-                        <h3>${p.name}</h3>
-                        <p>₹${p.price}</p>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   22. PRODUCT DETAIL VIEW
-========================================= */
-function openProductDetail(productId) {
-
-    const container = document.getElementById("product-detail");
-    if (!container) return;
-
-    db.collection("products")
-        .doc(productId)
-        .get()
-        .then(doc => {
-
-            if (!doc.exists) return;
-
-            const p = doc.data();
-
-            container.innerHTML = `
-                <div class="product-detail-box">
-                    <img src="${p.img}" />
-                    <h2>${p.name}</h2>
-                    <p>${p.desc || ""}</p>
-
-                    <p>
-                        <strike>₹${p.mrp || p.price}</strike>
-                        <b>₹${p.price}</b>
-                    </p>
-
-                    <button onclick='addToCart(${JSON.stringify(p)})'>
-                        Add to Cart
-                    </button>
-
-                    <button onclick='buyNow(${JSON.stringify(p)})'>
-                        Buy Now
-                    </button>
-
-                    <button onclick='addToWishlist(${JSON.stringify(p)})'>
-                        ❤️ Wishlist
-                    </button>
-                </div>
-            `;
-
-            switchPage("product-detail-page");
-        });
-}
-
-/* =========================================
-   23. SEARCH PRODUCTS
-========================================= */
-function searchProducts() {
-
-    const query = document.getElementById("search-box")?.value.toLowerCase();
-    if (!query) return loadProducts();
-
-    const container = document.getElementById("product-list");
-    if (!container) return;
-
-    db.collection("products")
-        .get()
-        .then(snapshot => {
-
-            container.innerHTML = "";
-
-            snapshot.forEach(doc => {
-
-                const p = doc.data();
-
-                if (p.name.toLowerCase().includes(query)) {
-
-                    container.innerHTML += `
-                        <div class="product-card" onclick="openProductDetail('${doc.id}')">
-                            <img src="${p.img}" />
-                            <h3>${p.name}</h3>
-                            <p>₹${p.price}</p>
-                        </div>
-                    `;
-                }
-            });
-
-        });
-}
-
-/* =========================================
-   24. FILTER BY CATEGORY
-========================================= */
-function filterCategory(category) {
-
-    const container = document.getElementById("product-list");
-    if (!container) return;
-
-    db.collection("products")
-        .where("category", "==", category)
-        .get()
-        .then(snapshot => {
-
-            container.innerHTML = "";
-
-            snapshot.forEach(doc => {
-
-                const p = doc.data();
-
-                container.innerHTML += `
-                    <div class="product-card" onclick="openProductDetail('${doc.id}')">
-                        <img src="${p.img}" />
-                        <h3>${p.name}</h3>
-                        <p>₹${p.price}</p>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   25. SELLER ADD PRODUCT
-========================================= */
-function addProduct() {
-
-    const name = document.getElementById("p-name")?.value;
-    const price = Number(document.getElementById("p-price")?.value);
-    const mrp = Number(document.getElementById("p-mrp")?.value);
-    const cat = document.getElementById("p-cat")?.value;
-    const stock = Number(document.getElementById("p-stock")?.value);
-    const desc = document.getElementById("p-desc")?.value;
-    const file = document.getElementById("p-img")?.files[0];
-
-    if (!name || !price || !file) {
-        showToast("Fill required fields", "danger");
-        return;
-    }
-
-    const storageRef = firebase.storage()
-        .ref("products/" + Date.now());
-
-    storageRef.put(file)
-        .then(snapshot => snapshot.ref.getDownloadURL())
-        .then(url => {
-
-            db.collection("products").add({
-                name,
-                price,
-                mrp: mrp || price,
-                category: cat || "General",
-                stock: stock || 0,
-                desc: desc || "",
-                img: url,
-                seller: currentUser.uid,
-                createdAt: new Date()
-            });
-
-            showToast("Product Added", "success");
-        });
-}
-
-/* =========================================
-   26. ADMIN DELETE PRODUCT
-========================================= */
-function deleteProduct(productId) {
-
-    if (!ADMIN_UIDS.includes(currentUser.uid)) {
-        showToast("Unauthorized", "danger");
-        return;
-    }
-
-    db.collection("products")
-        .doc(productId)
-        .delete()
-        .then(() => {
-            showToast("Product Deleted", "danger");
-        });
-}
-
-/* =========================================
-   27. LOAD SELLER PRODUCTS
-========================================= */
-function loadMyProducts() {
-
-    if (!currentUser) return;
-
-    const container = document.getElementById("my-products");
-    if (!container) return;
-
-    db.collection("products")
-        .where("seller", "==", currentUser.uid)
-        .onSnapshot(snapshot => {
-
-            container.innerHTML = "";
-
-            snapshot.forEach(doc => {
-
-                const p = doc.data();
-
-                container.innerHTML += `
-                    <div class="product-card">
-                        <img src="${p.img}" />
-                        <h3>${p.name}</h3>
-                        <p>₹${p.price}</p>
-
-                        <button onclick="deleteProduct('${doc.id}')">
-                            Delete
-                        </button>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   28. UPDATE PRODUCT STOCK
-========================================= */
-function updateStock(productId, newStock) {
-
-    db.collection("products")
-        .doc(productId)
-        .update({
-            stock: Number(newStock)
-        });
-
-    showToast("Stock Updated", "success");
-}
-
-/* =========================================
-   29. SORT PRODUCTS
-========================================= */
-function sortProducts(type) {
-
-    const container = document.getElementById("product-list");
-    if (!container) return;
-
-    let query = db.collection("products");
-
-    if (type === "low") {
-        query = query.orderBy("price", "asc");
-    }
-
-    if (type === "high") {
-        query = query.orderBy("price", "desc");
-    }
-
-    query.get().then(snapshot => {
-
-        container.innerHTML = "";
-
-        snapshot.forEach(doc => {
-
-            const p = doc.data();
-
-            container.innerHTML += `
-                <div class="product-card" onclick="openProductDetail('${doc.id}')">
-                    <img src="${p.img}" />
-                    <h3>${p.name}</h3>
-                    <p>₹${p.price}</p>
-                </div>
-            `;
-        });
-
-    });
-}
-
-/* =========================================
-   30. FEATURED PRODUCTS (HOME)
-========================================= */
-function loadFeaturedProducts() {
-
-    const container = document.getElementById("featured-products");
-    if (!container) return;
-
-    db.collection("products")
-        .limit(6)
-        .get()
-        .then(snapshot => {
-
-            container.innerHTML = "";
-
-            snapshot.forEach(doc => {
-
-                const p = doc.data();
-
-                container.innerHTML += `
-                    <div class="product-card" onclick="openProductDetail('${doc.id}')">
-                        <img src="${p.img}" />
-                        <h3>${p.name}</h3>
-                        <p>₹${p.price}</p>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-
-/* =========================================
-   31. NOTIFICATIONS SYSTEM
-========================================= */
-function loadNotifications() {
-
-    if (!currentUser) return;
-
-    const container = document.getElementById("notifications-list");
-    if (!container) return;
-
-    firebase.database()
-        .ref("notifications/" + currentUser.uid)
-        .limitToLast(20)
-        .on("value", snap => {
-
-            container.innerHTML = "";
-
-            snap.forEach(n => {
-
-                const data = n.val();
-
-                container.innerHTML += `
-                    <div class="notif-card">
-                        <p>${data.msg}</p>
-                        <small>${formatTime(data.time)}</small>
-                    </div>
-                `;
-            });
-
-        });
-}
-
-/* =========================================
-   PUSH NOTIFICATION
-========================================= */
-function pushNotification(uid, message) {
-
-    firebase.database()
-        .ref("notifications/" + uid)
-        .push({
-            msg: message,
-            time: Date.now()
-        });
-}
-
-/* =========================================
-   FORMAT TIME
-========================================= */
-function formatTime(ts) {
-
-    const d = new Date(ts);
-    return d.toLocaleString();
-}
-
-/* =========================================
-   32. LIVE CHAT SYSTEM
-========================================= */
-function openSupportChat() {
-
-    if (!currentUser) {
-        showToast("Login Required", "danger");
-        return;
-    }
-
-    if (document.getElementById('support-chat')) return;
-
-    const chat = document.createElement('div');
-    chat.id = "support-chat";
-
-    chat.style.cssText = `
-        position:fixed;
-        bottom:0;
-        right:10px;
-        width:300px;
-        height:400px;
-        background:#fff;
-        border-radius:10px;
-        box-shadow:0 0 10px rgba(0,0,0,0.2);
-        display:flex;
-        flex-direction:column;
-        overflow:hidden;
-        z-index:9999;
-    `;
-
-    chat.innerHTML = `
-        <div style="background:#004aad;color:#fff;padding:10px;">
-            Support Chat
-            <span onclick="closeChat()" style="float:right;cursor:pointer;">✖</span>
-        </div>
-
-        <div id="chat-messages" style="flex:1;overflow:auto;padding:10px;"></div>
-
-        <div style="display:flex;">
-            <input id="chat-input" placeholder="Type..." style="flex:1;border:none;padding:10px;">
-            <button onclick="sendChat()">Send</button>
-        </div>
-    `;
-
-    document.body.appendChild(chat);
-
-    loadChatMessages();
-}
-
-/* =========================================
-   CLOSE CHAT
-========================================= */
-function closeChat() {
-    const el = document.getElementById("support-chat");
-    if (el) el.remove();
-}
-
-/* =========================================
-   LOAD CHAT MESSAGES
-========================================= */
-function loadChatMessages() {
-
-    const container = document.getElementById("chat-messages");
-    if (!container) return;
-
-    firebase.database()
-        .ref("supportChats/" + currentUser.uid)
-        .on("value", snap => {
-
-            container.innerHTML = "";
-
-            snap.forEach(msg => {
-
-                const data = msg.val();
-
-                container.innerHTML += `
-                    <div style="margin-bottom:5px;">
-                        <b>${data.sender}</b>: ${data.text}
-                    </div>
-                `;
-            });
-
-            container.scrollTop = container.scrollHeight;
-        });
-}
-
-/* =========================================
-   SEND CHAT MESSAGE
-========================================= */
-function sendChat() {
-
-    const input = document.getElementById("chat-input");
-    if (!input) return;
-
-    const text = input.value.trim();
-    if (!text) return;
-
-    firebase.database()
-        .ref("supportChats/" + currentUser.uid)
-        .push({
-            sender: "User",
-            text: text,
-            time: Date.now()
-        });
-
-    input.value = "";
-}
-
-/* =========================================
-   ADMIN REPLY (OPTIONAL)
-========================================= */
-function adminReply(uid, message) {
-
-    if (!ADMIN_UIDS.includes(currentUser.uid)) return;
-
-    firebase.database()
-        .ref("supportChats/" + uid)
-        .push({
-            sender: "Admin",
-            text: message,
-            time: Date.now()
-        });
+function showToast(msg){
+alert(msg);
 }
-
-/* =========================================
-   33. DARK / LIGHT MODE
-========================================= */
-function toggleTheme() {
-
-    const body = document.body;
 
-    body.classList.toggle("dark-mode");
+function login(){
+const email = document.getElementById("email").value;
+const pass = document.getElementById("password").value;
 
-    const mode = body.classList.contains("dark-mode") ? "dark" : "light";
-
-    localStorage.setItem("srp-theme", mode);
-
-    showToast(`Theme: ${mode}`, "info");
+auth.signInWithEmailAndPassword(email, pass)
+.then(()=>showToast("Login Success"))
+.catch(e=>showToast(e.message));
 }
-
-/* =========================================
-   LOAD THEME
-========================================= */
-function loadTheme() {
 
-    const mode = localStorage.getItem("srp-theme");
+function register(){
+const email = document.getElementById("email").value;
+const pass = document.getElementById("password").value;
 
-    if (mode === "dark") {
-        document.body.classList.add("dark-mode");
-    }
+auth.createUserWithEmailAndPassword(email, pass)
+.then(()=>showToast("Registered"))
+.catch(e=>showToast(e.message));
 }
-
-/* =========================================
-   34. ADMIN DASHBOARD (BASIC)
-========================================= */
-function loadAdminStats() {
-
-    if (!currentUser || !ADMIN_UIDS.includes(currentUser.uid)) return;
-
-    const ordersEl = document.getElementById("admin-orders");
-    const usersEl = document.getElementById("admin-users");
-
-    // Total Users
-    firebase.database()
-        .ref("users")
-        .once("value")
-        .then(snap => {
-
-            const count = snap.numChildren();
-
-            if (usersEl) usersEl.innerText = count;
-        });
-
-    // Total Orders
-    firebase.database()
-        .ref("orders")
-        .once("value")
-        .then(snap => {
 
-            let totalOrders = 0;
-
-            snap.forEach(userOrders => {
-                totalOrders += userOrders.numChildren();
-            });
-
-            if (ordersEl) ordersEl.innerText = totalOrders;
-        });
+auth.onAuthStateChanged(user=>{
+if(user){
+currentUser = user;
+document.getElementById("auth-section").style.display="none";
+document.getElementById("home-section").style.display="block";
+loadProducts();
 }
-
-/* =========================================
-   35. SECURITY HELPERS
-========================================= */
+});
 
-// Prevent unauthorized admin access
-function requireAdmin() {
+function loadProducts(){
+db.collection("products").get().then(snap=>{
+const box = document.getElementById("products");
+box.innerHTML="";
 
-    if (!currentUser || !ADMIN_UIDS.includes(currentUser.uid)) {
-        showToast("Access Denied", "danger");
-        return false;
-    }
+snap.forEach(doc=>{
+const p = doc.data();
 
-    return true;
+box.innerHTML += `
+<div class="card">
+<h4>${p.name}</h4>
+<p>₹${p.price}</p>
+<button onclick="addToCart('${doc.id}')">Add</button>
+</div>`;
+});
+});
 }
 
-// Prevent guest access
-function requireLogin() {
-
-    if (!currentUser) {
-        showToast("Login Required", "danger");
-        return false;
-    }
-
-    return true;
+function addToCart(id){
+cartItems.push(id);
+document.getElementById("cart-badge").innerText = cartItems.length;
+showToast("Added");
 }
-
-/* =========================================
-   SAFE FIREBASE WRITE
-========================================= */
-function safeUpdate(ref, data) {
-
-    if (!ref || !data) return;
 
-    return ref.update(data)
-        .catch(err => {
-            console.error(err);
-            showToast("Error", "danger");
-        });
+function checkout(){
+showToast("Order placed");
 }
 
-/* =========================================
-   SAFE DELETE
-========================================= */
-function safeDelete(ref) {
-
-    if (!ref) return;
-
-    return ref.remove()
-        .catch(err => {
-            console.error(err);
-            showToast("Delete Failed", "danger");
-        });
+function toggleMode(){
+document.body.classList.toggle("dark-mode");
 }
-
-/* =========================================
-   AUTO LOAD THEME ON START
-========================================= */
-loadTheme();
 
-<!-- =========================================
-   36. PWA SETUP (APP INSTALL)
-========================================= -->
-
-<!-- Add inside <head> -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#004aad">
-
-<!-- Register Service Worker -->
-
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log("Service Worker Registered"));
-}
 </script>
 </body>
 </html>
