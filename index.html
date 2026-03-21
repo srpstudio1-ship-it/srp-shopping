@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SRP SHOPPING | Global Marketplace</title>
+    <title>SRP SHOPPING | Official Store</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,298 +13,176 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
         :root {
             --srp-blue: #0047AB;
-            --srp-dark: #001F4D;
-            --srp-accent: #FFD700;
-            --srp-bg: #F4F7FE;
+            --srp-dark: #003380;
+            --srp-accent: #007FFF;
+            --srp-white: #ffffff;
+            --srp-gray: #f8fafc;
         }
 
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: var(--srp-bg);
-            color: var(--srp-dark);
-            -webkit-tap-highlight-color: transparent;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--srp-gray); overflow-x: hidden; }
 
-        /* Complex UI Effects */
-        .srp-card {
-            background: white;
-            border-radius: 24px;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 10px 30px -10px rgba(0,71,171,0.1);
-            transition: all 0.3s ease;
-        }
-        .srp-card:active { transform: scale(0.97); }
-
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .gradient-btn {
-            background: linear-gradient(135deg, #0047AB 0%, #007FFF 100%);
-            color: white;
-            box-shadow: 0 8px 20px -6px rgba(0,71,171,0.4);
-        }
-
-        .admin-sidebar-link.active {
-            background: #0047AB;
-            color: white;
-        }
-
-        /* Custom Scrollbar */
+        /* Restored UI Components */
+        .glass-login { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .srp-gradient { background: linear-gradient(135deg, var(--srp-blue) 0%, var(--srp-accent) 100%); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Modal Transitions */
-        .modal-active { transform: translateY(0) !important; opacity: 1 !important; visibility: visible !important; }
-        .srp-modal {
-            position: fixed;
-            inset: 0;
-            background: white;
-            z-index: 9999;
-            transform: translateY(100%);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            visibility: hidden;
-        }
+        .product-card { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
+        .product-card:active { transform: scale(0.96); }
 
-        /* Cart Badge Pulse */
-        @keyframes pulse-red {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        .badge-pulse { animation: pulse-red 2s infinite; }
+        /* Animation & Modals */
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.4s ease-out; }
+        
+        .modal-screen { position: fixed; inset: 0; background: white; z-index: 10000; overflow-y: auto; }
+        .hidden { display: none !important; }
 
-        /* Admin Dashboard Styles */
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            border-left: 5px solid #0047AB;
-        }
+        /* Admin Dashboard Restored Stats */
+        .admin-stat-card { background: white; padding: 20px; border-radius: 20px; border-left: 6px solid var(--srp-blue); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="pb-24">
 
-    <div id="auth-overlay" class="fixed inset-0 bg-[#000814] z-[20000] flex items-center justify-center p-6 hidden">
-        <div class="w-full max-w-md">
-            <div class="text-center mb-10">
-                <div class="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-white text-4xl font-black mb-4 shadow-2xl">S</div>
-                <h2 class="text-3xl font-extrabold text-white tracking-tighter">SRP SHOPPING</h2>
-                <p class="text-blue-400 text-sm font-bold uppercase tracking-widest mt-1">Authorized Access Only</p>
+    <div id="auth-screen" class="fixed inset-0 flex items-center justify-center p-4 bg-black z-[20000] hidden">
+        <div class="glass-login w-full max-w-md rounded-3xl p-8 text-white shadow-2xl">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-black tracking-tighter">SRP <span class="text-blue-500">SHOPPING</span></h1>
+                <p id="auth-sub" class="text-gray-400 mt-2">Sign in to start shopping</p>
             </div>
-            
-            <div class="bg-white/10 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10">
-                <div id="auth-fields" class="space-y-4">
-                    <div class="relative">
-                        <i class="fas fa-at absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="email" id="email" placeholder="Email Address" class="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl text-white outline-none focus:border-blue-500 transition">
-                    </div>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="password" id="pass" placeholder="Password" class="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl text-white outline-none focus:border-blue-500 transition">
-                    </div>
-                    <button onclick="handleAuthAction()" id="auth-main-btn" class="w-full py-4 gradient-btn rounded-2xl font-bold uppercase tracking-widest mt-2">Sign In</button>
-                    
-                    <div class="relative my-6 text-center">
-                        <hr class="border-white/10">
-                        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#121b2b] px-4 text-[10px] text-gray-500 font-bold">POWERED BY SRP</span>
-                    </div>
-
-                    <button onclick="signInWithGoogle()" class="w-full py-4 bg-white text-black rounded-2xl font-bold flex items-center justify-center gap-3">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18">
-                        Google Account
-                    </button>
+            <div class="space-y-4">
+                <input type="email" id="auth-email" placeholder="Email Address" class="w-full bg-white/10 border border-white/20 p-4 rounded-xl focus:outline-none focus:border-blue-500 text-white">
+                <input type="password" id="auth-pass" placeholder="Password" class="w-full bg-white/10 border border-white/20 p-4 rounded-xl focus:outline-none focus:border-blue-500 text-white">
+                <button onclick="handleMainAuth()" id="auth-btn" class="w-full py-4 srp-gradient rounded-xl font-bold uppercase tracking-widest">Login</button>
+                <div class="relative my-6 text-center">
+                    <hr class="border-gray-800"><span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black px-4 text-[10px] text-gray-500">SECURE ACCESS</span>
                 </div>
-            </div>
-            <p class="text-center mt-8 text-gray-500 text-sm">
-                <span id="auth-toggle-text">Don't have an account?</span>
-                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-blue-500 font-bold ml-1">Create One</button>
-            </p>
-        </div>
-    </div>
-
-    <header class="sticky top-0 z-[1000] bg-[#0047AB] text-white">
-        <div class="max-w-7xl mx-auto p-4">
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#0047AB] font-black text-xl shadow-lg">S</div>
-                    <div>
-                        <h1 onclick="adminEntrance()" class="font-black text-lg leading-none cursor-pointer">SRP SHOPPING</h1>
-                        <p class="text-[9px] font-bold opacity-70 tracking-widest uppercase">Verified Store</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold opacity-60 uppercase">My Wallet</p>
-                        <p id="wallet-display" class="font-black text-yellow-400">₹0.00</p>
-                    </div>
-                    <button onclick="openModal('profile-modal')" class="w-10 h-10 rounded-full bg-blue-500/30 border border-blue-400/30 flex items-center justify-center">
-                        <i class="fas fa-user-circle text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="relative group">
-                <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="text" id="global-search" onkeyup="searchEngine()" placeholder="Search 50,000+ Products..." class="w-full bg-white py-4 px-14 rounded-2xl text-black font-semibold shadow-inner focus:ring-4 focus:ring-blue-400/30 outline-none transition-all">
-                <button class="absolute right-4 top-1/2 -translate-y-1/2 bg-blue-100 text-blue-600 p-2 rounded-lg">
-                    <i class="fas fa-sliders-h"></i>
+                <button onclick="googleLogin()" class="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Continue with Google
                 </button>
             </div>
         </div>
+    </div>
 
-        <div class="flex gap-6 overflow-x-auto no-scrollbar px-4 pb-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap">
-            <button onclick="filterCat('All')" class="cat-pill active text-white border-b-2 border-white pb-1">All Items</button>
-            <button onclick="filterCat('Mobiles')" class="cat-pill opacity-60">Mobiles</button>
-            <button onclick="filterCat('Electronics')" class="cat-pill opacity-60">Electronics</button>
-            <button onclick="filterCat('Fashion')" class="cat-pill opacity-60">Fashion</button>
-            <button onclick="filterCat('Gadgets')" class="cat-pill opacity-60">Gadgets</button>
-            <button onclick="filterCat('Appliances')" class="cat-pill opacity-60">Appliances</button>
+    <header class="sticky top-0 bg-[#0047AB] text-white z-50">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center p-4">
+                <div class="flex items-center gap-2">
+                    <button onclick="adminSecurityEntry()" class="text-2xl font-black tracking-tighter">SRP SHOPPING</button>
+                    <span class="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold">PRO</span>
+                </div>
+                <div class="flex items-center gap-4 text-right">
+                    <div>
+                        <span class="text-[10px] opacity-70 uppercase font-bold">Wallet</span>
+                        <div class="flex items-center gap-1"><i class="fas fa-wallet text-yellow-400 text-xs"></i><span id="user-wallet" class="font-bold">₹0.00</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 pb-4">
+                <div class="relative">
+                    <input type="text" id="search-bar" onkeyup="liveSearch()" placeholder="Search electronics, fashion, shoes..." class="w-full py-3 px-5 pr-12 rounded-xl text-black outline-none shadow-lg">
+                    <i class="fas fa-search absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+            <div id="cat-scroll" class="flex gap-6 overflow-x-auto no-scrollbar px-4 pb-3 text-sm font-medium whitespace-nowrap border-t border-blue-400/30 pt-3">
+                <button onclick="filterCategory('all')" class="cat-chip active border-b-2 border-white">All Items</button>
+                <button onclick="filterCategory('Mobiles')" class="cat-chip opacity-70">Mobiles</button>
+                <button onclick="filterCategory('Electronics')" class="cat-chip opacity-70">Electronics</button>
+                <button onclick="filterCategory('Fashion')" class="cat-chip opacity-70">Fashion</button>
+                <button onclick="filterCategory('Home')" class="cat-chip opacity-70">Home</button>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4">
-        <div class="w-full h-48 bg-gradient-to-r from-blue-700 to-indigo-800 rounded-[2.5rem] mb-8 relative overflow-hidden flex items-center px-10 shadow-2xl">
-            <div class="relative z-10">
-                <span class="bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase">Festival Offer</span>
-                <h2 class="text-3xl font-black text-white italic mt-2">FLAT 50% OFF</h2>
-                <p class="text-blue-100 text-sm mt-1">On all SRP Certified Refurbished Phones</p>
-                <button class="mt-4 bg-white text-blue-700 font-bold px-6 py-2 rounded-xl text-xs shadow-lg">SHOP NOW</button>
-            </div>
-            <i class="fas fa-bolt absolute -right-10 -bottom-10 text-[15rem] text-white/5 rotate-12"></i>
+    <main class="container mx-auto p-3">
+        <section class="mb-6 h-44 srp-gradient rounded-2xl p-8 relative overflow-hidden shadow-xl text-white">
+            <h2 class="text-3xl font-black italic">MEGA SRP SALE</h2>
+            <p class="text-sm opacity-90 mt-1">Get Extra 10% Off via Wallet</p>
+            <button class="mt-4 bg-white text-[#0047AB] px-6 py-2 rounded-full font-extrabold text-xs">CLAIM NOW</button>
+            <i class="fas fa-shopping-bag absolute -right-4 -bottom-4 text-9xl text-white/10 rotate-12"></i>
+        </section>
+
+        <div class="flex justify-between items-center mb-4 px-1">
+            <h3 class="font-bold text-gray-800"><i class="fas fa-bolt text-yellow-500 mr-2"></i>Flash Deals</h3>
+            <span id="grid-count" class="text-xs text-gray-500 font-bold">0 Products</span>
         </div>
 
-        <div class="flex justify-between items-end mb-6">
-            <div>
-                <h3 class="text-2xl font-black tracking-tighter">New Arrivals</h3>
-                <p class="text-xs text-gray-500 font-bold uppercase">Based on your activity</p>
-            </div>
-            <div class="text-xs font-bold text-blue-600 bg-blue-100 px-3 py-1.5 rounded-lg">
-                <span id="total-results">0</span> Items Found
-            </div>
-        </div>
-
-        <div id="main-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div id="product-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             </div>
     </main>
 
-    <div id="cart-modal" class="srp-modal">
-        <div class="h-full flex flex-col">
-            <header class="p-6 flex items-center justify-between border-b">
-                <div class="flex items-center gap-4">
-                    <button onclick="closeModal('cart-modal')" class="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h2 class="text-2xl font-black">My Shopping Cart</h2>
-                </div>
-                <button onclick="clearSrpCart()" class="text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg">CLEAR ALL</button>
-            </header>
+    <div id="product-modal" class="modal-screen hidden animate-slide-up">
+        <div id="modal-body-content"></div>
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md flex gap-3 border-t">
+            <button onclick="addToCartSync()" class="flex-1 py-4 bg-yellow-400 rounded-2xl font-black text-sm shadow-lg">ADD TO CART</button>
+            <button onclick="openCart()" class="flex-1 py-4 bg-[#0047AB] text-white rounded-2xl font-black text-sm shadow-lg">BUY NOW</button>
+        </div>
+    </div>
 
-            <div id="cart-items-container" class="flex-1 overflow-y-auto p-6 space-y-4">
-                </div>
+    <div id="cart-modal" class="modal-screen hidden">
+        <header class="p-4 border-b flex items-center gap-4 sticky top-0 bg-white z-10">
+            <button onclick="closeModal('cart-modal')" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="font-black text-xl">SRP Shopping Bag</h2>
+        </header>
+        <div id="cart-list" class="p-4 space-y-4 pb-40"></div>
+        <div class="fixed bottom-0 inset-x-0 p-6 bg-white border-t rounded-t-3xl shadow-2xl">
+            <div class="flex justify-between mb-4 font-bold">
+                <span>Total Payable</span>
+                <span id="cart-total" class="text-blue-700 text-xl">₹0.00</span>
+            </div>
+            <button onclick="checkoutWallet()" class="w-full py-4 srp-gradient text-white rounded-2xl font-black">PAY VIA WALLET</button>
+        </div>
+    </div>
 
-            <div class="p-8 glass-nav rounded-t-[3rem] shadow-2xl">
-                <div class="space-y-3 mb-6">
-                    <div class="flex justify-between text-sm text-gray-500 font-medium">
-                        <span>Bag Total (MRP)</span>
-                        <span id="cart-mrp-total">₹0</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-green-600 font-bold">
-                        <span>SRP Discount</span>
-                        <span id="cart-saving">- ₹0</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-gray-500 font-medium">
-                        <span>Delivery Fee</span>
-                        <span class="text-blue-600">FREE</span>
-                    </div>
-                    <hr class="border-dashed">
-                    <div class="flex justify-between items-center pt-2">
-                        <span class="text-xl font-black">Total Payable</span>
-                        <span id="cart-final-total" class="text-2xl font-black text-blue-700">₹0.00</span>
-                    </div>
+    <div id="admin-modal" class="modal-screen hidden bg-gray-50">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-black">Master Console</h1>
+                <button onclick="closeModal('admin-modal')" class="text-red-500 font-bold">Exit</button>
+            </div>
+            <div id="admin-stats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"></div>
+            <div class="bg-white p-6 rounded-3xl border">
+                <h3 class="font-bold mb-4">Add New Product</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="p-name" placeholder="Product Name" class="p-3 bg-gray-100 rounded-lg">
+                    <input type="number" id="p-price" placeholder="Price" class="p-3 bg-gray-100 rounded-lg">
+                    <input type="text" id="p-cat" placeholder="Category" class="p-3 bg-gray-100 rounded-lg">
+                    <input type="text" id="p-img" placeholder="Image URL" class="p-3 bg-gray-100 rounded-lg">
+                    <button onclick="uploadProduct()" class="col-span-2 py-3 srp-gradient text-white rounded-xl font-bold">UPLOAD TO SRP CLOUD</button>
                 </div>
-                <button onclick="proceedToCheckout()" class="w-full py-5 gradient-btn rounded-2xl font-black text-lg flex items-center justify-center gap-4">
-                    <span>CHECKOUT SECURELY</span>
-                    <i class="fas fa-shield-alt opacity-50"></i>
-                </button>
             </div>
         </div>
     </div>
 
-    <div id="product-modal" class="srp-modal">
-        <div id="product-detail-content" class="h-full overflow-y-auto pb-32">
-            </div>
-        <div class="fixed bottom-0 inset-x-0 p-6 glass-nav flex gap-4 z-[10001]">
-            <button onclick="addToCartEngine()" class="flex-1 py-5 bg-yellow-400 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition">ADD TO CART</button>
-            <button onclick="instantBuy()" class="flex-1 py-5 bg-[#0047AB] text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition">BUY NOW</button>
-        </div>
-    </div>
-
-    <div id="admin-modal" class="srp-modal bg-[#f8f9fc]">
-        <div class="h-full flex flex-col md:flex-row">
-            <div class="w-full md:w-72 bg-white border-r p-6 flex flex-col">
-                <div class="flex items-center gap-3 mb-10">
-                    <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white font-black">A</div>
-                    <h2 class="font-black text-xl">CONSOLE</h2>
-                </div>
-                <nav class="space-y-2 flex-1">
-                    <button onclick="switchAdminTab('dashboard')" class="admin-sidebar-link active w-full flex items-center gap-4 p-4 rounded-xl font-bold text-sm">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </button>
-                    <button onclick="switchAdminTab('products')" class="admin-sidebar-link w-full flex items-center gap-4 p-4 rounded-xl font-bold text-sm">
-                        <i class="fas fa-box"></i> Manage Products
-                    </button>
-                    <button onclick="switchAdminTab('orders')" class="admin-sidebar-link w-full flex items-center gap-4 p-4 rounded-xl font-bold text-sm">
-                        <i class="fas fa-shopping-bag"></i> Live Orders
-                    </button>
-                    <button onclick="switchAdminTab('users')" class="admin-sidebar-link w-full flex items-center gap-4 p-4 rounded-xl font-bold text-sm">
-                        <i class="fas fa-users"></i> User Database
-                    </button>
-                </nav>
-                <button onclick="closeModal('admin-modal')" class="p-4 bg-gray-100 rounded-xl font-bold text-sm text-red-600 mt-auto">Exit Console</button>
-            </div>
-
-            <div id="admin-main-view" class="flex-1 p-8 overflow-y-auto">
-                </div>
-        </div>
-    </div>
-
-    <nav class="fixed bottom-0 inset-x-0 h-20 glass-nav flex items-center justify-around px-4 z-[5000]">
-        <button onclick="location.reload()" class="flex flex-col items-center gap-1 text-blue-700">
-            <i class="fas fa-house-damage text-xl"></i>
-            <span class="text-[9px] font-black uppercase">Home</span>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white h-20 border-t flex items-center justify-around px-2 z-[1000]">
+        <button onclick="location.reload()" class="flex flex-col items-center gap-1 text-[#0047AB]">
+            <i class="fas fa-home text-lg"></i><span class="text-[9px] font-black uppercase">Home</span>
         </button>
-        <button onclick="openModal('cart-modal')" class="flex flex-col items-center gap-1 text-gray-400 relative">
-            <i class="fas fa-shopping-basket text-xl"></i>
-            <span class="text-[9px] font-bold uppercase">Cart</span>
-            <span id="global-cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white badge-pulse">0</span>
+        <button onclick="openCart()" class="flex flex-col items-center gap-1 text-gray-400 relative">
+            <i class="fas fa-shopping-cart text-lg"></i><span class="text-[9px] font-bold uppercase">Cart</span>
+            <span id="cart-badge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
         </button>
-        <button onclick="openModal('admin-modal')" class="w-14 h-14 bg-[#0047AB] rounded-2xl flex items-center justify-center text-white shadow-2xl -translate-y-6 border-4 border-[#F4F7FE]">
+        <button onclick="adminSecurityEntry()" class="w-14 h-14 bg-[#0047AB] rounded-2xl flex items-center justify-center text-white shadow-xl -translate-y-4">
             <i class="fas fa-plus"></i>
         </button>
-        <button onclick="openModal('orders-modal')" class="flex flex-col items-center gap-1 text-gray-400">
-            <i class="fas fa-truck-loading text-xl"></i>
-            <span class="text-[9px] font-bold uppercase">Orders</span>
+        <button onclick="alert('Wallet Recharge coming soon!')" class="flex flex-col items-center gap-1 text-gray-400">
+            <i class="fas fa-wallet text-lg"></i><span class="text-[9px] font-bold uppercase">Wallet</span>
         </button>
-        <button onclick="openModal('profile-modal')" class="flex flex-col items-center gap-1 text-gray-400">
-            <i class="fas fa-fingerprint text-xl"></i>
-            <span class="text-[9px] font-bold uppercase">Me</span>
+        <button onclick="auth.signOut()" class="flex flex-col items-center gap-1 text-gray-400">
+            <i class="fas fa-sign-out-alt text-lg"></i><span class="text-[9px] font-bold uppercase">Exit</span>
         </button>
     </nav>
 
     <script>
-        // 1. MASTER INITIALIZATION
+        // --- SRP ENGINE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
             databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
             projectId: "srp-shopping-54bbb",
-            storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+            storageBucket: "srp-shopping-54bbb.appspot.com",
             messagingSenderId: "491906168702",
             appId: "1:491906168702:web:2873565fcd2d561077252f"
         };
@@ -314,327 +192,221 @@
         const db = firebase.firestore();
         const rdb = firebase.database();
 
-        let currentUser = null;
-        let srpProducts = [];
-        let activeProduct = null;
-        let isLogin = true;
+        let allProducts = [];
+        let currentAuthUser = null;
+        let selectedProduct = null;
 
-        // 2. AUTHENTICATION SYSTEMS
+        // --- AUTH LOGIC ---
         auth.onAuthStateChanged(user => {
             if (user) {
-                currentUser = user;
-                document.getElementById('auth-overlay').classList.add('hidden');
-                syncSRPUser(user);
-                loadProducts();
-                initCartListener();
+                currentAuthUser = user;
+                document.getElementById('auth-screen').classList.add('hidden');
+                initSrpCloud();
             } else {
-                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
             }
         });
 
-        async function handleAuthAction() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            if(!email || !pass) return alert("Missing Credentials");
-
+        async function handleMainAuth() {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
             try {
-                if(isLogin) {
-                    await auth.signInWithEmailAndPassword(email, pass);
-                } else {
+                const res = await auth.signInWithEmailAndPassword(email, pass);
+                syncProfile(res.user);
+            } catch(e) {
+                // If login fails, try creating account (Auto-switch)
+                try {
                     const res = await auth.createUserWithEmailAndPassword(email, pass);
                     await db.collection("users").doc(res.user.uid).set({
-                        name: email.split('@')[0],
                         email: email,
-                        walletBalance: 1500, // Sign-up Bonus
-                        role: 'customer',
-                        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        walletBalance: 1000,
+                        joined: new Date().toISOString()
                     });
-                }
-            } catch(e) { alert(e.message); }
-        }
-
-        function toggleAuthMode() {
-            isLogin = !isLogin;
-            document.getElementById('auth-main-btn').innerText = isLogin ? 'Sign In' : 'Create Account';
-            document.getElementById('auth-toggle-btn').innerText = isLogin ? 'Create One' : 'Login';
-        }
-
-        // 3. PRODUCT & ENGINE LOGIC
-        async function loadProducts() {
-            // Check Firestore first, otherwise use fallback data
-            const snap = await db.collection("products").get();
-            if(!snap.empty) {
-                srpProducts = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            } else {
-                generateDemoData();
-            }
-            renderMainGrid(srpProducts);
-        }
-
-        function generateDemoData() {
-            const cats = ['Mobiles', 'Electronics', 'Fashion', 'Gadgets'];
-            for(let i=0; i<30; i++) {
-                const price = Math.floor(Math.random() * 20000) + 999;
-                srpProducts.push({
-                    id: 'SRP_DEV_'+i,
-                    name: `SRP Premium Product #${i+100}`,
-                    price: price,
-                    mrp: Math.floor(price * 1.5),
-                    category: cats[Math.floor(Math.random()*cats.length)],
-                    image: `https://picsum.photos/500/500?random=${i}`,
-                    rating: (Math.random()*2 + 3).toFixed(1),
-                    stock: 50,
-                    description: "Experience the pinnacle of SRP engineering. This product features high durability, sleek design, and guaranteed satisfaction for all SRP shoppers."
-                });
+                } catch(err) { alert(err.message); }
             }
         }
 
-        function renderMainGrid(list) {
-            const grid = document.getElementById('main-grid');
-            document.getElementById('total-results').innerText = list.length;
-            
+        // --- CORE FEATURES ---
+        async function initSrpCloud() {
+            // Load Real Products from Firestore
+            db.collection("products").onSnapshot(snap => {
+                allProducts = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                if(allProducts.length === 0) seedDemoData(); 
+                renderGrid(allProducts);
+            });
+
+            // Sync Wallet
+            db.collection("users").doc(currentAuthUser.uid).onSnapshot(doc => {
+                if(doc.exists) document.getElementById('user-wallet').innerText = `₹${doc.data().walletBalance.toLocaleString()}`;
+            });
+
+            // Sync Cart Badge
+            rdb.ref(`carts/${currentAuthUser.uid}`).on('value', snap => {
+                const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+                document.getElementById('cart-badge').innerText = count;
+            });
+        }
+
+        function renderGrid(list) {
+            const grid = document.getElementById('product-grid');
+            document.getElementById('grid-count').innerText = `${list.length} Products`;
             grid.innerHTML = list.map(p => `
-                <div onclick="viewDetails('${p.id}')" class="srp-card bg-white p-3 cursor-pointer">
-                    <div class="relative rounded-2xl overflow-hidden aspect-square bg-gray-50 mb-3">
+                <div onclick="openProductDetail('${p.id}')" class="product-card bg-white p-3 rounded-2xl shadow-sm cursor-pointer">
+                    <div class="relative mb-3 bg-gray-50 rounded-xl overflow-hidden aspect-square">
                         <img src="${p.image}" class="w-full h-full object-cover">
-                        <div class="absolute top-2 left-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full">NEW</div>
+                        <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Save ${Math.round(((p.mrp-p.price)/p.mrp)*100)}%</div>
                     </div>
-                    <p class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">${p.category}</p>
-                    <h4 class="text-xs font-bold text-gray-800 truncate">${p.name}</h4>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="text-sm font-black">₹${p.price.toLocaleString()}</span>
-                        <span class="text-[10px] line-through text-gray-400 font-medium">₹${p.mrp.toLocaleString()}</span>
-                    </div>
-                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                        <div class="flex items-center gap-1">
-                            <i class="fas fa-star text-yellow-400 text-[8px]"></i>
-                            <span class="text-[10px] font-black">${p.rating}</span>
-                        </div>
-                        <button class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-blue-600 hover:text-white transition">
-                            <i class="fas fa-cart-plus text-xs"></i>
-                        </button>
+                    <p class="text-[10px] text-blue-600 font-bold uppercase mb-1">${p.category}</p>
+                    <h4 class="text-xs font-semibold text-gray-800 line-clamp-2 h-8">${p.name}</h4>
+                    <div class="flex items-center gap-1 mt-2">
+                        <span class="text-sm font-black text-gray-900">₹${p.price.toLocaleString()}</span>
+                        <span class="text-[9px] line-through text-gray-400">₹${p.mrp.toLocaleString()}</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 4. CART & WALLET SYSTEMS
-        function initCartListener() {
-            rdb.ref(`carts/${currentUser.uid}`).on('value', snap => {
-                const cartData = snap.val() || {};
-                const items = Object.values(cartData);
-                document.getElementById('global-cart-count').innerText = items.length;
-                renderCartUI(items);
-            });
+        function openProductDetail(id) {
+            const p = allProducts.find(x => x.id === id);
+            selectedProduct = p;
+            const detailModal = document.getElementById('product-modal');
+            const body = document.getElementById('modal-body-content');
+
+            body.innerHTML = `
+                <header class="sticky top-0 bg-white border-b flex items-center justify-between p-4 z-50">
+                    <button onclick="closeModal('product-modal')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"><i class="fas fa-arrow-left"></i></button>
+                    <span class="font-bold text-gray-800 truncate max-w-[200px]">${p.name}</span>
+                    <i class="fas fa-share-alt text-gray-500"></i>
+                </header>
+                <img src="${p.image}" class="w-full h-80 object-contain bg-white">
+                <div class="p-5">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 leading-tight">${p.name}</h2>
+                            <p class="text-xs text-blue-600 font-bold uppercase mt-1 tracking-wider">${p.category}</p>
+                        </div>
+                        <div class="bg-green-700 text-white px-2 py-1 rounded text-sm font-bold">4.5 <i class="fas fa-star text-[10px]"></i></div>
+                    </div>
+                    <div class="mt-4 flex items-baseline gap-3">
+                        <span class="text-3xl font-black text-blue-800">₹${p.price.toLocaleString()}</span>
+                        <span class="text-sm text-gray-400 line-through">₹${p.mrp.toLocaleString()}</span>
+                    </div>
+                    <div class="border-t pt-6 mt-6">
+                        <h3 class="font-black text-gray-900 mb-3 uppercase tracking-tighter">Product Specifications</h3>
+                        <div class="text-sm text-gray-600 leading-relaxed space-y-4">
+                            <p>${(p.desc || "High-quality premium product exclusively from SRP SHOPPING. Built for performance and durability.").repeat(20)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            detailModal.classList.remove('hidden');
         }
 
-        function addToCartEngine() {
-            if(!activeProduct) return;
-            const cartRef = rdb.ref(`carts/${currentUser.uid}/${activeProduct.id}`);
-            cartRef.set({
-                ...activeProduct,
-                qty: 1,
-                addedAt: Date.now()
+        // --- CART OPERATIONS ---
+        function addToCartSync() {
+            if(!selectedProduct) return;
+            rdb.ref(`carts/${currentAuthUser.uid}/${selectedProduct.id}`).set({
+                ...selectedProduct,
+                qty: 1
             });
-            alert("Added to SRP Cart!");
+            alert("Success! Added to SRP Cart.");
             closeModal('product-modal');
         }
 
-        function renderCartUI(items) {
-            const container = document.getElementById('cart-items-container');
-            let totalPayable = 0;
-            let totalMrp = 0;
-
-            if(items.length === 0) {
-                container.innerHTML = `<div class="text-center py-20 opacity-30"><i class="fas fa-shopping-basket text-6xl mb-4"></i><p class="font-bold">Your cart is empty</p></div>`;
-            } else {
-                container.innerHTML = items.map(item => {
-                    totalPayable += (item.price * item.qty);
-                    totalMrp += (item.mrp * item.qty);
+        function openCart() {
+            const cartModal = document.getElementById('cart-modal');
+            rdb.ref(`carts/${currentAuthUser.uid}`).once('value', snap => {
+                const data = snap.val() || {};
+                const list = Object.values(data);
+                let total = 0;
+                
+                document.getElementById('cart-list').innerHTML = list.map(item => {
+                    total += (item.price * item.qty);
                     return `
-                        <div class="flex gap-4 bg-white p-4 rounded-3xl border border-gray-100">
-                            <img src="${item.image}" class="w-20 h-20 rounded-2xl object-cover">
+                        <div class="flex gap-4 bg-gray-50 p-3 rounded-2xl">
+                            <img src="${item.image}" class="w-16 h-16 rounded-xl object-cover bg-white">
                             <div class="flex-1">
-                                <h4 class="font-bold text-sm leading-tight">${item.name}</h4>
-                                <p class="text-blue-600 font-black mt-1">₹${item.price.toLocaleString()}</p>
-                                <div class="flex items-center gap-4 mt-3">
-                                    <div class="flex items-center bg-gray-100 rounded-lg px-2 py-1 gap-3">
-                                        <button onclick="updateQty('${item.id}', -1)" class="w-6 h-6">-</button>
-                                        <span class="text-xs font-black">${item.qty}</span>
-                                        <button onclick="updateQty('${item.id}', 1)" class="w-6 h-6">+</button>
-                                    </div>
-                                    <button onclick="removeFromCart('${item.id}')" class="text-xs text-red-500 font-bold">Remove</button>
-                                </div>
+                                <h4 class="text-sm font-bold truncate">${item.name}</h4>
+                                <p class="text-blue-700 font-black">₹${item.price.toLocaleString()}</p>
                             </div>
+                            <button onclick="removeItem('${item.id}')" class="text-red-500"><i class="fas fa-trash"></i></button>
                         </div>
                     `;
                 }).join('');
-            }
-
-            document.getElementById('cart-final-total').innerText = `₹${totalPayable.toLocaleString()}`;
-            document.getElementById('cart-mrp-total').innerText = `₹${totalMrp.toLocaleString()}`;
-            document.getElementById('cart-saving').innerText = `- ₹${(totalMrp - totalPayable).toLocaleString()}`;
+                document.getElementById('cart-total').innerText = `₹${total.toLocaleString()}`;
+                cartModal.classList.remove('hidden');
+            });
         }
 
-        async function proceedToCheckout() {
-            // Standard SRP Checkout: Check Wallet First
-            const userSnap = await db.collection("users").doc(currentUser.uid).get();
-            const balance = userSnap.data().walletBalance || 0;
-            const amount = parseInt(document.getElementById('cart-final-total').innerText.replace(/[₹,]/g, ''));
-
+        async function checkoutWallet() {
+            const amountStr = document.getElementById('cart-total').innerText.replace(/[₹,]/g, '');
+            const amount = parseInt(amountStr);
             if(amount === 0) return alert("Cart is empty");
 
-            if(balance < amount) {
-                alert(`Insufficient Balance! You need ₹${amount - balance} more in your SRP Wallet.`);
-                return;
-            }
+            const userRef = db.collection("users").doc(currentAuthUser.uid);
+            const userDoc = await userRef.get();
+            const balance = userDoc.data().walletBalance;
 
-            // Execute Transaction
-            const orderId = "SRP-ORD-" + Math.floor(100000 + Math.random() * 900000);
-            await db.collection("orders").add({
-                orderId,
-                uid: currentUser.uid,
-                amount,
-                status: 'Confirmed',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            if(balance < amount) return alert("Insufficient Wallet Balance!");
 
-            await db.collection("users").doc(currentUser.uid).update({
-                walletBalance: balance - amount
-            });
-
-            rdb.ref(`carts/${currentUser.uid}`).remove();
-            alert("Order Placed Successfully via SRP Wallet!");
+            await userRef.update({ walletBalance: balance - amount });
+            rdb.ref(`carts/${currentAuthUser.uid}`).remove();
+            alert("ORDER PLACED SUCCESSFULLY!");
             closeModal('cart-modal');
         }
 
-        // 5. UTILITY & MODAL MANAGEMENT
-        function openModal(id) {
-            document.getElementById(id).classList.add('modal-active');
-            document.body.style.overflow = 'hidden';
-            if(id === 'admin-modal') loadAdminDashboard();
+        // --- ADMIN SYSTEMS ---
+        function adminSecurityEntry() {
+            const pass = prompt("SRP SECURITY: Enter Admin PIN");
+            if(pass === "1234") {
+                loadAdminDashboard();
+                document.getElementById('admin-modal').classList.remove('hidden');
+            } else {
+                alert("ACCESS DENIED");
+            }
         }
 
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('modal-active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function viewDetails(id) {
-            const p = srpProducts.find(x => x.id === id);
-            activeProduct = p;
-            const content = document.getElementById('product-detail-content');
-            
-            content.innerHTML = `
-                <div class="relative">
-                    <img src="${p.image}" class="w-full h-[400px] object-cover">
-                    <button onclick="closeModal('product-modal')" class="absolute top-6 left-6 w-12 h-12 bg-white/50 backdrop-blur rounded-2xl flex items-center justify-center"><i class="fas fa-arrow-left"></i></button>
-                </div>
-                <div class="p-8 -mt-10 bg-white rounded-t-[3rem] relative shadow-2xl">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-3 py-1 rounded-full uppercase">${p.category}</span>
-                            <h2 class="text-2xl font-black mt-3 text-slate-800 leading-tight">${p.name}</h2>
-                        </div>
-                        <div class="bg-green-100 text-green-700 px-3 py-2 rounded-2xl flex items-center gap-1 font-black">
-                            <span>${p.rating}</span> <i class="fas fa-star text-[10px]"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-baseline gap-4 mt-6">
-                        <span class="text-4xl font-black text-blue-700">₹${p.price.toLocaleString()}</span>
-                        <span class="text-lg line-through text-gray-400">₹${p.mrp.toLocaleString()}</span>
-                        <span class="text-green-600 font-bold">Save ${Math.round(((p.mrp-p.price)/p.mrp)*100)}%</span>
-                    </div>
-
-                    <div class="my-8 p-6 bg-gray-50 rounded-3xl space-y-4">
-                        <h4 class="font-black text-sm uppercase tracking-widest">Description</h4>
-                        <p class="text-sm text-gray-600 leading-relaxed">${p.description}</p>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div class="p-4 border rounded-2xl"><i class="fas fa-truck text-blue-600 mb-2"></i><p class="text-[9px] font-bold">Fast Delivery</p></div>
-                        <div class="p-4 border rounded-2xl"><i class="fas fa-shield-virus text-blue-600 mb-2"></i><p class="text-[9px] font-bold">SRP Secure</p></div>
-                        <div class="p-4 border rounded-2xl"><i class="fas fa-undo text-blue-600 mb-2"></i><p class="text-[9px] font-bold">7 Day Return</p></div>
-                    </div>
-                </div>
-            `;
-            openModal('product-modal');
-        }
-
-        // 6. ADMIN CONSOLE FUNCTIONS
         async function loadAdminDashboard() {
-            const container = document.getElementById('admin-main-view');
+            const userSnap = await db.collection("users").get();
+            const orderSnap = await db.collection("products").get(); // Example stat
             
-            // Fetch live stats
-            const ordersSnap = await db.collection("orders").get();
-            const usersSnap = await db.collection("users").get();
-            let revenue = 0;
-            ordersSnap.forEach(doc => revenue += doc.data().amount);
-
-            container.innerHTML = `
-                <h1 class="text-3xl font-black mb-8">System Analytics</h1>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div class="stat-card">
-                        <p class="text-gray-500 font-bold text-xs uppercase">Total Revenue</p>
-                        <h2 class="text-3xl font-black mt-2">₹${revenue.toLocaleString()}</h2>
-                    </div>
-                    <div class="stat-card" style="border-color: #facc15">
-                        <p class="text-gray-500 font-bold text-xs uppercase">Live Orders</p>
-                        <h2 class="text-3xl font-black mt-2">${ordersSnap.size}</h2>
-                    </div>
-                    <div class="stat-card" style="border-color: #22c55e">
-                        <p class="text-gray-500 font-bold text-xs uppercase">Total Users</p>
-                        <h2 class="text-3xl font-black mt-2">${usersSnap.size}</h2>
-                    </div>
-                </div>
-
-                <div class="bg-white p-8 rounded-[2.5rem] border">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-black text-xl">Inventory Management</h3>
-                        <button onclick="addNewProduct()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs">+ ADD NEW</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="text-xs text-gray-400 uppercase tracking-widest border-b">
-                                    <th class="pb-4">Product</th>
-                                    <th class="pb-4">Price</th>
-                                    <th class="pb-4">Stock</th>
-                                    <th class="pb-4">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm font-bold">
-                                ${srpProducts.slice(0, 10).map(p => `
-                                    <tr class="border-b last:border-0">
-                                        <td class="py-4">${p.name}</td>
-                                        <td class="py-4">₹${p.price}</td>
-                                        <td class="py-4">${p.stock}</td>
-                                        <td class="py-4">
-                                            <button class="text-blue-600 mr-3">Edit</button>
-                                            <button class="text-red-500">Delete</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            document.getElementById('admin-stats').innerHTML = `
+                <div class="admin-stat-card"><p class="text-xs font-bold text-gray-400">TOTAL USERS</p><h2 class="text-2xl font-black">${userSnap.size}</h2></div>
+                <div class="admin-stat-card"><p class="text-xs font-bold text-gray-400">TOTAL PRODUCTS</p><h2 class="text-2xl font-black">${orderSnap.size}</h2></div>
+                <div class="admin-stat-card"><p class="text-xs font-bold text-gray-400">SYSTEM STATUS</p><h2 class="text-2xl font-black text-green-600">ONLINE</h2></div>
             `;
         }
 
-        function syncSRPUser(user) {
-            db.collection("users").doc(user.uid).onSnapshot(doc => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    document.getElementById('wallet-display').innerText = `₹${(data.walletBalance || 0).toLocaleString()}`;
-                }
-            });
+        async function uploadProduct() {
+            const data = {
+                name: document.getElementById('p-name').value,
+                price: parseInt(document.getElementById('p-price').value),
+                mrp: parseInt(document.getElementById('p-price').value) * 1.5,
+                category: document.getElementById('p-cat').value,
+                image: document.getElementById('p-img').value || "https://picsum.photos/400/400",
+                desc: "Premium quality product from SRP studio."
+            };
+            await db.collection("products").add(data);
+            alert("Uploaded to SRP Cloud!");
         }
 
-        window.onload = () => {
-            console.log("SRP Shopping Engine Fully Loaded.");
-        };
+        // --- HELPERS ---
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        function seedDemoData() {
+            const demo = [
+                {name: "iPhone 15 Clone", price: 4500, mrp: 9000, category: "Mobiles", image: "https://picsum.photos/400/400?1"},
+                {name: "SRP Wireless Buds", price: 1200, mrp: 2500, category: "Electronics", image: "https://picsum.photos/400/400?2"},
+                {name: "Premium Cotton Tee", price: 499, mrp: 999, category: "Fashion", image: "https://picsum.photos/400/400?3"}
+            ];
+            demo.forEach(p => db.collection("products").add(p));
+        }
+
+        function liveSearch() {
+            const q = document.getElementById('search-bar').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
+            renderGrid(filtered);
+        }
     </script>
 </body>
 </html>
