@@ -356,8 +356,10 @@ let isAdmin = false;
 
 // AUTH OBSERVER
 auth.onAuthStateChanged(user => {
-    if(user){
+    if (user) {
         currentUser = user;
+
+        console.log("SRP Authenticated:", user.uid);
 
         updateWallet();
         loadUserProfile();
@@ -368,9 +370,12 @@ auth.onAuthStateChanged(user => {
         loadNotifications();
         loadAddresses();
 
-        if(user.uid === ADMIN_UID){
+        if(user.uid === ADMIN_UID) {
             document.getElementById('admin-nav-item').style.display = "block";
         }
+
+    } else {
+        console.log("No User Found");
     }
 });
 // ==========================================
@@ -1076,7 +1081,10 @@ async function processVendorPayout(vendorId, amount) {
 window.onload = () => {
     // Initial UI state
     document.getElementById('cart-badge').innerText = cartItems.length;
-    
+    monitorNetworkStrength();
+setInterval(updateSignalUI, 3000);
+    const el = document.getElementById("id");
+if(!el) return;
     // Check Auth State
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -1086,6 +1094,8 @@ window.onload = () => {
             const ADMIN_UID = "LRukxuWhNeZEElB0MfxKV04nsgH3,5zaPB92EHJPIZLbttmwvsxDF64F3,qFVYJKbY25eUzQxZUjT5fCRTku42";
                 document.getElementById('admin-nav-item').style.display = "block";
             }
+        const el = document.getElementById("id");
+if(!el) return;
         } else {
             console.log("No User Found");
         }
@@ -1101,6 +1111,14 @@ window.onload = () => {
 function openDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('SRP_Offline_Vault', 1);
+
+        request.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('pending_orders')) {
+                db.createObjectStore('pending_orders', { keyPath: 'id' });
+            }
+        };
+
         request.onsuccess = e => resolve(e.target.result);
         request.onerror = e => reject(e);
     });
@@ -1122,9 +1140,12 @@ function applyCoupon(code, cartTotal) {
     showToast(`Coupon Applied! Saved ₹${discount}`, "success");
 
     return { discount, newTotal };
+    }
 }
     async function processWithdrawalRecord(maxBalance) {
     const amount = parseFloat(document.getElementById('w-amount').value);
+        const el = document.getElementById("id");
+if(!el) return;
     const account = document.getElementById('w-account').value;
 
     if (!amount || amount < 500) return showToast("Min ₹500", "danger");
@@ -1207,7 +1228,8 @@ request.onupgradeneeded = e => {
     function updateSignalUI() {
     const el = document.getElementById('srp-signal-status');
     if (!el) return;
-
+const el = document.getElementById("id");
+if(!el) return;
     const conn = navigator.connection;
 
     if (!conn) return;
@@ -1296,7 +1318,8 @@ function addAddress(){
 function loadAddresses(){
     const container = document.getElementById("address-list");
     if(!container) return;
-
+const el = document.getElementById("id");
+if(!el) return;
     firebase.database().ref("addresses/" + currentUser.uid)
     .on("value", snap => {
         container.innerHTML = "";
@@ -1350,12 +1373,18 @@ function loadWallet(){
 
         document.getElementById("wallet-balance").innerText =
             "₹" + (userProfile.wallet || 0).toFixed(2);
+        const el = document.getElementById("id");
+if(!el) return;
     });
 }
 
-function rechargeWallet(){
+ function rechargeWallet(){
     const amt = parseFloat(prompt("Enter amount:"));
-    if(!amt) return;
+
+    if(!amt || amt <= 0){
+        showToast("Invalid Amount", "danger");
+        return;
+    }
 
     firebase.database().ref("users/" + currentUser.uid).once("value")
     .then(snap => {
@@ -1368,15 +1397,15 @@ function rechargeWallet(){
 
         showToast("Wallet Recharged!", "success");
     });
-}
-
+ }
 // ==========================================
 // 7.5 WISHLIST
 // ==========================================
 function loadWishlist(){
     const container = document.getElementById("wishlist");
     if(!container) return;
-
+const el = document.getElementById("id");
+if(!el) return;
     firebase.database().ref("wishlist/" + currentUser.uid)
     .on("value", snap => {
         container.innerHTML = "";
@@ -1419,6 +1448,9 @@ function moveToCart(id){
 function loadCart(){
     const container = document.getElementById("cart-items");
     const totalBox = document.getElementById("cart-total");
+const el = document.getElementById("id");
+if(!el) return;
+    if(!container || !totalBox) return;
 
     firebase.database().ref("cart/" + currentUser.uid)
     .on("value", snap => {
@@ -1443,7 +1475,6 @@ function loadCart(){
         totalBox.innerText = "Total: ₹" + total;
     });
 }
-
 function updateQty(id, qty){
     firebase.database().ref(`cart/${currentUser.uid}/${id}`).update({
         qty: parseInt(qty)
@@ -1479,7 +1510,8 @@ function loadNotifications(){
 // ==========================================
 function applyCouponDB(){ ... }
     const code = document.getElementById("coupon-code").value;
-
+const el = document.getElementById("id");
+if(!el) return;
     firebase.database().ref("coupons/" + code).once("value")
     .then(snap => {
         if(!snap.exists()){
@@ -1534,7 +1566,8 @@ function logoutAll(){
 
 function loadAdminPanel() {
     const page = document.getElementById("page-admin");
-
+const el = document.getElementById("id");
+if(!el) return;
     page.innerHTML = `
         <h2>Admin Dashboard</h2>
 
@@ -1589,7 +1622,8 @@ function loadAdminProducts(){
     db.collection("products").onSnapshot(snap => {
         const list = document.getElementById("admin-products");
         list.innerHTML = "";
-
+const el = document.getElementById("id");
+if(!el) return;
         snap.forEach(doc=>{
             const p = doc.data();
 
@@ -1606,10 +1640,12 @@ function loadAdminProducts(){
 
 function addProduct(){
     const file = document.getElementById("p-img").files[0];
-if(!file){
-    alert("Select Image");
-    return;
-}
+
+    if(!file){
+        alert("Select Image First");
+        return;
+    }
+
     const ref = firebase.storage().ref("products/" + Date.now());
 
     ref.put(file).then(snapshot=>{
@@ -1628,7 +1664,8 @@ if(!file){
         });
     });
 }
-
+const el = document.getElementById("id");
+if(!el) return;
 function deleteProduct(id){
     db.collection("products").doc(id).delete();
 }
@@ -1663,7 +1700,8 @@ function loadAdminOrders(){
 
 function updateTrack(id){
     const t = document.getElementById("track-"+id).value;
-
+const el = document.getElementById("id");
+if(!el) return;
     db.collection("orders").doc(id).update({
         trackingId: t,
         status: "Shipped"
@@ -1675,7 +1713,8 @@ function updateTrack(id){
 ========================================= */
 function loadWithdrawals(){
     const box = document.getElementById("admin-content");
-
+const el = document.getElementById("id");
+if(!el) return;
     db.collection("withdrawals").onSnapshot(snap=>{
         box.innerHTML = "";
 
@@ -1836,6 +1875,8 @@ function loadSellers(){
         });
     });
 }
+    const el = document.getElementById("id");
+if(!el) return;
 
 function suspendSeller(id){
     db.collection("users").doc(id).update({
