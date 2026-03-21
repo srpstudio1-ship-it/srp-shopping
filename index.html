@@ -27,6 +27,14 @@
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; z-index: 50; }
         #product-detail-view { display: none; z-index: 100; }
         .banner-gradient { background: linear-gradient(90deg, #0047AB 0%, #007FFF 100%); }
+
+        /* New Feature Views */
+        #cart-view, #profile-view, #orders-view, #address-view { 
+            display: none; position: fixed; inset: 0; background: #f4f7f6; z-index: 110; overflow-y: auto; 
+        }
+        .dark { background-color: #111827 !important; color: white !important; }
+        .dark .bg-white { background-color: #1f2937 !important; color: white !important; }
+        .dark .text-gray-600 { color: #9ca3af !important; }
     </style>
 </head>
 <body class="pb-20">
@@ -87,6 +95,67 @@
         </main>
     </div>
 
+    <div id="cart-view">
+        <nav class="p-4 bg-white border-b flex items-center justify-between sticky top-0">
+            <div class="flex items-center gap-4">
+                <button onclick="closeCart()" class="fas fa-arrow-left text-xl"></button>
+                <span class="font-bold">My Shopping Cart</span>
+            </div>
+        </nav>
+        <div id="cart-items-container" class="p-4 space-y-4">
+            </div>
+        <div class="p-4 bg-white border-t sticky bottom-0">
+            <div class="flex justify-between items-center mb-4">
+                <span class="font-bold">Total Amount:</span>
+                <span class="text-xl font-black text-blue-700">₹<span id="cart-grand-total">0</span></span>
+            </div>
+            <button onclick="processCheckout()" class="w-full py-4 bg-orange-500 text-white rounded-xl font-bold uppercase shadow-lg">Checkout Now</button>
+        </div>
+    </div>
+
+    <div id="profile-view">
+        <nav class="p-4 bg-white border-b flex items-center gap-4 sticky top-0">
+            <button onclick="closeProfile()" class="fas fa-arrow-left text-xl"></button>
+            <span class="font-bold">My Account</span>
+        </nav>
+        <div class="p-4 space-y-4">
+            <div class="bg-blue-800 p-6 rounded-2xl text-white shadow-xl">
+                <p class="text-xs opacity-70 uppercase">SRP Wallet Balance</p>
+                <h2 class="text-3xl font-black">₹<span id="profile-wallet-balance">450</span></h2>
+                <button onclick="addWalletMoney()" class="mt-4 text-xs bg-white/20 px-4 py-2 rounded-full font-bold">RECHARGE WALLET</button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="openOrders()" class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm">
+                    <span class="font-medium"><i class="fas fa-box-open mr-3 text-blue-500"></i> My Orders</span>
+                    <i class="fas fa-chevron-right text-gray-300"></i>
+                </button>
+                <button onclick="openAddressBook()" class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm">
+                    <span class="font-medium"><i class="fas fa-map-marker-alt mr-3 text-red-500"></i> Address Book</span>
+                    <i class="fas fa-chevron-right text-gray-300"></i>
+                </button>
+                <button onclick="toggleDarkMode()" class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm">
+                    <span class="font-medium"><i class="fas fa-moon mr-3 text-purple-500"></i> Day / Night Mode</span>
+                    <div id="theme-indicator" class="w-10 h-5 bg-gray-200 rounded-full relative">
+                        <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 transition-all"></div>
+                    </div>
+                </button>
+                <button onclick="auth.signOut()" class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm text-red-500 font-bold">
+                    <span><i class="fas fa-sign-out-alt mr-3"></i> Logout</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orders-view">
+        <nav class="p-4 bg-white border-b flex items-center gap-4 sticky top-0">
+            <button onclick="closeOrders()" class="fas fa-arrow-left text-xl"></button>
+            <span class="font-bold">Track Orders</span>
+        </nav>
+        <div id="orders-list" class="p-4 space-y-4">
+            </div>
+    </div>
+
     <div id="product-detail-view" class="fixed inset-0 bg-white overflow-y-auto">
         <nav class="p-4 flex items-center gap-4 border-b sticky top-0 bg-white">
             <button onclick="closeDetail()" class="fas fa-arrow-left text-xl"></button>
@@ -109,12 +178,12 @@
                     <div class="flex gap-2"><div class="w-6 h-6 rounded-full bg-black border"></div><div class="w-6 h-6 rounded-full bg-blue-500 border"></div></div>
                 </div>
                 <div><label class="text-xs font-bold block mb-1">Quantity</label>
-                    <select class="w-full p-1 border rounded text-sm"><option>1</option><option>2</option></select>
+                    <select id="detail-qty" class="w-full p-1 border rounded text-sm"><option>1</option><option>2</option><option>3</option></select>
                 </div>
             </div>
             <p class="text-sm text-gray-500 mb-6"><i class="fas fa-truck mr-2"></i>Delivery: 7 to 15 days</p>
             <div class="flex flex-col gap-2">
-                <button onclick="alert('Added!')" class="w-full py-3 bg-yellow-400 rounded-full font-bold">Add to Cart</button>
+                <button id="add-to-cart-action" class="w-full py-3 bg-yellow-400 rounded-full font-bold">Add to Cart</button>
                 <button class="w-full py-3 bg-orange-500 text-white rounded-full font-bold">Buy Now</button>
             </div>
             <div class="mt-8">
@@ -126,10 +195,10 @@
 
     <nav class="bottom-nav h-16 flex items-center justify-around">
         <button onclick="location.reload()" class="flex flex-col items-center text-blue-700"><i class="fas fa-home"></i><span class="text-[10px] font-bold">Home</span></button>
-        <button onclick="window.location.href='profile.html'" class="flex flex-col items-center text-gray-400"><i class="fas fa-user"></i><span class="text-[10px]">Account</span></button>
-        <button onclick="window.location.href='profile.html#wallet'" class="flex flex-col items-center text-gray-400"><i class="fas fa-wallet"></i><span class="text-[10px]">Wallet</span></button>
-        <button onclick="window.location.href='seller.html'" class="flex flex-col items-center text-gray-400"><i class="fas fa-store"></i><span class="text-[10px]">Seller</span></button>
-        <button onclick="window.location.href='cart.html'" class="flex flex-col items-center text-gray-400"><i class="fas fa-shopping-cart"></i><span class="text-[10px]">Cart</span></button>
+        <button onclick="openProfile()" class="flex flex-col items-center text-gray-400"><i class="fas fa-user"></i><span class="text-[10px]">Account</span></button>
+        <button onclick="openProfile()" class="flex flex-col items-center text-gray-400"><i class="fas fa-wallet"></i><span class="text-[10px]">Wallet</span></button>
+        <button onclick="alert('Seller Section Opening...')" class="flex flex-col items-center text-gray-400"><i class="fas fa-store"></i><span class="text-[10px]">Seller</span></button>
+        <button onclick="openCart()" class="flex flex-col items-center text-gray-400"><i class="fas fa-shopping-cart"></i><span class="text-[10px]">Cart</span></button>
     </nav>
 
     <script>
@@ -161,6 +230,9 @@
             if (user) {
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('main-storefront').style.display = 'block';
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('main-storefront').style.display = 'none';
             }
         });
 
@@ -192,7 +264,7 @@
             cat: i % 2 === 0 ? 'Electronics' : 'Fashion',
             price: 499 + (i * 100), mrp: 999 + (i * 100),
             img: `https://picsum.photos/400/400?random=${i}`,
-            desc: "This is a premium product from SRP SHOPPING. ".repeat(100)
+            desc: "This is a premium product from SRP SHOPPING. Produced with high quality materials for long-lasting durability and style. "
         }));
 
         function renderProducts(list) {
@@ -220,6 +292,11 @@
             document.getElementById('detail-img-1').src = p.img;
             document.getElementById('detail-img-2').src = p.img;
             document.getElementById('product-detail-view').style.display = 'block';
+
+            // Feature 7.6 Integration: Hook the button to the cart logic
+            document.getElementById('add-to-cart-action').onclick = () => {
+                addToCart(p, parseInt(document.getElementById('detail-qty').value));
+            };
         }
 
         function closeDetail() { document.getElementById('product-detail-view').style.display = 'none'; }
@@ -233,6 +310,140 @@
             const query = document.getElementById('search-input').value.toLowerCase();
             renderProducts(products.filter(p => p.name.toLowerCase().includes(query)));
         }
+
+        // --- NEW FEATURES LOGIC (7.1 - 7.10) ---
+
+        let cart = JSON.parse(localStorage.getItem('srp_cart')) || [];
+        let orders = JSON.parse(localStorage.getItem('srp_orders')) || [];
+        let walletBalance = 450;
+
+        // 7.6 Cart Logic
+        function addToCart(product, qty) {
+            const existing = cart.find(item => item.id === product.id);
+            if(existing) existing.qty += qty;
+            else cart.push({...product, qty});
+            
+            saveCart();
+            alert("Product added to SRP Cart!");
+            closeDetail();
+        }
+
+        function saveCart() {
+            localStorage.setItem('srp_cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            let total = 0;
+            if(cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 text-gray-400">Cart is empty</div>`;
+            } else {
+                container.innerHTML = cart.map((item, index) => {
+                    total += (item.price * item.qty);
+                    return `
+                    <div class="flex items-center gap-4 bg-white p-3 rounded-xl border">
+                        <img src="${item.img}" class="w-16 h-16 object-cover rounded-lg">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-bold truncate">${item.name}</h4>
+                            <p class="text-blue-600 font-bold text-sm">₹${item.price} x ${item.qty}</p>
+                        </div>
+                        <button onclick="removeFromCart(${index})" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                }).join('');
+            }
+            document.getElementById('cart-grand-total').innerText = total;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            saveCart();
+        }
+
+        function openCart() { renderCart(); document.getElementById('cart-view').style.display = 'block'; }
+        function closeCart() { document.getElementById('cart-view').style.display = 'none'; }
+
+        // 7.4 Wallet & Checkout
+        function processCheckout() {
+            const total = parseInt(document.getElementById('cart-grand-total').innerText);
+            if(total === 0) return alert("Cart is empty");
+            
+            if(walletBalance >= total) {
+                walletBalance -= total;
+                // 7.1 Create Order
+                const newOrder = {
+                    id: 'SRP' + Math.floor(Math.random() * 1000000),
+                    date: new Date().toLocaleDateString(),
+                    total: total,
+                    status: 'Processing',
+                    trackId: 'IN' + Math.floor(Math.random() * 99999999) + 'IN'
+                };
+                orders.push(newOrder);
+                localStorage.setItem('srp_orders', JSON.stringify(orders));
+                
+                cart = [];
+                saveCart();
+                updateWalletUI();
+                alert("Order Placed using SRP Wallet!");
+                closeCart();
+            } else {
+                alert("Insufficient Wallet Balance! Please recharge.");
+            }
+        }
+
+        function updateWalletUI() {
+            document.getElementById('header-wallet').innerText = walletBalance;
+            document.getElementById('profile-wallet-balance').innerText = walletBalance;
+        }
+
+        function addWalletMoney() {
+            const amt = prompt("Enter amount to recharge:");
+            if(amt && !isNaN(amt)) {
+                walletBalance += parseInt(amt);
+                updateWalletUI();
+            }
+        }
+
+        // 7.0 Profile & Theme
+        function openProfile() { document.getElementById('profile-view').style.display = 'block'; }
+        function closeProfile() { document.getElementById('profile-view').style.display = 'none'; }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const dot = document.querySelector('#theme-indicator div');
+            if(document.body.classList.contains('dark')) {
+                dot.style.transform = 'translateX(20px)';
+                document.getElementById('theme-indicator').classList.replace('bg-gray-200', 'bg-blue-600');
+            } else {
+                dot.style.transform = 'translateX(0)';
+                document.getElementById('theme-indicator').classList.replace('bg-blue-600', 'bg-gray-200');
+            }
+        }
+
+        // 7.1 Orders & Tracking
+        function openOrders() {
+            const container = document.getElementById('orders-list');
+            document.getElementById('orders-view').style.display = 'block';
+            if(orders.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-gray-400">No orders placed yet.</div>`;
+            } else {
+                container.innerHTML = orders.map(o => `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <div class="flex justify-between border-b pb-2 mb-2">
+                            <span class="text-xs font-bold">Order ID: ${o.id}</span>
+                            <span class="text-xs text-blue-600 font-bold">${o.status}</span>
+                        </div>
+                        <p class="text-sm">Total: ₹${o.total}</p>
+                        <p class="text-[10px] text-gray-400">Placed on: ${o.date}</p>
+                        <div class="mt-3 flex gap-2">
+                            <a href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackitem.aspx?txtTrkNo=${o.trackId}" class="text-[10px] bg-gray-100 px-3 py-1 rounded-lg font-bold">Track India Post</a>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        function closeOrders() { document.getElementById('orders-view').style.display = 'none'; }
+        function openAddressBook() { alert("Address Book: Under Encryption Setup..."); }
 
         renderProducts(products);
     </script>
