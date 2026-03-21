@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRP Shopping Home</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000;
+        }
+        header {
+            background-color: #004aad;
+            color: #ffffff;
+            padding: 15px;
+            text-align: left;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #004aad;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .navbar button {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .wallet-amount {
+            color: #ffffff;
+            font-size: 14px;
+        }
+        .main-content {
+            padding: 20px;
+            margin-top: 70px;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        .banner {
+            background-color: #004aad;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .privacy {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Left SRP SHOPPING -->
+    <header onclick="reloadPage()">SRP SHOPPING</header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Search Panel -->
+        <div class="search-bar">
+            <input type="text" placeholder="Search products..." style="width: 80%; padding: 10px;">
+            <button style="padding: 10px;">Search</button>
+        </div>
+
+        <!-- Wallet Amount -->
+        <div class="wallet-amount">
+            Wallet: ₹<span id="wallet-amount">0.00</span>
+        </div>
+
+        <!-- SRP Shopping Discount Banner -->
+        <div class="banner">
+            SRP SHOPPING DISCOUNT: Get 50% Off Today!
+        </div>
+
+        <!-- Privacy Policy Button -->
+        <div class="privacy">
+            <button onclick="openPrivacyPolicy()">Privacy Policy</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="navbar">
+        <button onclick="goHome()">Home</button>
+        <button onclick="goToProfile()">Profile</button>
+        <button onclick="goToWallet()">Wallet</button>
+        <button onclick="goToSeller()">Seller Dashboard</button>
+        <button onclick="goToCart()">Cart</button>
+        <button onclick="openAI()">AI Assistant</button>
+    </div>
+
+    <script>
+        function reloadPage() {
+            // Reload the website
+            location.reload();
+        }
+
+        function goHome() {
+            // Already home page
+            alert('You are on Home.');
+        }
+
+        function goToProfile() {
+            alert('Profile page (to be implemented).');
+        }
+
+        function goToWallet() {
+            alert('Wallet page (to be implemented).');
+        }
+
+        function goToSeller() {
+            // Admin check
+            const user = firebase.auth().currentUser;
+            if (user) {
+                const email = user.email;
+                if (email === 'Srpstudio1@gmail.com' || email === 'subhashrajpurohit10@gmail.com') {
+                    alert('Admin panel (password protected)'); 
+                    // Here, you would redirect to a password prompt page
+                } else {
+                    alert('You are not an admin.');
+                }
+            } else {
+                alert('Please log in as admin.');
+            }
+        }
+
+        function goToCart()
+      function goToCart() {
+            alert('Cart page (to be implemented).');
+        }
+
+        function openAI() {
+            alert('AI Assistant (to be implemented).');
+        }
+
+        function openPrivacyPolicy() {
+            alert('Privacy Policy page (to be implemented).');
+        }
+    </script>
+</body>
+</html>
