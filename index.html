@@ -2,349 +2,138 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SRP SHOPPING | OFFICIAL MASTER BUILD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRP SHOPPING | Home</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-        /* --- SRP DESIGN TOKENS --- */
-        :root {
-            --srp-primary: #0047AB;
-            --srp-primary-dark: #003380;
-            --srp-accent: #007FFF;
-            --srp-success: #10b981;
-            --srp-danger: #ef4444;
-            --srp-warning: #f59e0b;
-            --srp-bg: #f8fafc;
-            --srp-glass: rgba(255, 255, 255, 0.9);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--srp-bg);
-            color: #1e293b;
-            overflow-x: hidden;
-            line-height: 1.5;
-        }
-
-        /* --- UI UTILITIES --- */
+        :root { --srp-blue: #0047AB; --srp-white: #ffffff; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .srp-gradient { background: linear-gradient(135deg, var(--srp-primary) 0%, var(--srp-accent) 100%); }
-        .srp-shadow { box-shadow: 0 10px 25px -5px rgba(0, 71, 171, 0.1), 0 8px 10px -6px rgba(0, 71, 171, 0.1); }
-        .glass-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-
-        /* --- AUTHENTICATION LAYER STYLES --- */
-        #auth-container {
-            position: fixed;
-            inset: 0;
-            z-index: 10000;
-            background: radial-gradient(circle at top right, #1e293b, #020617);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+        
+        /* Auth Styles */
+        #auth-screen { 
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%); 
+            display: flex; 
         }
-
-        .auth-card {
-            width: 100%;
-            max-width: 420px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 32px;
-            padding: 40px;
-            color: white;
-        }
-
-        .auth-input {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 16px 20px;
-            color: white;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        .auth-input:focus {
-            border-color: var(--srp-accent);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        /* --- PRODUCT GRID ARCHITECTURE --- */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            padding: 12px;
-        }
-
-        @media (min-width: 768px) {
-            .grid-container { grid-template-columns: repeat(4, 1fr); gap: 20px; }
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid #f1f5f9;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .product-card:active { transform: scale(0.95); }
-
-        .image-wrapper {
-            aspect-ratio: 1/1;
-            background: #f8fafc;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .image-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            transition: 0.5s;
-        }
-
-        /* --- DETAIL VIEW (SAMSUNG STYLE) --- */
-        #detail-view {
-            position: fixed;
-            inset: 0;
-            background: white;
-            z-index: 5000;
-            transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-            display: none;
-        }
-
-        #detail-view.active {
-            display: block;
-            transform: translateY(0);
-        }
-
-        /* --- ADMIN PANEL MODAL --- */
-        #admin-panel {
-            position: fixed;
-            inset: 0;
-            background: #f1f5f9;
-            z-index: 9000;
-            display: none;
-            padding: 24px;
-            overflow-y: auto;
-        }
-
-        /* --- ANIMATIONS --- */
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .animate-in { animation: slideIn 0.4s forwards; }
-
-        /* --- SHIMMER LOADING --- */
-        .shimmer {
-            background: #f6f7f8;
-            background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
-            background-repeat: no-repeat;
-            background-size: 800px 100%;
-            animation: shimmer 1.5s infinite linear;
-        }
-
-        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        /* Main UI Styles */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; z-index: 50; }
+        #product-detail-view { display: none; z-index: 100; }
+        .banner-gradient { background: linear-gradient(90deg, #0047AB 0%, #007FFF 100%); }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-20">
 
-    <div id="auth-container">
-        <div class="auth-card animate-in">
-            <div class="text-center mb-10">
-                <div class="inline-block p-4 bg-blue-600 rounded-3xl mb-4 shadow-xl shadow-blue-500/30">
-                    <i class="fas fa-shopping-bag text-3xl"></i>
-                </div>
-                <h1 class="text-4xl font-black tracking-tighter uppercase">SRP <span class="text-blue-500">Shopping</span></h1>
-                <p id="auth-status-text" class="text-gray-400 text-sm mt-2">Access the Official Marketplace</p>
+    <section id="auth-screen" class="fixed inset-0 z-[200] items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-2xl p-8 text-white">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-extrabold tracking-tighter">SRP <span class="text-blue-500">SHOPPING</span></h1>
+                <p class="text-gray-400 text-sm mt-2" id="auth-subtitle">Welcome back, please login</p>
             </div>
-
             <form id="auth-form" class="space-y-4">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Identity</label>
-                    <input type="email" id="auth-email" class="auth-input" placeholder="Email address" required>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-gray-500 uppercase ml-1">Secure PIN</label>
-                    <input type="password" id="auth-password" class="auth-input" placeholder="••••••••" required>
-                </div>
-                <button type="submit" id="auth-submit-btn" class="w-full py-4 srp-gradient rounded-2xl font-black uppercase tracking-widest mt-4 shadow-lg active:scale-95 transition-all">
-                    Enter Store
-                </button>
+                <input type="email" id="email" class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white" placeholder="Email" required>
+                <input type="password" id="password" class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white" placeholder="Password" required>
+                <button type="submit" id="main-submit" class="w-full py-3 rounded-lg bg-blue-600 font-bold uppercase">Sign In</button>
             </form>
-
-            <div class="relative my-8 text-center">
-                <hr class="border-white/10">
-                <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#121826] px-4 text-[10px] text-gray-500 font-bold uppercase">Or Secure Connect</span>
-            </div>
-
-            <button onclick="googleSignIn()" class="w-full py-4 bg-white text-black rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Continue with Google
+            <div class="relative my-6 text-center text-xs text-gray-500">OR CONTINUE WITH</div>
+            <button id="google-btn" class="w-full py-3 rounded-lg bg-white text-black font-semibold flex items-center justify-center gap-3">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> Sign in with Google
             </button>
-
-            <p class="mt-8 text-center text-sm">
-                <span id="auth-toggle-msg">New to SRP?</span>
-                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-blue-400 font-black ml-1">Create Account</button>
+            <p class="mt-6 text-center text-sm text-gray-400">
+                <span id="toggle-text">New here?</span> <a href="#" id="toggle-auth" class="text-blue-400 font-bold ml-1">Create Account</a>
             </p>
         </div>
-    </div>
+    </section>
 
-    <div id="app-content" style="display: none;">
-        
-        <header class="sticky top-0 z-[1000] glass-blur border-b border-gray-100 bg-white/80">
-            <div class="p-4 flex justify-between items-center">
-                <div onclick="handleLogoClick()" class="flex items-center gap-2 cursor-pointer">
-                    <h1 class="text-2xl font-black tracking-tighter text-blue-800">SRP <span class="text-slate-900">SHOP</span></h1>
-                    <span class="bg-yellow-400 text-[8px] px-1.5 py-0.5 rounded font-black italic">VERIFIED</span>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="bg-blue-50 border border-blue-100 px-4 py-2 rounded-2xl flex items-center gap-2">
-                        <i class="fas fa-wallet text-blue-600 text-sm"></i>
-                        <span id="user-wallet" class="text-sm font-black text-blue-800">₹0</span>
+    <div id="main-storefront" style="display:none;">
+        <header class="sticky top-0 bg-[#0047AB] text-white p-3 z-50 shadow-md">
+            <div class="flex justify-between items-center mb-3">
+                <button onclick="handleLogoTap()" class="text-xl font-bold tracking-tighter">SRP SHOPPING</button>
+                <div class="flex items-center gap-3">
+                    <button class="text-[10px] opacity-80">Privacy Policy</button>
+                    <div class="bg-white/20 px-3 py-1 rounded-full flex items-center gap-2 text-sm">
+                        <i class="fas fa-wallet text-yellow-400"></i> ₹<span id="header-wallet">450</span>
                     </div>
                 </div>
             </div>
-
-            <div class="px-4 pb-4">
-                <div class="relative">
-                    <input type="text" id="main-search" onkeyup="liveSearch()" placeholder="Search Gadgets, Fashion, Tech..." 
-                        class="w-full bg-gray-100 py-4 px-6 pr-12 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 border border-transparent focus:border-blue-600/30 transition-all font-medium">
-                    <i class="fas fa-search absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                </div>
+            <div class="relative mb-2">
+                <input type="text" id="search-input" onkeyup="searchProducts()" placeholder="Search products..." class="w-full py-2 px-4 rounded text-black outline-none">
             </div>
-
-            <div class="flex gap-4 overflow-x-auto no-scrollbar px-4 pb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
-                <button onclick="filterItems('all')" class="cat-chip text-blue-600 whitespace-nowrap">All Items</button>
-                <button onclick="filterItems('Mobiles')" class="cat-chip whitespace-nowrap">Mobiles</button>
-                <button onclick="filterItems('Electronics')" class="cat-chip whitespace-nowrap">Electronics</button>
-                <button onclick="filterItems('Fashion')" class="cat-chip whitespace-nowrap">Fashion</button>
-                <button onclick="filterItems('Accessories')" class="cat-chip whitespace-nowrap">Accessories</button>
+            <div class="flex gap-4 overflow-x-auto no-scrollbar py-1 text-xs whitespace-nowrap border-t border-white/20">
+                <button onclick="filterCategory('all')" class="font-bold">All</button>
+                <button onclick="filterCategory('Electronics')">Electronics</button>
+                <button onclick="filterCategory('Fashion')">Fashion</button>
+                <button onclick="filterCategory('Mobiles')">Mobiles</button>
             </div>
         </header>
 
-        <main class="max-w-7xl mx-auto">
-            
-            <section class="p-4">
-                <div class="h-44 srp-gradient rounded-[2rem] p-8 text-white relative overflow-hidden shadow-2xl flex flex-col justify-center">
-                    <h3 class="text-xs font-black tracking-widest uppercase opacity-70 mb-2">SRP Summer Exclusive</h3>
-                    <h2 class="text-4xl font-black italic leading-tight">UP TO 80% <br>OFF SALE</h2>
-                    <i class="fas fa-bolt absolute -right-4 -bottom-4 text-9xl opacity-10 rotate-12"></i>
+        <main class="p-3">
+            <section class="banner-gradient rounded-xl p-6 text-white mb-6 shadow-lg flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-black italic">SRP EXCLUSIVE</h2>
+                    <p class="text-sm opacity-90">MEGA SALE: UP TO 70% OFF</p>
                 </div>
+                <i class="fas fa-shopping-bag text-5xl opacity-20"></i>
             </section>
 
-            <div id="product-container" class="grid-container">
-                <div class="product-card h-64 shimmer"></div>
-                <div class="product-card h-64 shimmer"></div>
-                <div class="product-card h-64 shimmer"></div>
-                <div class="product-card h-64 shimmer"></div>
-            </div>
+            <div id="product-grid" class="grid grid-cols-2 gap-3"></div>
         </main>
     </div>
 
-    <div id="detail-view">
-        <nav class="sticky top-0 bg-white/90 backdrop-blur-md p-4 flex items-center justify-between z-[6000] border-b">
-            <div class="flex items-center gap-4">
-                <button onclick="closeDetail()" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 active:scale-90 transition-all"><i class="fas fa-arrow-left"></i></button>
-                <span id="nav-title" class="font-black text-sm uppercase tracking-tighter truncate max-w-[150px]">Product Details</span>
-            </div>
-            <div class="flex gap-5 text-gray-400 text-lg">
-                <i class="fas fa-share-nodes"></i>
-                <i class="fas fa-heart"></i>
-            </div>
+    <div id="product-detail-view" class="fixed inset-0 bg-white overflow-y-auto">
+        <nav class="p-4 flex items-center gap-4 border-b sticky top-0 bg-white">
+            <button onclick="closeDetail()" class="fas fa-arrow-left text-xl"></button>
+            <span class="font-bold truncate" id="detail-title-top">Product Details</span>
         </nav>
-
-        <div id="detail-content" class="max-w-4xl mx-auto pb-32">
+        <div class="flex overflow-x-auto no-scrollbar h-72 bg-gray-50 border-b">
+            <img id="detail-img-1" class="w-full h-full object-contain flex-shrink-0">
+            <img id="detail-img-2" class="w-full h-full object-contain flex-shrink-0">
+        </div>
+        <div class="p-4">
+            <h2 id="detail-name" class="text-xl font-bold"></h2>
+            <div class="text-green-700 font-bold my-2">4.5 ★ <span class="text-gray-400 font-normal text-sm ml-2">(1,240 Ratings)</span></div>
+            <div class="flex items-center gap-2 text-2xl mb-4">
+                <span id="detail-discount" class="text-red-600 font-light"></span>
+                <span class="font-bold">₹<span id="detail-price"></span></span>
+                <span id="detail-mrp" class="text-sm line-through text-gray-400"></span>
             </div>
-
-        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/90 glass-blur border-t flex gap-4 z-[7000]">
-            <button onclick="addToCart()" class="flex-1 py-4 bg-yellow-400 rounded-2xl font-black text-xs uppercase shadow-lg shadow-yellow-500/20 active:scale-95 transition-all">Add to Bag</button>
-            <button onclick="processCheckout()" class="flex-1 py-4 bg-blue-700 text-white rounded-2xl font-black text-xs uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Buy Now</button>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div><label class="text-xs font-bold block mb-1">Color</label>
+                    <div class="flex gap-2"><div class="w-6 h-6 rounded-full bg-black border"></div><div class="w-6 h-6 rounded-full bg-blue-500 border"></div></div>
+                </div>
+                <div><label class="text-xs font-bold block mb-1">Quantity</label>
+                    <select class="w-full p-1 border rounded text-sm"><option>1</option><option>2</option></select>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mb-6"><i class="fas fa-truck mr-2"></i>Delivery: 7 to 15 days</p>
+            <div class="flex flex-col gap-2">
+                <button onclick="alert('Added!')" class="w-full py-3 bg-yellow-400 rounded-full font-bold">Add to Cart</button>
+                <button class="w-full py-3 bg-orange-500 text-white rounded-full font-bold">Buy Now</button>
+            </div>
+            <div class="mt-8">
+                <h3 class="font-bold border-b pb-2 mb-2">Description</h3>
+                <p id="detail-desc" class="text-sm text-gray-600 leading-relaxed"></p>
+            </div>
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t flex items-center justify-around px-4 z-[2000] shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-        <button onclick="location.reload()" class="flex flex-col items-center gap-1 text-blue-700">
-            <i class="fas fa-house text-xl"></i><span class="text-[9px] font-black uppercase">Home</span>
-        </button>
-        <button onclick="alert('Profile Coming Soon')" class="flex flex-col items-center gap-1 text-gray-400">
-            <i class="fas fa-user-circle text-xl"></i><span class="text-[9px] font-black uppercase">Account</span>
-        </button>
-        <button onclick="handleLogoClick()" class="w-14 h-14 bg-blue-700 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-500/30 -translate-y-4 border-4 border-white active:scale-90 transition-all">
-            <i class="fas fa-plus text-xl"></i>
-        </button>
-        <button onclick="showCart()" class="flex flex-col items-center gap-1 text-gray-400 relative">
-            <i class="fas fa-shopping-cart text-xl"></i><span class="text-[9px] font-black uppercase">Cart</span>
-            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
-        </button>
-        <button onclick="auth.signOut()" class="flex flex-col items-center gap-1 text-red-400">
-            <i class="fas fa-sign-out-alt text-xl"></i><span class="text-[9px] font-black uppercase">Exit</span>
-        </button>
+    <nav class="bottom-nav h-16 flex items-center justify-around">
+        <button onclick="location.reload()" class="flex flex-col items-center text-blue-700"><i class="fas fa-home"></i><span class="text-[10px] font-bold">Home</span></button>
+        <button onclick="window.location.href='profile.html'" class="flex flex-col items-center text-gray-400"><i class="fas fa-user"></i><span class="text-[10px]">Account</span></button>
+        <button onclick="window.location.href='profile.html#wallet'" class="flex flex-col items-center text-gray-400"><i class="fas fa-wallet"></i><span class="text-[10px]">Wallet</span></button>
+        <button onclick="window.location.href='seller.html'" class="flex flex-col items-center text-gray-400"><i class="fas fa-store"></i><span class="text-[10px]">Seller</span></button>
+        <button onclick="window.location.href='cart.html'" class="flex flex-col items-center text-gray-400"><i class="fas fa-shopping-cart"></i><span class="text-[10px]">Cart</span></button>
     </nav>
 
-    <div id="admin-panel">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tighter">Master Console</h2>
-            <button onclick="closeAdmin()" class="bg-red-100 text-red-600 px-4 py-2 rounded-xl font-bold">Exit</button>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-blue-100">
-                <p class="text-xs font-bold text-gray-400 uppercase">Total Users</p>
-                <h4 id="stat-users" class="text-3xl font-black text-blue-700">Loading...</h4>
-            </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-green-100">
-                <p class="text-xs font-bold text-gray-400 uppercase">Total Products</p>
-                <h4 id="stat-products" class="text-3xl font-black text-green-700">Loading...</h4>
-            </div>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-yellow-100">
-                <p class="text-xs font-bold text-gray-400 uppercase">System Status</p>
-                <h4 class="text-3xl font-black text-yellow-600 italic">SECURE</h4>
-            </div>
-        </div>
-
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl">
-            <h3 class="font-black text-xl mb-6 flex items-center gap-3">
-                <i class="fas fa-plus-circle text-blue-600"></i> Upload New Product
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input type="text" id="adm-name" placeholder="Product Name" class="w-full bg-gray-50 border p-4 rounded-2xl outline-none">
-                <input type="number" id="adm-price" placeholder="Sale Price (₹)" class="w-full bg-gray-50 border p-4 rounded-2xl outline-none">
-                <input type="number" id="adm-mrp" placeholder="MRP (₹)" class="w-full bg-gray-50 border p-4 rounded-2xl outline-none">
-                <select id="adm-cat" class="w-full bg-gray-50 border p-4 rounded-2xl outline-none font-bold">
-                    <option>Mobiles</option><option>Electronics</option><option>Fashion</option><option>Accessories</option>
-                </select>
-                <input type="text" id="adm-img" placeholder="Image URL" class="w-full bg-gray-50 border p-4 rounded-2xl outline-none">
-                <textarea id="adm-desc" placeholder="Product Description..." class="w-full bg-gray-50 border p-4 rounded-2xl outline-none md:col-span-2 h-32"></textarea>
-                <button onclick="uploadToFirebase()" class="md:col-span-2 py-4 srp-gradient text-white rounded-2xl font-black uppercase shadow-lg">Push to Cloud</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // 1. DATABASE & FIREBASE CONFIGURATION
+        // FIREBASE CONFIG (Part 9)
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -353,252 +142,99 @@
             storageBucket: "srp-shopping-54bbb"
         };
         firebase.initializeApp(firebaseConfig);
-        
         const auth = firebase.auth();
-        const db = firebase.firestore();
-        const rdb = firebase.database();
-        const ADMIN_LIST = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
+        const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
 
-        // State Management
-        let productsArray = [];
-        let currentAuthMode = 'login';
-        let selectedProductID = null;
+        // 1. Auth Toggle Logic
+        let isLoginMode = true;
+        document.getElementById('toggle-auth').onclick = (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            document.getElementById('main-submit').innerText = isLoginMode ? 'Sign In' : 'Create Account';
+            document.getElementById('auth-subtitle').innerText = isLoginMode ? 'Welcome back, please login' : 'Start your journey';
+            document.getElementById('toggle-text').innerText = isLoginMode ? "New here?" : "Joined before?";
+            document.getElementById('toggle-auth').innerText = isLoginMode ? 'Create Account' : 'Sign In';
+        };
 
-        // 2. AUTHENTICATION CONTROLLER
+        // 2. Auth Execution
         auth.onAuthStateChanged(user => {
             if (user) {
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('app-content').style.display = 'block';
-                initUserSession(user);
-            } else {
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('app-content').style.display = 'none';
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-storefront').style.display = 'block';
             }
         });
 
         document.getElementById('auth-form').onsubmit = (e) => {
             e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-password').value;
-            
-            if(currentAuthMode === 'login') {
-                auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
-            } else {
-                auth.createUserWithEmailAndPassword(email, pass).then(res => {
-                    db.collection("users").doc(res.user.uid).set({
-                        email: email, walletBalance: 1500, role: 'user', joined: new Date().getTime()
-                    });
-                }).catch(err => alert(err.message));
-            }
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            if(isLoginMode) auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+            else auth.createUserWithEmailAndPassword(email, pass).catch(err => alert(err.message));
         };
 
-        function googleSignIn() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => alert(err.message));
+        document.getElementById('google-btn').onclick = () => {
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => alert(err.message));
+        };
+
+        // 3. Admin Redirect Logic
+        function handleLogoTap() {
+            const user = auth.currentUser;
+            if (user && ADMIN_EMAILS.includes(user.email)) {
+                const pin = prompt("Admin Security PIN:");
+                if (pin === "1234") window.location.href = "admin.html";
+            } else { location.reload(); }
         }
 
-        function toggleAuthMode() {
-            currentAuthMode = (currentAuthMode === 'login') ? 'signup' : 'login';
-            document.getElementById('auth-submit-btn').innerText = (currentAuthMode === 'login') ? 'Enter Store' : 'Create Account';
-            document.getElementById('auth-toggle-msg').innerText = (currentAuthMode === 'login') ? 'New to SRP?' : 'Already joined?';
-            document.getElementById('auth-toggle-btn').innerText = (currentAuthMode === 'login') ? 'Create Account' : 'Sign In';
-            document.getElementById('auth-status-text').innerText = (currentAuthMode === 'login') ? 'Access the Official Marketplace' : 'Start your Premium Journey';
-        }
+        // 4. Product Data & Display
+        const products = Array.from({ length: 20 }, (_, i) => ({
+            id: i,
+            name: `SRP Premium Product ${i + 1}`,
+            cat: i % 2 === 0 ? 'Electronics' : 'Fashion',
+            price: 499 + (i * 100), mrp: 999 + (i * 100),
+            img: `https://picsum.photos/400/400?random=${i}`,
+            desc: "This is a premium product from SRP SHOPPING. ".repeat(100)
+        }));
 
-        // 3. CORE APP LOGIC
-        async function initUserSession(user) {
-            // Sync Wallet Live
-            db.collection("users").doc(user.uid).onSnapshot(doc => {
-                if(doc.exists) document.getElementById('user-wallet').innerText = `₹${doc.data().walletBalance.toLocaleString()}`;
-            });
-
-            // Load Products
-            db.collection("products").onSnapshot(snapshot => {
-                productsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if(productsArray.length === 0) seedDemoProducts(); // Fallback if DB empty
-                renderStore(productsArray);
-            });
-
-            // Sync Cart Badge
-            rdb.ref(`carts/${user.uid}`).on('value', snap => {
-                const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-                document.getElementById('cart-count').innerText = count;
-            });
-        }
-
-        function renderStore(list) {
-            const container = document.getElementById('product-container');
-            container.innerHTML = list.map(p => `
-                <div onclick="openProductDetail('${p.id}')" class="product-card animate-in">
-                    <div class="image-wrapper">
-                        <img src="${p.image}" loading="lazy">
-                        <div class="absolute bottom-2 left-2 bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest">Premium</div>
+        function renderProducts(list) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = list.map(p => `
+                <div onclick="openDetail(${p.id})" class="bg-white p-2 rounded shadow-sm border border-gray-100">
+                    <img src="${p.img}" class="w-full h-36 object-contain mb-2">
+                    <h3 class="text-xs font-medium truncate">${p.name}</h3>
+                    <div class="flex items-center gap-1 mt-1">
+                        <span class="text-sm font-bold">₹${p.price}</span>
+                        <span class="text-[8px] line-through text-gray-400">₹${p.mrp}</span>
                     </div>
-                    <div class="p-3">
-                        <p class="text-[8px] font-black text-blue-600 uppercase mb-1">${p.category}</p>
-                        <h4 class="text-[10px] font-bold text-gray-800 line-clamp-2 h-7 leading-tight">${p.name}</h4>
-                        <div class="flex items-center gap-1.5 mt-2">
-                            <span class="text-sm font-black text-slate-900">₹${p.price.toLocaleString()}</span>
-                            <span class="text-[8px] line-through text-gray-400">₹${p.mrp.toLocaleString()}</span>
-                        </div>
-                    </div>
+                    <p class="text-[10px] text-green-600 font-bold">50% OFF</p>
                 </div>
             `).join('');
         }
 
-        // 4. DETAIL VIEW ENGINE (5000+ Word Content Logic)
-        function openProductDetail(id) {
-            const p = productsArray.find(item => item.id === id);
-            selectedProductID = id;
-            
-            document.getElementById('nav-title').innerText = p.name;
-            const content = document.getElementById('detail-content');
-            
-            // Generate deep specification logic
-            let specsHTML = `
-                <div class="relative w-full h-80 bg-white flex items-center justify-center p-6 border-b">
-                    <img src="${p.image}" class="max-h-full max-w-full object-contain">
-                </div>
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 class="text-2xl font-black text-slate-900 leading-tight uppercase tracking-tighter">${p.name}</h2>
-                            <p class="text-xs font-bold text-blue-600 uppercase mt-1">Official SRP Product</p>
-                        </div>
-                        <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-black">4.8 <i class="fas fa-star text-[8px]"></i></div>
-                    </div>
-
-                    <div class="flex items-baseline gap-4 mb-8">
-                        <span class="text-4xl font-black text-blue-800">₹${p.price.toLocaleString()}</span>
-                        <span class="text-sm text-gray-400 line-through">₹${p.mrp.toLocaleString()}</span>
-                        <span class="text-xs text-red-500 font-black uppercase">-${Math.round(((p.mrp-p.price)/p.mrp)*100)}% Off</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <div class="bg-slate-50 p-4 rounded-2xl border border-gray-100">
-                            <label class="text-[9px] font-black text-gray-400 uppercase">Available Color</label>
-                            <p class="text-xs font-bold mt-1 uppercase">SRP Midnight Blue</p>
-                        </div>
-                        <div class="bg-slate-50 p-4 rounded-2xl border border-gray-100">
-                            <label class="text-[9px] font-black text-gray-400 uppercase">Est. Delivery</label>
-                            <p class="text-xs font-bold mt-1 uppercase text-green-600">3 - 5 Days</p>
-                        </div>
-                    </div>
-
-                    <div class="border-t pt-8">
-                        <h3 class="font-black text-lg mb-4 tracking-tighter uppercase">Technical Specifications</h3>
-                        <div class="space-y-4 text-sm text-gray-500 font-medium italic">
-                            <p><i class="fas fa-check-circle text-blue-600 mr-2"></i> SRP Intelligence Engine v4.0 Integrated.</p>
-                            <p><i class="fas fa-check-circle text-blue-600 mr-2"></i> High-Grade Aero-Polycarbonate Housing.</p>
-                            <p><i class="fas fa-check-circle text-blue-600 mr-2"></i> Precision calibration for extreme performance.</p>
-                            <p class="mt-6 uppercase text-[10px] font-black text-gray-400 leading-relaxed">${(p.desc || "A masterpiece of engineering and design by SRP SHOPPING. This product features the latest technology and premium materials for unparalleled quality.").repeat(50)}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            content.innerHTML = specsHTML;
-            document.getElementById('detail-view').classList.add('active');
+        function openDetail(id) {
+            const p = products[id];
+            document.getElementById('detail-name').innerText = p.name;
+            document.getElementById('detail-price').innerText = p.price;
+            document.getElementById('detail-mrp').innerText = `₹${p.mrp}`;
+            document.getElementById('detail-discount').innerText = "-50%";
+            document.getElementById('detail-desc').innerText = p.desc;
+            document.getElementById('detail-img-1').src = p.img;
+            document.getElementById('detail-img-2').src = p.img;
+            document.getElementById('product-detail-view').style.display = 'block';
         }
 
-        function closeDetail() {
-            document.getElementById('detail-view').classList.remove('active');
+        function closeDetail() { document.getElementById('product-detail-view').style.display = 'none'; }
+        
+        function filterCategory(cat) {
+            if(cat === 'all') renderProducts(products);
+            else renderProducts(products.filter(p => p.cat === cat));
         }
 
-        // 5. TRANSACTIONAL LOGIC
-        async function addToCart() {
-            const user = auth.currentUser;
-            const p = productsArray.find(x => x.id === selectedProductID);
-            
-            await rdb.ref(`carts/${user.uid}/${p.id}`).set({
-                name: p.name, price: p.price, image: p.image, qty: 1
-            });
-            alert("SECURED: Added to SRP Bag!");
+        function searchProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            renderProducts(products.filter(p => p.name.toLowerCase().includes(query)));
         }
 
-        async function processCheckout() {
-            const user = auth.currentUser;
-            const p = productsArray.find(x => x.id === selectedProductID);
-            
-            const userRef = db.collection("users").doc(user.uid);
-            const userDoc = await userRef.get();
-            const balance = userDoc.data().walletBalance;
-
-            if(balance < p.price) {
-                alert("INSUFFICIENT FUNDS: Top up your SRP Wallet.");
-                return;
-            }
-
-            await userRef.update({ walletBalance: balance - p.price });
-            alert("ORDER SUCCESSFUL: Thank you for shopping with SRP!");
-            closeDetail();
-        }
-
-        // 6. MASTER ADMIN TOOLS
-        function handleLogoClick() {
-            const user = auth.currentUser;
-            if(ADMIN_LIST.includes(user.email)) {
-                const pin = prompt("SRP SECURITY: ENTER ADMIN PIN");
-                if(pin === "1234") {
-                    openAdminPanel();
-                } else {
-                    alert("UNAUTHORIZED ACCESS DETECTED");
-                }
-            } else {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        }
-
-        async function openAdminPanel() {
-            const userSnap = await db.collection("users").get();
-            document.getElementById('stat-users').innerText = userSnap.size;
-            document.getElementById('stat-products').innerText = productsArray.length;
-            document.getElementById('admin-panel').style.display = 'block';
-        }
-
-        function closeAdmin() {
-            document.getElementById('admin-panel').style.display = 'none';
-        }
-
-        async function uploadToFirebase() {
-            const name = document.getElementById('adm-name').value;
-            const price = parseInt(document.getElementById('adm-price').value);
-            const mrp = parseInt(document.getElementById('adm-mrp').value);
-            const cat = document.getElementById('adm-cat').value;
-            const img = document.getElementById('adm-img').value;
-            const desc = document.getElementById('adm-desc').value;
-
-            if(!name || !price) return alert("Please fill mandatory fields");
-
-            await db.collection("products").add({
-                name, price, mrp, category: cat, image: img, desc, date: new Date().getTime()
-            });
-            alert("SUCCESS: Product Published to Marketplace!");
-            closeAdmin();
-        }
-
-        // 7. UTILITY FUNCTIONS
-        function liveSearch() {
-            const q = document.getElementById('main-search').value.toLowerCase();
-            renderStore(productsArray.filter(p => p.name.toLowerCase().includes(q)));
-        }
-
-        function filterItems(cat) {
-            const chips = document.querySelectorAll('.cat-chip');
-            chips.forEach(c => c.classList.remove('text-blue-600'));
-            event.target.classList.add('text-blue-600');
-            
-            if(cat === 'all') renderStore(productsArray);
-            else renderStore(productsArray.filter(p => p.category === cat));
-        }
-
-        function seedDemoProducts() {
-            const demo = [
-                { name: "SRP Ultra Mobile G1", price: 15999, mrp: 25000, category: "Mobiles", image: "https://images.samsung.com/is/image/samsung/p6pim/in/2401/galaxy-s24-ultra/s24-ultra-titanium-gray.png" },
-                { name: "Official Gaming Buds", price: 1499, mrp: 3999, category: "Electronics", image: "https://m.media-amazon.com/images/I/510+86z7pRL._AC_UF1000,1000_QL80_.jpg" }
-            ];
-            demo.forEach(p => db.collection("products").add(p));
-        }
+        renderProducts(products);
     </script>
 </body>
 </html>
