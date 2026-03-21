@@ -2,156 +2,304 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SRP Account | My Profile</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <title>SRP Account</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        /* 7.3: Day/Night Mode Transitions */
-        .dark-mode { background-color: #0f172a; color: #f8fafc; }
-        .dark-mode .card { background-color: #1e293b; border-color: #334155; }
-        .dark-mode .text-gray-600 { color: #94a3b8; }
-        .transition-theme { transition: all 0.3s ease; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        
+        :root {
+            --bg-primary: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --border-color: #e2e8f0;
+        }
+
+        .dark-mode {
+            --bg-primary: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --border-color: #334155;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-primary); 
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .card { 
+            background-color: var(--card-bg); 
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .srp-blue-gradient { background: linear-gradient(135deg, #0047AB 0%, #007FFF 100%); }
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Shimmer effect for loading */
+        .loading-shimmer {
+            background: linear-gradient(90deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite linear;
+        }
+        @keyframes shimmer { to { background-position: -200% 0; } }
     </style>
 </head>
-<body id="main-body" class="bg-gray-50 pb-24 transition-theme">
+<body id="main-body" class="pb-24">
 
-    <header class="bg-[#0047AB] text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-lg">
-        <h1 class="text-lg font-bold">My Account</h1>
-        <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <i id="theme-icon" class="fas fa-moon"></i>
-        </button>
+    <header class="bg-[#0047AB] text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-xl">
+        <div class="flex items-center gap-3">
+            <button onclick="history.back()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/10">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="text-sm font-black uppercase tracking-widest">My Account</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center transition-transform active:scale-90">
+                <i id="theme-icon" class="fas fa-moon"></i>
+            </button>
+        </div>
     </header>
 
-    <main class="p-4 space-y-4">
+    <main class="p-4 space-y-5 max-w-lg mx-auto">
         
-        <section class="card bg-white p-5 rounded-2xl border shadow-sm">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-tight">SRP Wallet Balance</p>
-                    <h2 class="text-3xl font-black text-blue-700">₹<span id="wallet-amt">450.00</span></h2>
+        <section class="card p-6 rounded-3xl flex items-center gap-4">
+            <div class="relative">
+                <div class="w-16 h-16 rounded-2xl srp-blue-gradient flex items-center justify-center text-white text-2xl font-black" id="user-initial">
+                    S
                 </div>
-                <button onclick="rechargeWallet()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase">
-                    + Recharge
-                </button>
+                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <p class="text-[10px] text-gray-400 mt-2">All refunds are instantly credited here.</p>
+            <div>
+                <h2 class="text-lg font-black tracking-tight" id="profile-name">SRP User</h2>
+                <p class="text-xs text-gray-400 font-medium" id="profile-email">Loading identity...</p>
+                <div class="flex gap-2 mt-1">
+                    <span class="text-[8px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-black uppercase">Prime Member</span>
+                </div>
+            </div>
         </section>
 
-        <div class="grid grid-cols-4 gap-2 text-center">
-            <button onclick="showSection('orders')" class="card bg-white p-3 rounded-xl border flex flex-col items-center">
-                <i class="fas fa-box text-blue-600 mb-1"></i>
-                <span class="text-[9px] font-bold">Orders</span>
+        <section class="card p-6 rounded-3xl relative overflow-hidden">
+            <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/5 rounded-full"></div>
+            <div class="flex justify-between items-end">
+                <div>
+                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">SRP Digital Wallet</p>
+                    <h2 class="text-4xl font-black">₹<span id="wallet-amt">450.00</span></h2>
+                </div>
+                <button onclick="rechargeWallet()" class="srp-blue-gradient text-white px-5 py-2.5 rounded-2xl font-black text-[10px] uppercase shadow-lg transform active:scale-95 transition">
+                    + Top Up
+                </button>
+            </div>
+            <div class="mt-4 pt-4 border-t border-dashed flex items-center gap-2 text-[9px] text-gray-400">
+                <i class="fas fa-shield-check text-green-500"></i>
+                Secured by SRP Enterprise Payment Gateway
+            </div>
+        </section>
+
+        <div class="grid grid-cols-4 gap-3">
+            <button onclick="switchTab('orders')" class="card p-4 rounded-2xl flex flex-col items-center gap-2 hover:border-blue-500 transition-colors">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <i class="fas fa-box"></i>
+                </div>
+                <span class="text-[8px] font-black uppercase">Orders</span>
             </button>
-            <button onclick="showSection('wishlist')" class="card bg-white p-3 rounded-xl border flex flex-col items-center">
-                <i class="fas fa-heart text-red-500 mb-1"></i>
-                <span class="text-[9px] font-bold">Wishlist</span>
+            <button onclick="alert('Wishlist empty!')" class="card p-4 rounded-2xl flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <span class="text-[8px] font-black uppercase">Saved</span>
             </button>
-            <button onclick="showSection('coupons')" class="card bg-white p-3 rounded-xl border flex flex-col items-center">
-                <i class="fas fa-ticket-alt text-yellow-500 mb-1"></i>
-                <span class="text-[9px] font-bold">Coupons</span>
+            <button onclick="alert('No active coupons')" class="card p-4 rounded-2xl flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                    <i class="fas fa-ticket"></i>
+                </div>
+                <span class="text-[8px] font-black uppercase">Offers</span>
             </button>
-            <button onclick="showSection('support')" class="card bg-white p-3 rounded-xl border flex flex-col items-center">
-                <i class="fas fa-headset text-purple-600 mb-1"></i>
-                <span class="text-[9px] font-bold">Help</span>
+            <button onclick="location.href='mailto:support@srpshopping.com'" class="card p-4 rounded-2xl flex flex-col items-center gap-2">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <span class="text-[8px] font-black uppercase">Support</span>
             </button>
         </div>
 
-        <section id="orders-section" class="space-y-3">
-            <h3 class="font-bold text-sm px-1">Recent Orders</h3>
-            <div class="card bg-white p-4 rounded-xl border shadow-sm">
-                <div class="flex justify-between text-[10px] mb-2 font-bold">
-                    <span class="text-blue-700">ID: SRP882100</span>
-                    <span class="text-orange-600 uppercase">Shipped</span>
+        <section id="orders-tab" class="space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <h3 class="font-black text-xs uppercase tracking-widest text-gray-500">Recent Purchases</h3>
+                <button class="text-[10px] text-blue-600 font-bold">View All</button>
+            </div>
+            
+            <div class="card p-4 rounded-3xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[9px] font-black uppercase">ID: SRP882100</div>
+                    <span class="text-[9px] font-black text-orange-600 uppercase italic">In Transit</span>
                 </div>
-                <div class="flex gap-3 mb-3">
-                    <div class="w-12 h-12 bg-gray-100 rounded"></div>
+                <div class="flex gap-4 mb-4">
+                    <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+                        <i class="fas fa-headphones text-2xl text-gray-300"></i>
+                    </div>
                     <div>
-                        <h4 class="text-xs font-bold">Premium Wireless Earbuds</h4>
-                        <p class="text-[10px] text-gray-500">Qty: 1 | ₹1,299</p>
+                        <h4 class="text-sm font-bold leading-tight">Premium Wireless Earbuds (v2)</h4>
+                        <p class="text-[10px] text-gray-400 mt-1">Status: Handed over to India Post</p>
+                        <p class="text-[10px] font-black mt-1">₹1,299.00</p>
                     </div>
                 </div>
-                <div class="bg-gray-50 p-2 rounded text-[10px] flex justify-between items-center border">
-                    <span>Track: <b class="text-black">IN123456789IN</b></span>
-                    <a href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx" 
-                       target="_blank" class="text-blue-600 font-bold underline">India Post Link</a>
+                <div class="bg-gray-50 dark:bg-black/20 p-3 rounded-2xl text-[9px] flex justify-between items-center border border-gray-100">
+                    <span class="font-bold">AWB: <b class="text-blue-600">IN123456789IN</b></span>
+                    <button onclick="window.open('https://www.indiapost.gov.in')" class="bg-white px-3 py-1.5 rounded-lg border shadow-sm font-black uppercase text-gray-700">Track Live</button>
                 </div>
             </div>
         </section>
 
-        <section class="card bg-white p-4 rounded-xl border">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-sm">Saved Addresses</h3>
-                <button onclick="addNewAddress()" class="text-blue-600 text-xs font-bold">+ Add New</button>
+        <section class="card p-6 rounded-3xl">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-black text-xs uppercase tracking-widest text-gray-500">Delivery Address</h3>
+                <button onclick="addNewAddress()" class="text-blue-600 text-[10px] font-black uppercase">+ New</button>
             </div>
-            <div id="address-list" class="space-y-2">
-                <div class="p-3 border rounded-lg bg-blue-50/50 relative">
-                    <span class="absolute top-2 right-2 text-[8px] bg-blue-700 text-white px-1 rounded">DEFAULT</span>
-                    <p class="text-xs font-bold">Subhash Rajpurohit</p>
-                    <p class="text-[10px] text-gray-600">123, SRP Studio, Jaipur, Rajasthan, 302001</p>
-                    <div class="mt-2 flex gap-3 text-[10px] text-blue-600 font-bold">
-                        <button>Edit</button>
-                        <button class="text-red-500">Delete</button>
+            <div id="address-list" class="space-y-3">
+                <div class="p-4 border-2 border-blue-500/20 rounded-2xl bg-blue-50/10 relative">
+                    <div class="absolute top-4 right-4 bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">Home</div>
+                    <p class="text-xs font-black" id="addr-name">Subhash Rajpurohit</p>
+                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed" id="addr-detail">123, SRP Studio, Jaipur, Rajasthan, 302001<br>Phone: +91 98XXX XXXXX</p>
+                    <div class="mt-4 flex gap-4 text-[9px] font-black uppercase tracking-widest">
+                        <button class="text-blue-600">Edit Address</button>
+                        <button class="text-red-400">Delete</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <div class="pt-4 space-y-2">
-            <button class="w-full bg-white border p-3 rounded-xl text-left text-xs font-bold flex justify-between">
-                <span>Change Password</span> <i class="fas fa-chevron-right opacity-30"></i>
+        <div class="space-y-2 pb-6">
+            <button class="w-full card p-4 rounded-2xl text-left text-xs font-bold flex justify-between items-center transition-transform active:scale-[0.98]">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-lock text-gray-400"></i>
+                    <span>Privacy & Security</span>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-20"></i>
             </button>
-            <button onclick="logout()" class="w-full bg-red-50 text-red-600 border border-red-100 p-3 rounded-xl text-center text-xs font-black uppercase">
-                Logout from All Devices
+            <button onclick="logout()" class="w-full bg-red-50 dark:bg-red-500/10 text-red-600 p-4 rounded-2xl text-center text-[10px] font-black uppercase tracking-[3px] mt-4 border border-red-100 dark:border-red-900/30">
+                Logout Securely
             </button>
         </div>
 
     </main>
 
-    <nav class="fixed bottom-0 w-full h-16 bg-white border-t flex items-center justify-around z-50">
-        <button class="flex flex-col items-center text-gray-400"><i class="fas fa-home text-lg"></i><span class="text-[9px]">Home</span></button>
-        <button class="flex flex-col items-center text-gray-400"><i class="fas fa-store text-lg"></i><span class="text-[9px]">Seller</span></button>
-        <button class="flex flex-col items-center text-blue-700"><i class="fas fa-user text-lg"></i><span class="text-[9px] font-bold">Profile</span></button>
-        <button class="flex flex-col items-center text-blue-400"><i class="fas fa-robot text-lg"></i><span class="text-[9px]">AI Help</span></button>
+    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t-2 border-gray-50 dark:bg-[#1e293b] dark:border-gray-800 flex items-center justify-around px-4 z-[100] shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+        <button onclick="location.href='index.html'" class="flex flex-col items-center gap-1.5 text-gray-400">
+            <i class="fas fa-home text-lg"></i>
+            <span class="text-[8px] font-black uppercase">Home</span>
+        </button>
+        <button onclick="location.href='seller.html'" class="flex flex-col items-center gap-1.5 text-gray-400">
+            <i class="fas fa-store text-lg"></i>
+            <span class="text-[8px] font-black uppercase">Seller</span>
+        </button>
+        <button class="flex flex-col items-center gap-1.5 text-blue-600">
+            <div class="w-12 h-1 bg-blue-600 absolute top-0 rounded-b-full"></div>
+            <i class="fas fa-user text-lg"></i>
+            <span class="text-[8px] font-black uppercase">Profile</span>
+        </button>
+        <button onclick="alert('SRP AI Support is processing your request...')" class="flex flex-col items-center gap-1.5 text-blue-400">
+            <i class="fas fa-robot text-lg"></i>
+            <span class="text-[8px] font-black uppercase">AI</span>
+        </button>
     </nav>
 
     <script>
-        // 7.3: Day/Night Mode Logic
+        // 1. FIREBASE INITIALIZATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+            authDomain: "srp-shopping-54bbb.firebaseapp.com",
+            databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+            projectId: "srp-shopping-54bbb",
+            storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+            messagingSenderId: "491906168702",
+            appId: "1:491906168702:web:2873565fcd2d561077252f",
+            measurementId: "G-3S7X8V8EFQ"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 2. AUTH STATE SYNC
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('profile-name').innerText = user.displayName || user.email.split('@')[0];
+                document.getElementById('profile-email').innerText = user.email;
+                document.getElementById('user-initial').innerText = (user.displayName || user.email)[0].toUpperCase();
+                
+                // Fetch Wallet from DB
+                db.collection("users").doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        document.getElementById('wallet-amt').innerText = (data.walletBalance || 0).toFixed(2);
+                        if(data.name) document.getElementById('addr-name').innerText = data.name;
+                        if(data.address) document.getElementById('addr-detail').innerHTML = `${data.address}<br>Phone: ${user.phoneNumber || 'Verified'}`;
+                    }
+                });
+            } else {
+                location.href = 'index.html';
+            }
+        });
+
+        // 3. THEME ENGINE
         function toggleDarkMode() {
             const body = document.getElementById('main-body');
             const icon = document.getElementById('theme-icon');
             body.classList.toggle('dark-mode');
             
             const isDark = body.classList.contains('dark-mode');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('srp-theme', isDark ? 'dark' : 'light');
             icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        // Load Preference on startup
-        if(localStorage.getItem('theme') === 'dark') {
-            toggleDarkMode();
+        // Initialize theme
+        if(localStorage.getItem('srp-theme') === 'dark') {
+            document.getElementById('main-body').classList.add('dark-mode');
+            document.getElementById('theme-icon').className = 'fas fa-sun';
         }
 
-        // 7.4: Wallet Logic
-        function rechargeWallet() {
-            let amount = prompt("Enter amount to add to SRP Wallet (₹):");
-            if(amount) {
-                let current = parseFloat(document.getElementById('wallet-amt').innerText);
-                let total = current + parseFloat(amount);
-                document.getElementById('wallet-amt').innerText = total.toFixed(2);
-                alert("₹" + amount + " added successfully via UPI!");
+        // 4. WALLET LOGIC (UPI Simulation)
+        async function rechargeWallet() {
+            const amount = prompt("Enter recharge amount (Min ₹100):");
+            if(amount && !isNaN(amount)) {
+                const user = auth.currentUser;
+                const currentBalance = parseFloat(document.getElementById('wallet-amt').innerText);
+                const newBalance = currentBalance + parseFloat(amount);
+
+                try {
+                    await db.collection("users").doc(user.uid).set({
+                        walletBalance: newBalance
+                    }, { merge: true });
+                    alert(`₹${amount} added successfully! Your SRP Wallet is ready.`);
+                } catch (err) { alert(err.message); }
             }
         }
 
-        // 7.2: Address Management Placeholder
+        // 5. USER ACTIONS
         function addNewAddress() {
-            alert("Opening Address Form Modal...");
+            const newAddr = prompt("Enter your full delivery address:");
+            if(newAddr) {
+                db.collection("users").doc(auth.currentUser.uid).update({
+                    address: newAddr
+                });
+            }
         }
 
         function logout() {
-            if(confirm("Are you sure you want to logout?")) {
-                location.href = 'login.html';
+            if(confirm("Securely sign out from SRP SHOPPING?")) {
+                auth.signOut().then(() => {
+                    location.href = 'index.html';
+                });
             }
         }
     </script>
