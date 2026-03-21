@@ -1,190 +1,685 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<!-- META -->
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>SRP SHOPPING</title>
 
+<!-- TAILWIND -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- FIREBASE v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
 <style>
 body{
-margin:0;
-font-family:Poppins;
-background:#f1f5f9;
+    margin:0;
+    font-family:Poppins, Arial;
+    background:#f1f5f9;
 }
-
-header{
-background:#004aad;
-color:#fff;
-padding:15px;
-display:flex;
-justify-content:space-between;
+.hidden{display:none;}
+.btn{
+    background:#004aad;
+    color:#fff;
+    padding:10px;
+    border-radius:6px;
+    cursor:pointer;
 }
-
-.container{
-padding:15px;
-}
-
-button{
-padding:10px;
-border:none;
-border-radius:6px;
-background:#004aad;
-color:white;
-}
-
-input{
-padding:10px;
-margin:5px 0;
-width:100%;
-}
-
-.card{
-background:#fff;
-padding:10px;
-margin-bottom:10px;
-border-radius:8px;
-}
-
-.dark-mode{
-background:#111;
-color:#fff;
-}
-
 </style>
+
 </head>
+
 <body>
 
-<header>
-<h2>SRP SHOPPING</h2>
-<div id="cart-badge">0</div>
-</header>
+<!-- ================= LOGIN PAGE ================= -->
+<div id="login-page" class="flex items-center justify-center h-screen">
 
-<div class="container">
+<div class="bg-white p-6 rounded-xl shadow-lg w-80">
 
-<div id="auth-section">
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button onclick="login()">Login</button>
-<button onclick="register()">Register</button>
+<h2 class="text-xl font-bold mb-4 text-center text-blue-700">
+SRP SHOPPING
+</h2>
+
+<input id="email" type="email" placeholder="Email"
+class="w-full mb-2 p-2 border rounded">
+
+<input id="password" type="password" placeholder="Password"
+class="w-full mb-2 p-2 border rounded">
+
+<button onclick="login()" class="btn w-full mb-2">
+Login
+</button>
+
+<button onclick="signup()" class="btn w-full mb-2 bg-green-600">
+Create Account
+</button>
+
+<button onclick="googleLogin()" class="btn w-full bg-red-500">
+Login with Google
+</button>
+
+</div>
 </div>
 
-<div id="home-section" style="display:none;">
-<h3>Products</h3>
-<div id="products"></div>
+<!-- ================= MAIN APP ================= -->
+<div id="app" class="hidden">
+<div id="product-page" class="hidden p-3 bg-white">
+
+<div id="slider" class="flex overflow-x-scroll gap-2"></div>
+
+<h2 id="p-name" class="text-xl font-bold mt-2"></h2>
+
+<select id="color" class="border p-1 mt-2">
+<option>Black</option>
+<option>White</option>
+<option>Blue</option>
+</select>
+
+<input id="qty" type="number" value="1" class="border p-1 w-16 mt-2">
+
+<div id="priceBox" class="mt-2"></div>
+
+<button onclick="addToCart()" class="btn w-full mt-2">
+Add to Cart
+</button>
+
+<button onclick="buyNow()" class="btn w-full mt-2 bg-green-600">
+Buy Now
+</button>
+
+<p class="mt-2 text-gray-500">
+Delivery in 7-15 days
+</p>
+
+<p class="mt-2">
+This is a premium quality product with long detailed description like Amazon.
+</p>
+
+</div>
+<!-- TOP BAR -->
+<div class="flex justify-between items-center bg-blue-700 text-white p-3">
+
+<div class="flex items-center gap-3">
+<button onclick="reloadSite()" class="font-bold">
+SRP SHOPPING
+</button>
+<input id="searchBox" placeholder="Search..."
+onkeyup="searchProducts()"
+class="p-1 rounded text-black">
+class="p-1 rounded text-black">
 </div>
 
-<div id="cart-section">
-<h3>Cart</h3>
-<div id="cart-items"></div>
-<div id="cart-total"></div>
-<button onclick="checkout()">Checkout</button>
+<div class="flex items-center gap-3">
+
+<button onclick="privacy()">Privacy</button>
+
+<div id="wallet-amt">₹0</div>
+
 </div>
 
-<div id="wishlist">
-<h3>Wishlist</h3>
 </div>
 
-<div id="user-orders"></div>
+<!-- BANNER -->
+<div class="p-2">
+<div class="bg-blue-500 text-white p-5 rounded mb-2">
+🔥 Big Discount Sale
+</div>
+<div class="bg-blue-400 text-white p-5 rounded mb-2">
+💥 Festival Offer
+</div>
+<div class="bg-blue-300 text-white p-5 rounded">
+⚡ Limited Deals
+</div>
+</div>
+  <div class="flex overflow-x-scroll gap-2 p-2">
 
-<div id="address-list"></div>
+<button onclick="filterCat('All')" class="btn">All</button>
+<button onclick="filterCat('Electronics')" class="btn">Electronics</button>
+<button onclick="filterCat('Fashion')" class="btn">Fashion</button>
+<button onclick="filterCat('Home')" class="btn">Home</button>
 
-<div id="notifications"></div>
+  </div>
 
-<div id="wallet-balance"></div>
+<!-- PRODUCTS -->
+<div id="products" class="grid grid-cols-2 gap-2 p-2"></div>
+
+<!-- BOTTOM NAV -->
+<div class="fixed bottom-0 left-0 right-0 bg-white flex justify-around p-2 border-t">
+
+<button onclick="showHome()">🏠</button>
+<button onclick="showProfile()">👤</button>
+<button onclick="showWallet()">💰</button>
+<button onclick="showSeller()">📊</button>
+<button onclick="showCart()">🛒</button>
+<button onclick="showAI()">🤖</button>
+
+</div>
 
 </div>
 
 <script>
 
+/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
-apiKey: "YOUR_KEY",
-authDomain: "YOUR_DOMAIN",
-projectId: "YOUR_ID",
-storageBucket: "YOUR_BUCKET",
-messagingSenderId: "YOUR_MSG",
-appId: "YOUR_APP"
+apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+authDomain: "srp-shopping-54bbb.firebaseapp.com",
+databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+projectId: "srp-shopping-54bbb",
+storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+messagingSenderId: "491906168702",
+appId: "1:491906168702:web:2873565fcd2d561077252f"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
-const db = firebase.firestore();
+const db = firebase.database();
 
-let currentUser = null;
-let cartItems = [];
+/* ================= AUTH ================= */
 
-function showToast(msg){
-alert(msg);
+function signup(){
+let email = emailInput();
+let pass = passInput();
+
+auth.createUserWithEmailAndPassword(email, pass)
+.then(()=>{
+alert("Account Created");
+})
+.catch(e=>alert(e.message));
 }
 
 function login(){
-const email = document.getElementById("email").value;
-const pass = document.getElementById("password").value;
+let email = emailInput();
+let pass = passInput();
 
 auth.signInWithEmailAndPassword(email, pass)
-.then(()=>showToast("Login Success"))
-.catch(e=>showToast(e.message));
+.catch(e=>alert(e.message));
 }
 
-function register(){
-const email = document.getElementById("email").value;
-const pass = document.getElementById("password").value;
-
-auth.createUserWithEmailAndPassword(email, pass)
-.then(()=>showToast("Registered"))
-.catch(e=>showToast(e.message));
+function googleLogin(){
+let provider = new firebase.auth.GoogleAuthProvider();
+auth.signInWithPopup(provider);
 }
+
+function emailInput(){
+return document.getElementById("email").value;
+}
+
+function passInput(){
+return document.getElementById("password").value;
+}
+
+/* ================= AUTH STATE ================= */
 
 auth.onAuthStateChanged(user=>{
 if(user){
-currentUser = user;
-document.getElementById("auth-section").style.display="none";
-document.getElementById("home-section").style.display="block";
+document.getElementById("login-page").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+
 loadProducts();
+loadWallet();
+
+}else{
+document.getElementById("login-page").classList.remove("hidden");
+document.getElementById("app").classList.add("hidden");
 }
 });
 
+/* ================= BASIC FUNCTIONS ================= */
+
+function reloadSite(){
+location.reload();
+}
+
+function privacy(){
+alert("Privacy Policy Page Coming Soon");
+}
+
+function showHome(){ alert("Home"); }
+function showProfile(){
+hideAll();
+document.getElementById("profile-page").classList.remove("hidden");
+}
+function showWallet(){ alert("Wallet"); }
+function showSeller(){ alert("Seller Dashboard"); }
+function showCart(){ alert("Cart"); }
+function showAI(){ alert("AI Assistant Coming Soon"); }
+let CURRENT_PRODUCT = null;
+
+/* OPEN PRODUCT */
+function openProduct(id){
+
+let p = ALL_PRODUCTS.find(x=>x.id==id);
+CURRENT_PRODUCT = p;
+
+document.getElementById("product-page").classList.remove("hidden");
+document.getElementById("app").classList.add("hidden");
+
+let slider = document.getElementById("slider");
+slider.innerHTML="";
+
+p.img.forEach(i=>{
+slider.innerHTML+=`<img src="${i}" class="h-40 rounded">`;
+});
+
+document.getElementById("p-name").innerText = p.name;
+
+document.getElementById("priceBox").innerHTML = `
+<span class="line-through text-gray-400">₹${p.mrp}</span>
+<span class="text-blue-700 font-bold ml-2">₹${p.price}</span>
+`;
+
+}
+
+/* ADD TO CART */
+function addToCart(){
+
+let uid = auth.currentUser.uid;
+let qty = document.getElementById("qty").value;
+
+db.ref("cart/"+uid+"/"+CURRENT_PRODUCT.id).set({
+...CURRENT_PRODUCT,
+qty:qty
+});
+
+alert("Added to Cart");
+
+}
+
+/* BUY NOW (RAZORPAY LINK) */
+function buyNow(){
+
+window.location.href = "https://rzp.io/rzp/juTBnc4Q";
+
+                                }
+/* ================= WALLET ================= */
+
+function loadWallet(){
+let uid = auth.currentUser.uid;
+
+db.ref("users/"+uid).on("value",snap=>{
+let data = snap.val() || {wallet:0};
+document.getElementById("wallet-amt").innerText = "₹"+data.wallet;
+});
+}
+
+/* ================= PRODUCTS (BASIC) ================= */
 function loadProducts(){
-db.collection("products").get().then(snap=>{
-const box = document.getElementById("products");
-box.innerHTML="";
 
-snap.forEach(doc=>{
-const p = doc.data();
+let container = document.getElementById("products");
+container.innerHTML="";
 
-box.innerHTML += `
-<div class="card">
-<h4>${p.name}</h4>
-<p>₹${p.price}</p>
-<button onclick="addToCart('${doc.id}')">Add</button>
-</div>`;
+const PRODUCTS = [
+{id:"p1",cat:"Electronics",name:"iPhone 13",mrp:69999,price:49999,img:["https://images.unsplash.com/photo-1632661674596-9f3c5d0d08fd"]},
+{id:"p2",cat:"Fashion",name:"Nike Shoes",mrp:4999,price:2499,img:["https://images.unsplash.com/photo-1528701800489-20be3c9a43f8"]},
+{id:"p3",cat:"Electronics",name:"Smart Watch",mrp:3999,price:1499,img:["https://images.unsplash.com/photo-1519741497674-611481863552"]},
+{id:"p4",cat:"Electronics",name:"Headphones",mrp:2999,price:1299,img:["https://images.unsplash.com/photo-1518444028785-8f9c9b3f6e9b"]},
+{id:"p5",cat:"Electronics",name:"Laptop",mrp:80000,price:55000,img:["https://images.unsplash.com/photo-1517336714731-489689fd1ca8"]},
+{id:"p6",cat:"Electronics",name:"Mouse",mrp:1500,price:699,img:["https://images.unsplash.com/photo-1587202372775-e229f172b9d7"]},
+{id:"p7",cat:"Electronics",name:"Keyboard",mrp:2000,price:899,img:["https://images.unsplash.com/photo-1518779578993-ec3579fee39f"]},
+{id:"p8",cat:"Home",name:"Backpack",mrp:2500,price:1200,img:["https://images.unsplash.com/photo-1507525428034-b723cf961d3e"]},
+{id:"p9",cat:"Fashion",name:"T-Shirt",mrp:999,price:399,img:["https://images.unsplash.com/photo-1521335629791-ce4aec67dd47"]},
+{id:"p10",cat:"Fashion",name:"Jeans",mrp:2000,price:899,img:["https://images.unsplash.com/photo-1514996937319-344454492b37"]},
+{id:"p11",cat:"Fashion",name:"Sunglasses",mrp:1500,price:599,img:["https://images.unsplash.com/photo-1511499767150-a48a237f0083"]},
+{id:"p12",cat:"Electronics",name:"Power Bank",mrp:2000,price:999,img:["https://images.unsplash.com/photo-1585386959984-a41552231658"]},
+{id:"p13",cat:"Electronics",name:"Tablet",mrp:30000,price:19999,img:["https://images.unsplash.com/photo-1510557880182-3d4d3cba35c9"]},
+{id:"p14",cat:"Electronics",name:"Camera",mrp:60000,price:45000,img:["https://images.unsplash.com/photo-1519183071298-a2962e402c98"]},
+{id:"p15",cat:"Electronics",name:"Speaker",mrp:4000,price:1499,img:["https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2"]},
+{id:"p16",cat:"Electronics",name:"AirPods",mrp:20000,price:12999,img:["https://images.unsplash.com/photo-1585386959984-a41552231658"]},
+{id:"p17",cat:"Home",name:"Chair",mrp:15000,price:8999,img:["https://images.unsplash.com/photo-1582582494700-6ef4b9d6b68c"]},
+{id:"p18",cat:"Electronics",name:"LED TV",mrp:50000,price:34999,img:["https://images.unsplash.com/photo-1593784991095-a205069470b6"]},
+{id:"p19",cat:"Home",name:"Refrigerator",mrp:40000,price:28999,img:["https://images.unsplash.com/photo-1586201375761-83865001e31c"]},
+{id:"p20",cat:"Home",name:"Washing Machine",mrp:30000,price:21999,img:["https://images.unsplash.com/photo-1581578731548-c64695cc6952"]}
+];
+
+window.ALL_PRODUCTS = PRODUCTS;
+
+PRODUCTS.forEach(p=>{
+container.innerHTML+=`
+<div onclick="openProduct('${p.id}')" class="bg-white p-2 rounded shadow cursor-pointer">
+<img src="${p.img[0]}" class="h-32 w-full object-cover">
+<div class="font-bold">${p.name}</div>
+<div class="text-gray-500 line-through">₹${p.mrp}</div>
+<div class="text-blue-700 font-bold">₹${p.price}</div>
+</div>
+`;
 });
-});
+
+ }
+  function searchProducts(){
+let val = document.getElementById("searchBox").value.toLowerCase();
+
+let filtered = ALL_PRODUCTS.filter(p =>
+p.name.toLowerCase().includes(val)
+);
+
+renderProducts(filtered);
+  }
+function filterCat(cat){
+
+if(cat=="All"){
+renderProducts(ALL_PRODUCTS);
+return;
 }
 
-function addToCart(id){
-cartItems.push(id);
-document.getElementById("cart-badge").innerText = cartItems.length;
-showToast("Added");
+let filtered = ALL_PRODUCTS.filter(p=>p.cat==cat);
+renderProducts(filtered);
+
+}
+  function renderProducts(list){
+
+let container = document.getElementById("products");
+container.innerHTML="";
+
+list.forEach(p=>{
+container.innerHTML+=`
+<div onclick="openProduct('${p.id}')" class="bg-white p-2 rounded shadow">
+<img src="${p.img[0]}" class="h-32 w-full object-cover">
+<div class="font-bold">${p.name}</div>
+<div class="text-blue-700">₹${p.price}</div>
+
+<button onclick="event.stopPropagation(); addWishlist('${p.id}')"
+class="text-red-500">❤️</button>
+
+</div>
+`;
+});
+
+  }
+  function addWishlist(id){
+
+let uid = auth.currentUser.uid;
+
+db.ref("wishlist/"+uid+"/"+id).set(true);
+
+alert("Added to Wishlist");
+
+  }
+  <div id="cart-page" class="hidden p-3 bg-white">
+
+<h2 class="text-xl font-bold">Your Cart</h2>
+
+<div id="cart-items"></div>
+
+<h3 id="cart-total" class="mt-2 font-bold"></h3>
+
+<button onclick="checkout()" class="btn w-full mt-2">
+Checkout
+</button>
+
+</div>
+  function showCart(){
+
+document.getElementById("app").classList.add("hidden");
+document.getElementById("cart-page").classList.remove("hidden");
+
+loadCart();
+
+}
+
+function loadCart(){
+
+let uid = auth.currentUser.uid;
+
+db.ref("cart/"+uid).on("value",snap=>{
+
+let data = snap.val() || {};
+let container = document.getElementById("cart-items");
+container.innerHTML="";
+
+let total = 0;
+
+Object.values(data).forEach(p=>{
+
+total += p.price * p.qty;
+
+container.innerHTML+=`
+<div class="border p-2 mb-2">
+${p.name} × ${p.qty}
+<br>₹${p.price}
+<button onclick="removeCart('${p.id}')">Remove</button>
+</div>
+`;
+
+});
+
+document.getElementById("cart-total").innerText = "Total: ₹"+total;
+
+});
+
+}
+
+function removeCart(id){
+
+let uid = auth.currentUser.uid;
+db.ref("cart/"+uid+"/"+id).remove();
+
 }
 
 function checkout(){
-showToast("Order placed");
+
+window.location.href = "https://rzp.io/rzp/juTBnc4Q";
+
+                       }
+  <div id="profile-page" class="hidden p-3 bg-white">
+
+<h2 class="text-xl font-bold mb-2">My Account</h2>
+
+<button onclick="loadOrders()" class="btn w-full mb-2">My Orders</button>
+<button onclick="showAddress()" class="btn w-full mb-2">Address Book</button>
+<button onclick="showWalletPage()" class="btn w-full mb-2">Wallet</button>
+<button onclick="toggleDark()" class="btn w-full mb-2">🌖 Dark / Light</button>
+<button onclick="showWishlist()" class="btn w-full mb-2">Wishlist</button>
+<button onclick="showNotifications()" class="btn w-full mb-2">Notifications</button>
+<button onclick="showCoupons()" class="btn w-full mb-2">Coupons</button>
+<button onclick="support()" class="btn w-full mb-2">Help & Support</button>
+<button onclick="logout()" class="btn w-full bg-red-500">Logout</button>
+
+<div id="profile-content" class="mt-3"></div>
+
+</div>
+  function hideAll(){
+
+["app","product-page","cart-page","profile-page"].forEach(id=>{
+document.getElementById(id).classList.add("hidden");
+});
+
+  }
+  function loadOrders(){
+
+let uid = auth.currentUser.uid;
+
+db.ref("orders/"+uid).on("value",snap=>{
+
+let data = snap.val() || {};
+let html="";
+
+Object.values(data).forEach(o=>{
+html+=`
+<div class="border p-2 mb-2">
+Order ID: ${o.id}<br>
+Amount: ₹${o.amount}<br>
+Status: ${o.status}<br>
+Tracking: <a href="https://www.indiapost.gov.in" target="_blank">Track</a>
+</div>
+`;
+});
+
+document.getElementById("profile-content").innerHTML = html || "No Orders";
+
+});
+  }
+  function showAddress(){
+
+let html=`
+<input id="addr" placeholder="Address" class="border p-2 w-full mb-2">
+<button onclick="saveAddress()" class="btn w-full">Save</button>
+<div id="addr-list"></div>
+`;
+
+document.getElementById("profile-content").innerHTML = html;
+
+loadAddress();
+
 }
 
-function toggleMode(){
-document.body.classList.toggle("dark-mode");
+function saveAddress(){
+
+let uid = auth.currentUser.uid;
+let val = document.getElementById("addr").value;
+
+db.ref("address/"+uid).push({text:val});
+
 }
 
-</script>
-</body>
-</html>
+function loadAddress(){
+
+let uid = auth.currentUser.uid;
+
+db.ref("address/"+uid).on("value",snap=>{
+
+let data = snap.val()||{};
+let html="";
+
+Object.entries(data).forEach(([k,v])=>{
+html+=`
+<div class="border p-2 mb-2">
+${v.text}
+<button onclick="delAddr('${k}')">Delete</button>
+</div>
+`;
+});
+
+document.getElementById("addr-list").innerHTML = html;
+
+});
+}
+
+function delAddr(id){
+
+let uid = auth.currentUser.uid;
+db.ref("address/"+uid+"/"+id).remove();
+
+}
+  function showWalletPage(){
+
+let html=`
+<h3>Wallet Balance: <span id="walletBal">0</span></h3>
+<button onclick="addMoney()" class="btn w-full mt-2">Recharge</button>
+`;
+
+document.getElementById("profile-content").innerHTML = html;
+
+loadWallet();
+
+}
+
+function addMoney(){
+
+let amt = prompt("Enter amount");
+
+let uid = auth.currentUser.uid;
+
+db.ref("users/"+uid+"/wallet").once("value").then(snap=>{
+
+let bal = snap.val() || 0;
+
+db.ref("users/"+uid).update({
+wallet: bal + Number(amt)
+});
+
+});
+
+}
+  function toggleDark(){
+
+let mode = localStorage.getItem("dark");
+
+if(mode=="on"){
+document.body.style.background="#f1f5f9";
+localStorage.setItem("dark","off");
+}else{
+document.body.style.background="#111";
+localStorage.setItem("dark","on");
+}
+
+  }
+  function showWishlist(){
+
+let uid = auth.currentUser.uid;
+
+db.ref("wishlist/"+uid).on("value",snap=>{
+
+let data = snap.val()||{};
+let ids = Object.keys(data);
+
+let items = ALL_PRODUCTS.filter(p=>ids.includes(p.id));
+
+renderWishlist(items);
+
+});
+
+}
+
+function renderWishlist(list){
+
+let html="";
+
+list.forEach(p=>{
+html+=`
+<div class="border p-2 mb-2">
+${p.name} ₹${p.price}
+<button onclick="addToCartFromWish('${p.id}')">Add to Cart</button>
+</div>
+`;
+});
+
+document.getElementById("profile-content").innerHTML = html;
+
+}
+
+function addToCartFromWish(id){
+
+let p = ALL_PRODUCTS.find(x=>x.id==id);
+CURRENT_PRODUCT = p;
+addToCart();
+
+}
+  function showNotifications(){
+
+let html=`
+<div class="border p-2">🎉 Sale Coming Soon</div>
+<div class="border p-2">📦 Order Update</div>
+`;
+
+document.getElementById("profile-content").innerHTML = html;
+
+    }
+  function showCoupons(){
+
+let html=`
+<div class="border p-2">SAVE50 - 50% OFF</div>
+<div class="border p-2">WELCOME10 - 10% OFF</div>
+`;
+
+document.getElementById("profile-content").innerHTML = html;
+
+  }
+  function support(){
+
+let html=`
+<textarea placeholder="Your issue" class="border w-full p-2"></textarea>
+<button class="btn w-full mt-2">Submit</button>
+`;
+
+document.getElementById("profile-content").innerHTML = html;
+
+  }
+  function logout(){
+auth.signOut();
+  }
