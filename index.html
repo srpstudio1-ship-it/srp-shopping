@@ -2,268 +2,278 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SRP SHOPPING | ALL-IN-ONE MASTER</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass-card { background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); border:1px solid rgba(255,0,0,0.1); box-shadow:0 8px 32px rgba(0,0,0,0.8); }
-        .red-gradient-btn { background: linear-gradient(90deg, #8b0000 0%, #ff0000 100%); transition: 0.2s; }
-        .red-gradient-btn:hover { transform: translateY(-2px); box-shadow:0 4px 15px rgba(255,0,0,0.4);}
-        .input-field { background: rgba(255,255,255,0.05); border:1px solid #333; color:white; }
-        .input-field:focus { border-color:#ff0000; outline:none; }
-        .no-scrollbar::-webkit-scrollbar { display:none; }
-        .product-slider { scroll-snap-type: x mandatory; }
-        .product-slider img { scroll-snap-align:start; }
-        #product-detail-view { display:none; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --srp-blue: #0047AB;
+            --srp-red: #ff0000;
+            --srp-dark-red: #8b0000;
+        }
+
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* AUTH STYLES (Feature 1) */
+        #auth-view {
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 0, 0, 0.1);
+        }
+        .red-gradient-btn { background: linear-gradient(90deg, var(--srp-dark-red) 0%, var(--srp-red) 100%); }
+
+        /* HOME STYLES (Feature 2 & 3) */
+        #home-view { background-color: #f4f7f6; display: none; }
+        .banner-gradient { background: linear-gradient(90deg, #0047AB 0%, #007FFF 100%); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; z-index: 1000; }
+
+        /* DETAIL VIEW STYLES (Feature 4) */
+        #product-detail-view { display: none; position: fixed; inset: 0; bg: white; z-index: 2000; overflow-y: auto; background: white; }
+        .product-slider { scroll-snap-type: x mandatory; display: flex; overflow-x: auto; height: 320px; }
+        .product-slider img { scroll-snap-align: start; width: 100%; flex-shrink: 0; object-fit: contain; background: #f9f9f9; }
+
+        /* ANIMATIONS */
+        .slide-up { animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="pb-20">
 
-<!-- LOGIN / SIGNUP CARD -->
-<div id="auth-card" class="flex items-center justify-center p-4 min-h-screen">
-    <div class="glass-card w-full max-w-md rounded-2xl p-8">
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-white tracking-tighter">
-                SRP <span class="text-red-600">SHOPPING</span>
-            </h1>
-            <p class="text-gray-400 text-sm mt-2" id="auth-subtitle">Welcome back, please login</p>
-        </div>
-        <form id="auth-form" class="space-y-5">
-            <div>
-                <label class="block text-gray-300 text-sm mb-2">Email Address</label>
-                <input type="email" id="email" class="input-field w-full px-4 py-3 rounded-lg" placeholder="name@example.com" required>
+    <section id="auth-view">
+        <div class="glass-card w-full max-w-md rounded-2xl p-8 m-4">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-extrabold text-white tracking-tighter">SRP <span class="text-red-600">SHOPPING</span></h1>
+                <p class="text-gray-400 text-sm mt-2" id="auth-subtitle">Welcome back, please login</p>
             </div>
-            <div>
-                <label class="block text-gray-300 text-sm mb-2">Password</label>
-                <input type="password" id="password" class="input-field w-full px-4 py-3 rounded-lg" placeholder="••••••••" required>
-            </div>
-            <button type="submit" id="main-submit" class="red-gradient-btn w-full py-3 rounded-lg text-white font-bold uppercase tracking-wide">Sign In</button>
-        </form>
-
-        <div class="relative my-8">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-800"></div></div>
-            <div class="relative flex justify-center text-sm"><span class="px-2 bg-black text-gray-500">OR CONTINUE WITH</span></div>
-        </div>
-        <button id="google-btn" class="w-full py-3 px-4 rounded-lg bg-white text-black font-semibold flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20" alt="Google">
-            Sign in with Google
-        </button>
-
-        <div class="mt-8 text-center">
-            <p class="text-gray-400 text-sm">
-                <span id="toggle-text">Don't have an account?</span>
-                <a href="#" id="toggle-auth" class="text-red-500 hover:text-red-400 font-bold ml-1">Create Account</a>
-            </p>
-        </div>
-    </div>
-</div>
-
-<!-- HOME PAGE -->
-<div id="home-view" class="hidden pb-20">
-
-    <!-- HEADER -->
-    <header class="sticky top-0 bg-[#0047AB] text-white p-3 z-50">
-        <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl font-bold" onclick="handleLogoTap()">SRP SHOPPING</h1>
-            <div class="flex gap-4 items-center">
-                <i class="fas fa-search cursor-pointer" onclick="toggleSearch()"></i>
-                <i class="fas fa-filter cursor-pointer" onclick="toggleFilters()"></i>
-                <div class="bg-white/20 px-2 py-1 rounded text-xs">₹<span id="header-wallet">450</span></div>
+            <form id="auth-form" class="space-y-5">
+                <input type="email" id="email" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-gray-800 text-white outline-none focus:border-red-600" placeholder="Email" required>
+                <input type="password" id="password" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-gray-800 text-white outline-none focus:border-red-600" placeholder="Password" required>
+                <button type="submit" id="main-submit" class="red-gradient-btn w-full py-3 rounded-lg text-white font-bold uppercase tracking-wide active:scale-95 transition-transform">Sign In</button>
+            </form>
+            <button id="google-btn" class="w-full py-3 px-4 rounded-lg bg-white text-black font-semibold flex items-center justify-center gap-3 mt-4 hover:bg-gray-200">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20"> Sign in with Google
+            </button>
+            <div class="mt-8 text-center">
+                <p class="text-gray-400 text-sm">
+                    <span id="toggle-text">Don't have an account?</span>
+                    <button id="toggle-auth" class="text-red-500 font-bold ml-1">Create Account</button>
+                </p>
             </div>
         </div>
-        <div class="flex gap-4 overflow-x-auto no-scrollbar py-2 text-sm whitespace-nowrap border-t border-blue-400">
-            <button onclick="filterCategory('all')" class="font-bold border-b-2 border-white">All</button>
-            <button onclick="filterCategory('Electronics')">Electronics</button>
-            <button onclick="filterCategory('Fashion')">Fashion</button>
-            <button onclick="filterCategory('Mobiles')">Mobiles</button>
-            <button onclick="filterCategory('Home')">Home</button>
-        </div>
-    </header>
+    </section>
 
-    <!-- PROMO BANNER -->
-    <div class="w-full h-32 bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg mb-4 flex items-center justify-center text-white font-bold p-4">
-        <div class="text-center">
-            <p class="text-xs uppercase tracking-widest">SRP Exclusive</p>
-            <h2 class="text-lg">MEGA SALE: UP TO 70% OFF</h2>
-        </div>
-    </div>
-
-    <!-- PRODUCT GRID -->
-    <div id="product-grid" class="grid grid-cols-2 gap-2 p-2"></div>
-</div>
-
-<!-- PRODUCT DETAIL MODAL -->
-<div id="product-detail-view" class="fixed inset-0 bg-white z-[60] overflow-y-auto">
-    <nav class="p-4 flex items-center gap-4 border-b sticky top-0 bg-white">
-        <button onclick="closeDetail()" class="fas fa-arrow-left text-xl"></button>
-        <span class="font-bold truncate" id="detail-title-top">Product Details</span>
-    </nav>
-    <div class="flex overflow-x-auto product-slider no-scrollbar h-80 bg-gray-50">
-        <img id="main-img-1" src="" class="w-full h-full object-contain flex-shrink-0">
-        <img id="main-img-2" src="" class="w-full h-full object-contain flex-shrink-0">
-    </div>
-    <div class="p-4">
-        <h2 id="detail-name" class="text-lg font-medium text-gray-800"></h2>
-        <div class="flex items-center gap-2 my-2">
-            <span id="detail-rating" class="bg-green-700 text-white text-[10px] px-2 py-0.5 rounded">4.5 ★</span>
-            <span class="text-blue-600 text-xs">1,240 Ratings</span>
-        </div>
-        <hr class="my-4">
-        <div class="mb-4">
-            <div class="flex items-center gap-2">
-                <span id="detail-discount" class="text-red-600 text-2xl font-light">-50%</span>
-                <span class="text-2xl font-bold">₹<span id="detail-price"></span></span>
-            </div>
-            <p class="text-gray-500 text-sm">M.R.P.: <span class="line-through" id="detail-mrp"></span></p>
-            <p class="text-green-700 font-bold text-sm">Inclusive of all taxes</p>
-        </div>
-        <div class="flex flex-col gap-4 mb-6">
-            <div>
-                <p class="text-sm font-bold mb-2">Color</p>
-                <div class="flex gap-2">
-                    <div class="w-8 h-8 rounded-full border-2 border-blue-600 bg-black"></div>
-                    <div class="w-8 h-8 rounded-full border border-gray-300 bg-blue-500"></div>
-                    <div class="w-8 h-8 rounded-full border border-gray-300 bg-gray-200"></div>
+    <section id="home-view" class="min-h-screen">
+        <header class="sticky top-0 bg-[#0047AB] text-white p-3 z-50 shadow-md">
+            <div class="flex justify-between items-center mb-2">
+                <button onclick="handleLogoTap()" class="text-xl font-bold tracking-tighter">SRP SHOPPING</button>
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs">
+                        <i class="fas fa-wallet text-yellow-400 mr-1"></i> ₹<span id="wallet-balance">0</span>
+                    </div>
                 </div>
             </div>
-            <div>
-                <p class="text-sm font-bold mb-2">Quantity</p>
-                <select class="w-full p-2 border rounded bg-gray-50">
-                    <option>1</option><option>2</option><option>3</option>
-                </select>
+            <input type="text" id="search-bar" onkeyup="searchProducts()" placeholder="Search products..." class="w-full py-2 px-4 rounded text-black outline-none text-sm">
+            <div class="flex gap-4 overflow-x-auto no-scrollbar py-2 text-[10px] font-bold uppercase tracking-widest border-t border-blue-400 mt-2">
+                <button onclick="filterCategory('all')" class="border-b-2 border-white pb-1">All</button>
+                <button onclick="filterCategory('Electronics')">Electronics</button>
+                <button onclick="filterCategory('Fashion')">Fashion</button>
+                <button onclick="filterCategory('Mobiles')">Mobiles</button>
             </div>
+        </header>
+
+        <main class="p-3">
+            <div class="banner-gradient rounded-xl p-5 text-white mb-6 shadow-lg">
+                <h2 class="text-xl font-black italic">SRP EXCLUSIVE MEGA SALE</h2>
+                <p class="text-xs opacity-90">UP TO 70% OFF ON ALL ITEMS</p>
+            </div>
+            <div id="product-grid" class="grid grid-cols-2 gap-3">
+                </div>
+        </main>
+
+        <nav class="bottom-nav h-16 flex items-center justify-around">
+            <button class="flex flex-col items-center text-[#0047AB]"><i class="fas fa-home"></i><span class="text-[9px] font-bold">Home</span></button>
+            <button class="flex flex-col items-center text-gray-400"><i class="fas fa-wallet"></i><span class="text-[9px] font-bold">Wallet</span></button>
+            <button class="flex flex-col items-center text-gray-400"><i class="fas fa-store"></i><span class="text-[9px] font-bold">Seller</span></button>
+            <button class="flex flex-col items-center text-gray-400"><i class="fas fa-shopping-cart"></i><span class="text-[9px] font-bold">Cart</span></button>
+            <button onclick="auth.signOut()" class="flex flex-col items-center text-red-400"><i class="fas fa-power-off"></i><span class="text-[9px] font-bold">Exit</span></button>
+        </nav>
+    </section>
+
+    <section id="product-detail-view" class="slide-up">
+        <nav class="p-4 flex items-center gap-4 border-b sticky top-0 bg-white z-50">
+            <button onclick="closeDetail()" class="fas fa-arrow-left text-xl"></button>
+            <span class="font-bold truncate text-sm" id="detail-title-top">Product Details</span>
+        </nav>
+        <div class="product-slider no-scrollbar">
+            <img id="detail-img-1" src="">
+            <img id="detail-img-2" src="">
         </div>
-        <p class="text-sm text-gray-600 mb-6"><i class="fas fa-truck mr-2"></i>Delivery will be in 7 to 15 days</p>
-        <div class="flex flex-col gap-2 mb-8">
-            <button onclick="addToCart()" class="w-full py-3 bg-yellow-400 rounded-full font-bold">Add to Cart</button>
-            <button class="w-full py-3 bg-orange-500 text-white rounded-full font-bold">Buy Now</button>
+        <div class="p-5">
+            <h2 id="detail-name" class="text-xl font-bold text-gray-800"></h2>
+            <div class="flex items-center gap-2 my-2">
+                <span class="bg-green-700 text-white text-[10px] px-2 py-0.5 rounded">4.8 ★</span>
+                <span class="text-blue-600 text-xs">Premium Choice</span>
+            </div>
+            <div class="my-4">
+                <div class="flex items-center gap-2">
+                    <span id="detail-discount" class="text-red-600 text-2xl font-light">-50%</span>
+                    <span class="text-3xl font-bold">₹<span id="detail-price"></span></span>
+                </div>
+                <p class="text-gray-400 text-sm line-through">M.R.P.: ₹<span id="detail-mrp"></span></p>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg text-xs text-blue-800 font-medium mb-6">
+                <i class="fas fa-truck mr-2"></i> Free Express Delivery in 5-7 days.
+            </div>
+            <div class="flex gap-3 mb-8">
+                <button onclick="alert('Added to Cart')" class="flex-1 py-4 bg-yellow-400 rounded-xl font-bold uppercase text-xs">Add to Cart</button>
+                <button class="flex-1 py-4 bg-orange-500 text-white rounded-xl font-bold uppercase text-xs">Buy Now</button>
+            </div>
+            <h3 class="font-bold border-b pb-2 mb-2 uppercase text-xs">Description</h3>
+            <p id="detail-desc" class="text-sm text-gray-600 leading-relaxed"></p>
         </div>
-        <div>
-            <h3 class="font-bold border-b pb-2 mb-2">Product Description</h3>
-            <p id="detail-desc" class="text-sm text-gray-700 leading-relaxed"></p>
-        </div>
-    </div>
-</div>
+    </section>
 
-<!-- BOTTOM NAV -->
-<nav class="fixed bottom-0 w-full h-16 bg-white border-t flex items-center justify-around z-50">
-    <button class="flex flex-col items-center text-blue-700"><i class="fas fa-home"></i><span class="text-[10px]">Home</span></button>
-    <button class="flex flex-col items-center text-gray-400"><i class="fas fa-wallet"></i><span class="text-[10px]">Wallet</span></button>
-    <button class="flex flex-col items-center text-gray-400"><i class="fas fa-store"></i><span class="text-[10px]">Seller</span></button>
-    <button class="flex flex-col items-center text-gray-400"><i class="fas fa-shopping-cart"></i><span class="text-[10px]">Cart</span></button>
-    <button class="flex flex-col items-center text-blue-400"><i class="fas fa-robot"></i><span class="text-[10px]">AI</span></button>
-</nav>
+    <script>
+        // FIREBASE INITIALIZATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+            authDomain: "srp-shopping-54bbb.firebaseapp.com",
+            databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+            projectId: "srp-shopping-54bbb",
+            storageBucket: "srp-shopping-54bbb.appspot.com",
+            messagingSenderId: "491906168702",
+            appId: "1:491906168702:web:2873565fcd2d561077252f"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-<!-- SCRIPT -->
-<script type="module">
-    // FIREBASE CONFIG
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // APP STATE
+        const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
+        let products = [];
+        let isLoginMode = true;
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-        authDomain: "srp-shopping-54bbb.firebaseapp.com",
-        databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-        projectId: "srp-shopping-54bbb",
-        storageBucket: "srp-shopping-54bbb"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+        // AUTH LISTENER
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-view').style.display = 'none';
+                document.getElementById('home-view').style.display = 'block';
+                loadUserData(user);
+                loadProducts();
+            } else {
+                document.getElementById('auth-view').style.display = 'flex';
+                document.getElementById('home-view').style.display = 'none';
+            }
+        });
 
-    let isLoginMode = true;
+        // AUTH LOGIC
+        document.getElementById('toggle-auth').onclick = () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('main-submit').innerText = isLoginMode ? 'Sign In' : 'Create Account';
+            document.getElementById('auth-subtitle').innerText = isLoginMode ? 'Welcome back, please login' : 'Start your journey';
+            document.getElementById('toggle-text').innerText = isLoginMode ? "Don't have an account?" : "Already have an account?";
+            document.getElementById('toggle-auth').innerText = isLoginMode ? 'Create Account' : 'Sign In';
+        };
 
-    // AUTH TOGGLE
-    const toggleBtn = document.getElementById('toggle-auth');
-    const mainSubmit = document.getElementById('main-submit');
-    const authSubtitle = document.getElementById('auth-subtitle');
-    const toggleText = document.getElementById('toggle-text');
+        document.getElementById('auth-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                if(isLoginMode) await auth.signInWithEmailAndPassword(email, pass);
+                else await auth.createUserWithEmailAndPassword(email, pass);
+            } catch(err) { alert(err.message); }
+        };
 
-    toggleBtn.onclick = (e) => {
-        e.preventDefault();
-        isLoginMode = !isLoginMode;
-        mainSubmit.innerText = isLoginMode ? 'Sign In' : 'Create Account';
-        authSubtitle.innerText = isLoginMode ? 'Welcome back, please login' : 'Start your shopping journey';
-        toggleText.innerText = isLoginMode ? "Don't have an account?" : "Already have an account?";
-        toggleBtn.innerText = isLoginMode ? 'Create Account' : 'Sign In';
-    };
+        document.getElementById('google-btn').onclick = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(err => alert(err.message));
+        };
 
-    document.getElementById('auth-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        try {
-            if (isLoginMode) await signInWithEmailAndPassword(auth, email, password);
-            else await createUserWithEmailAndPassword(auth, email, password);
-            document.getElementById('auth-card').classList.add('hidden');
-            document.getElementById('home-view').classList.remove('hidden');
-        } catch (error) { alert(error.message); }
-    };
-
-    document.getElementById('google-btn').onclick = async () => {
-        try {
-            await signInWithPopup(auth, provider);
-            document.getElementById('auth-card').classList.add('hidden');
-            document.getElementById('home-view').classList.remove('hidden');
-        } catch (error) { alert(error.message); }
-    };
-
-    // ADMIN / NAV
-    const ADMIN_EMAILS = ["Srpstudio1@gmail.com","subhashrajpurohit10@gmail.com"];
-    let currentUserEmail = "subhashrajpurohit10@gmail.com"; // mock
-    function handleLogoTap() {
-        if(ADMIN_EMAILS.includes(currentUserEmail)){
-            const pass = prompt("Enter Admin PIN:");
-            if(pass==="1234"){ alert("Welcome Admin!"); } else alert("Access Denied.");
+        // DATA LOGIC
+        function loadUserData(user) {
+            db.collection("users").doc(user.uid).onSnapshot(doc => {
+                const bal = doc.exists ? doc.data().walletBalance : 0;
+                document.getElementById('wallet-balance').innerText = bal.toLocaleString();
+            });
         }
-    }
 
-    // PRODUCTS
-    const products = Array.from({length:20},(_,i)=>({
-        id:i,
-        name:`SRP Premium Product ${i+1}`,
-        category:i%2===0?'Electronics':'Fashion',
-        price:499+(i*100),
-        mrp:999+(i*100),
-        discount:"50%",
-        image:`https://picsum.photos/400/400?random=${i}`,
-        desc:"High quality product description. ".repeat(200)
-    }));
+        function loadProducts() {
+            // Generate 20 products for the demo
+            products = Array.from({ length: 20 }, (_, i) => ({
+                id: i,
+                name: `SRP Elite Gadget ${i + 1}`,
+                category: i % 2 === 0 ? 'Electronics' : 'Fashion',
+                price: 999 + (i * 150),
+                mrp: 2999 + (i * 150),
+                image: `https://picsum.photos/400/400?random=${i}`,
+                desc: "Official high-performance product engineered by SRP SHOPPING. ".repeat(150)
+            }));
+            renderGrid(products);
+        }
 
-    function renderProducts(items){
-        const grid = document.getElementById('product-grid');
-        grid.innerHTML = items.map(p=>`
-            <div onclick="openDetail(${p.id})" class="bg-white p-2 rounded shadow-sm border border-gray-100">
-                <img src="${p.image}" class="w-full h-32 object-contain mb-2">
-                <h3 class="text-xs font-medium truncate">${p.name}</h3>
-                <div class="flex items-center gap-1 mt-1">
-                    <span class="text-sm font-bold">₹${p.price}</span>
-                    <span class="text-[8px] line-through text-gray-400">₹${p.mrp}</span>
+        function renderGrid(items) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = items.map(p => `
+                <div onclick="openDetail(${p.id})" class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 active:scale-95 transition-transform">
+                    <img src="${p.image}" class="w-full h-32 object-contain mb-2 rounded-lg">
+                    <h3 class="text-[10px] font-bold text-gray-800 truncate uppercase">${p.name}</h3>
+                    <div class="flex items-center gap-1 mt-1">
+                        <span class="text-sm font-black text-blue-700">₹${p.price}</span>
+                        <span class="text-[8px] line-through text-gray-400">₹${p.mrp}</span>
+                    </div>
+                    <p class="text-[9px] text-green-600 font-bold">50% OFF</p>
                 </div>
-                <p class="text-[10px] text-green-600 font-bold">${p.discount} OFF</p>
-            </div>
-        `).join('');
-    }
+            `).join('');
+        }
 
-    function openDetail(id){
-        const p = products[id];
-        document.getElementById('detail-name').innerText=p.name;
-        document.getElementById('detail-price').innerText=p.price;
-        document.getElementById('detail-mrp').innerText=p.mrp;
-        document.getElementById('detail-discount').innerText=`-${p.discount}`;
-        document.getElementById('detail-desc').innerText=p.desc;
-        document.getElementById('main-img-1').src=p.image;
-        document.getElementById('main-img-2').src=`https://picsum.photos/400/400?random=${id+50}`;
-        document.getElementById('product-detail-view').style.display='block';
-        document.body.style.overflow='hidden';
-    }
-    function closeDetail(){ document.getElementById('product-detail-view').style.display='none'; document.body.style.overflow='auto'; }
-    function filterCategory(cat){ if(cat==='all') renderProducts(products); else renderProducts(products.filter(p=>p.category===cat)); }
-    function addToCart(){ alert("Added to SRP Cart!"); }
+        // NAVIGATION & UI
+        function openDetail(id) {
+            const p = products[id];
+            document.getElementById('detail-name').innerText = p.name;
+            document.getElementById('detail-price').innerText = p.price;
+            document.getElementById('detail-mrp').innerText = p.mrp;
+            document.getElementById('detail-desc').innerText = p.desc;
+            document.getElementById('detail-img-1').src = p.image;
+            document.getElementById('detail-img-2').src = `https://picsum.photos/400/400?random=${id+100}`;
+            document.getElementById('product-detail-view').style.display = 'block';
+        }
 
-    renderProducts(products);
-</script>
+        function closeDetail() { document.getElementById('product-detail-view').style.display = 'none'; }
+
+        function filterCategory(cat) {
+            if(cat === 'all') renderGrid(products);
+            else renderGrid(products.filter(p => p.category === cat));
+        }
+
+        function handleLogoTap() {
+            const user = auth.currentUser;
+            if (user && ADMIN_EMAILS.includes(user.email)) {
+                const pin = prompt("ADMIN PIN REQUIRED:");
+                if (pin === "1234") alert("Redirecting to Master Console...");
+                else alert("Unauthorized!");
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+    </script>
 </body>
-                                                                                     </html>
+</html>
