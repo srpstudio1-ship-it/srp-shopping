@@ -2,76 +2,220 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
-    <!-- Firebase JS SDK -->
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-            authDomain: "srp-shopping-54bbb.firebaseapp.com",
-            databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-            projectId: "srp-shopping-54bbb",
-            storageBucket: "srp-shopping-54bbb.appspot.com",
-            // measurementId: "G-XXXXXXX" // Optional
-        };
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-    </script>
-    <!-- You can add some CSS styling here -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SRP Shopping | Secure Access</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0047AB; /* SRP Primary Blue */
+            background: linear-gradient(135deg, #0047AB 0%, #002D6B 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            width: 90%;
+            max-width: 400px;
+            padding: 40px 30px;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 14px 14px 45px;
+            border-radius: 16px;
+            border: 1.5px solid #e2e8f0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #0047AB;
+            box-shadow: 0 0 0 4px rgba(0, 71, 171, 0.1);
+        }
+
+        .btn-srp {
+            background: #0047AB;
+            color: white;
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-srp:active { transform: scale(0.96); }
+
+        .loader {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0047AB;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <h2>Login</h2>
-    <div>
-        <input type="email" id="email" placeholder="Email" required><br>
-        <input type="password" id="password" placeholder="Password" required><br>
-        <button onclick="login()">Login</button><br>
-        <button onclick="googleSignIn()">Login with Google</button><br>
-        <button onclick="createAccount()">Create Account</button>
+
+    <div class="login-card text-center">
+        <div class="mb-8">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-white text-3xl font-black mb-3 shadow-lg">
+                S
+            </div>
+            <h1 class="text-2xl font-black text-slate-800">SRP SHOPPING</h1>
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Enterprise Marketplace</p>
+        </div>
+
+        <div id="auth-form">
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" placeholder="Email Address">
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" placeholder="Password">
+            </div>
+
+            <button onclick="handleAuth('login')" id="login-btn" class="btn-srp mb-4 flex items-center justify-center gap-3">
+                <span>Sign In</span>
+                <div id="load-spinner" class="loader"></div>
+            </button>
+
+            <div class="flex items-center gap-3 mb-6">
+                <div class="h-[1px] bg-slate-200 flex-1"></div>
+                <span class="text-[10px] text-slate-400 font-bold">OR</span>
+                <div class="h-[1px] bg-slate-200 flex-1"></div>
+            </div>
+
+            <button onclick="googleSignIn()" class="w-full border-1.5 border-slate-200 py-3 rounded-16 flex items-center justify-center gap-3 text-slate-600 font-semibold text-sm hover:bg-slate-50 border rounded-xl mb-6">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5">
+                Google Login
+            </button>
+
+            <p class="text-xs text-slate-500">
+                New to SRP? 
+                <button onclick="handleAuth('signup')" class="text-blue-600 font-bold underline">Create Account</button>
+            </p>
+        </div>
     </div>
 
     <script>
-        // Login with Email and Password
-        function login() {
+        // 1. CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+            authDomain: "srp-shopping-54bbb.firebaseapp.com",
+            projectId: "srp-shopping-54bbb",
+            storageBucket: "srp-shopping-54bbb.appspot.com",
+            messagingSenderId: "491906168702",
+            appId: "1:491906168702:web:2873565fcd2d561077252f"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 2. CHECK REDIRECT (If already logged in)
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // If it's an admin, go to Admin Panel, else Home
+                const ADMIN_UID = "YOUR_ADMIN_UID_HERE"; 
+                if(user.uid === ADMIN_UID) {
+                    window.location.href = "admin.html";
+                } else {
+                    window.location.href = "index.html";
+                }
+            }
+        });
+
+        // 3. MAIN AUTH HANDLER
+        async function handleAuth(type) {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    alert("Login successful!");
-                    // Redirect or handle user info
-                })
-                .catch((error) => {
-                    alert(error.message);
-                });
+            const spinner = document.getElementById('load-spinner');
+
+            if(!email || !password) return alert("Please fill all fields.");
+
+            spinner.style.display = 'block';
+
+            try {
+                let userCredential;
+                if(type === 'login') {
+                    userCredential = await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    // Initialize New User Data in Firestore
+                    await initializeUserProfile(userCredential.user);
+                }
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                spinner.style.display = 'none';
+            }
         }
 
-        // Google Sign-In
-        function googleSignIn() {
+        // 4. GOOGLE SIGN IN
+        async function googleSignIn() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().signInWithPopup(provider)
-                .then((result) => {
-                    alert("Google login successful!");
-                    // Redirect or handle user info
-                })
-                .catch((error) => {
-                    alert(error.message);
-                });
+            try {
+                const result = await auth.signInWithPopup(provider);
+                await initializeUserProfile(result.user);
+            } catch (error) {
+                alert(error.message);
+            }
         }
 
-        // Create Account
-        function createAccount() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    alert("Account created successfully!");
-                    // Redirect or handle user info
-                })
-                .catch((error) => {
-                    alert(error.message);
+        // 5. DATABASE INITIALIZATION
+        async function initializeUserProfile(user) {
+            const userRef = db.collection("users").doc(user.uid);
+            const doc = await userRef.get();
+
+            // Only create if user doesn't exist in DB
+            if (!doc.exists) {
+                await userRef.set({
+                    name: user.displayName || "New Member",
+                    email: user.email,
+                    walletBalance: 0,
+                    isVendor: false,
+                    joinedAt: new Date().toISOString(),
+                    kycStatus: "none"
                 });
+            }
         }
     </script>
 </body>
