@@ -278,6 +278,26 @@
             <button class="btn btn-primary" onclick="closeModal()" style="width: 100%; margin-top: 20px;">Close Window</button>
         </div>
     </div>
+// COMMON SRP BRAIN (PART 9)
+const firebaseConfig = {
+    apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+    authDomain: "srp-shopping-54bbb.firebaseapp.com",
+    databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+    projectId: "srp-shopping-54bbb",
+    storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+    messagingSenderId: "491906168702",
+    appId: "1:491906168702:web:2873565fcd2d561077252f",
+    measurementId: "G-3S7X8V8EFQ"
+};
+
+// Initialize Firebase once per page
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const rdb = firebase.database();
+
+// Admin Identification (Part 2)
+const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
 
 <script>
     // ENTERPRISE CONFIGURATION
