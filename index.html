@@ -356,21 +356,23 @@ let isAdmin = false;
 
 // AUTH OBSERVER
 auth.onAuthStateChanged(user => {
-    if (user) {
+    if(user){
         currentUser = user;
-        isAdmin = ADMIN_EMAILS.includes(user.email);
-        document.getElementById('auth-portal').style.display = 'none';
-        document.getElementById('app-shell').style.display = 'block';
-        if (isAdmin) document.getElementById('admin-badge').style.display = 'block';
-        
-        loadHomeData();
-        syncUserWallet();
-    } else {
-        document.getElementById('auth-portal').style.display = 'flex';
-        document.getElementById('app-shell').style.display = 'none';
+
+        updateWallet();
+        loadUserProfile();
+        loadOrders();
+        loadWallet();
+        loadWishlist();
+        loadCart();
+        loadNotifications();
+        loadAddresses();
+
+        if(user.uid === ADMIN_UID){
+            document.getElementById('admin-nav-item').style.display = "block";
+        }
     }
 });
-
 // ==========================================
 // UI ENGINE FUNCTIONS
 // ==========================================
@@ -1066,7 +1068,6 @@ async function processVendorPayout(vendorId, amount) {
             status: 'Completed'
         });
     }).then(() => showToast("Payout Successful")).catch(e => showToast(e));
-}
 
 /* =========================================
    5. FINAL APP BOOTSTRAP (The Glue)
@@ -1082,7 +1083,7 @@ window.onload = () => {
             console.log("SRP Authenticated:", user.uid);
             updateWallet();
             // Check if Admin to show Admin Tab
-            if(user.uid === ADMIN_UID) {
+            const ADMIN_UID = "LRukxuWhNeZEElB0MfxKV04nsgH3,5zaPB92EHJPIZLbttmwvsxDF64F3,qFVYJKbY25eUzQxZUjT5fCRTku42";
                 document.getElementById('admin-nav-item').style.display = "block";
             }
         } else {
@@ -1182,7 +1183,14 @@ function applyCoupon(code, cartTotal) {
     }
     async function processOfflineQueue() {
     const db = await openDB();
-    const tx = db.transaction('pending_orders', 'readwrite');
+    const request = indexedDB.open('SRP_Offline_Vault', 1);
+
+request.onupgradeneeded = e => {
+    const db = e.target.result;
+    if (!db.objectStoreNames.contains('pending_orders')) {
+        db.createObjectStore('pending_orders', { keyPath: 'id' });
+    }
+};
     const store = tx.objectStore('pending_orders');
 
     const data = await store.get("checkout");
@@ -1469,7 +1477,7 @@ function loadNotifications(){
 // ==========================================
 // 7.8 COUPON
 // ==========================================
-function applyCoupon(){
+function applyCouponDB(){ ... }
     const code = document.getElementById("coupon-code").value;
 
     firebase.database().ref("coupons/" + code).once("value")
@@ -1598,7 +1606,10 @@ function loadAdminProducts(){
 
 function addProduct(){
     const file = document.getElementById("p-img").files[0];
-
+if(!file){
+    alert("Select Image");
+    return;
+}
     const ref = firebase.storage().ref("products/" + Date.now());
 
     ref.put(file).then(snapshot=>{
