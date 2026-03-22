@@ -391,22 +391,8 @@
         initLiveMonitor();
     });
 
-    // 4. SECURITY HANDLER
-    function authenticateAdmin() {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                if (MASTER_ADMINS.includes(user.email.toLowerCase())) {
-                    console.log("Access Granted: " + user.email);
-                    loadDashboardView(); // Default view
-                } else {
-                    alert("Unauthorized Access Attempt Detected.");
-                    auth.signOut().then(() => window.location.href = "login.html");
-                }
-            } else {
-                window.location.href = "login.html";
-            }
-        });
-    }
+    
+    
 
     // 5. DASHBOARD VIEW RENDERER (Part of 8.8 & 8.9)
     function loadDashboardView() {
