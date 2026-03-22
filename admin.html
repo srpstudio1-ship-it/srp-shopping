@@ -72,7 +72,15 @@
             transition: 0.2s;
             text-decoration: none;
         }
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
         .nav-item i { margin-right: 15px; font-size: 18px; width: 20px; text-align: center; }
         .nav-item:hover { background: var(--light-blue); color: var(--primary-blue); }
         .nav-item.active { background: var(--primary-blue); color: var(--white); box-shadow: var(--shadow); }
@@ -279,25 +287,6 @@
         </div>
     </div>
 // COMMON SRP BRAIN (PART 9)
-const firebaseConfig = {
-    apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-    authDomain: "srp-shopping-54bbb.firebaseapp.com",
-    databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-    projectId: "srp-shopping-54bbb",
-    storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-    messagingSenderId: "491906168702",
-    appId: "1:491906168702:web:2873565fcd2d561077252f",
-    measurementId: "G-3S7X8V8EFQ"
-};
-
-// Initialize Firebase once per page
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const rdb = firebase.database();
-
-// Admin Identification (Part 2)
-const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
 
 <script>
     // ENTERPRISE CONFIGURATION
@@ -312,15 +301,20 @@ const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
     };
 
     // Global Instances
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
     const rdb = firebase.database();
     const auth = firebase.auth();
     const storage = firebase.storage();
 
     // FIXED ADMIN REGISTRY (Removes duplicates from previous version)
-    const ADMIN_LIST = ["UID_1", "UID_2"];
-
+    const ADMIN_EMAILS = [
+    "admin1@srp.com",
+    "Srpstudio1@gmail.com",
+    "subhashrajpurohit10@gmail.com"
+];
     // SYSTEM INITIALIZATION
     window.onload = function() {
         console.log("SRP System v4.0 Initialized");
@@ -329,19 +323,20 @@ const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
     };
 
     function checkSecuritySession() {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                if (ADMIN_LIST.includes(user.uid)) {
-                    document.getElementById('dynamic-view').innerHTML = `<h2>Welcome Back, Authorized Admin</h2><p>Select a module from the sidebar to begin management.</p>`;
-                } else {
-                    window.location.href = "login.html";
-                }
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            if (ADMIN_EMAILS.includes(user.email)) {
+                document.getElementById('dynamic-view').innerHTML =
+                    `<h2>Welcome Admin</h2>`;
             } else {
-                // Redirect if not logged in
+                alert("Access Denied");
+                window.location.href = "index.html";
             }
-        });
+        } else {
+            window.location.href = "index.html";
+        }
+    });
     }
-
     // UI NAVIGATION ENGINE
     function switchTab(tab, element) {
         // Update Sidebar UI
@@ -353,6 +348,17 @@ const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
         const desc = document.getElementById('page-desc');
 
         switch(tab) {
+                case 'products':
+    title.innerText = "Global Products";
+    desc.innerText = "Manage inventory and products.";
+    renderProductPanel();
+    break;
+
+case 'settings':
+    title.innerText = "System Settings";
+    desc.innerText = "Configure platform rules.";
+    renderSettingsPanel();
+    break;
             case 'dashboard':
                 title.innerText = "Admin Dashboard";
                 desc.innerText = "Real-time platform overview and system health.";
@@ -466,7 +472,9 @@ function renderVendorPanel() {
 
 function toggleVendorStatus(id, currentStatus) {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-    db.collection("users").doc(id).update({ vendorStatus: newStatus })
+    .update({...})
+.then(()=> alert("Updated"))
+.catch(err => alert(err.message));
     .then(() => alert(`Vendor ${newStatus} successfully.`));
 }
 
@@ -521,7 +529,7 @@ function updateTracking(orderId) {
    ========================================= */
 function renderWalletPanel() {
     const view = document.getElementById('dynamic-view');
-    view.innerHTML = `
+    view.innerHTML = `<p>Loading...</p>`;
         <div class="finance-header">
             <div class="card">Total Platform Commission: <h2 id="platform-comm">₹0</h2></div>
             <div class="card">Pending Payouts: <h2 id="pending-payouts">₹0</h2></div>
@@ -1061,7 +1069,7 @@ function printInvoice(orderId) {
                             <th style="padding:10px; border:1px solid #ddd;">Qty</th>
                             <th style="padding:10px; border:1px solid #ddd;">Price</th>
                         </tr>
-                        ${o.items.map(i => `
+                        ${(o.items || []).map(i => `
                             <tr>
                                 <td style="padding:10px; border:1px solid #ddd;">${i.name}</td>
                                 <td style="padding:10px; border:1px solid #ddd; text-align:center;">${i.qty}</td>
@@ -1283,7 +1291,7 @@ function closeModal() {
    ========================================= */
 function updateGlobalStats() {
     // Aggregates data for the top 4 cards on the dashboard
-    rdb.ref('orders').on('value', snap => {
+    rdb.ref('orders').limitToLast(50).on('value', snap => {
         let rev = 0;
         let ord = 0;
         const today = new Date().toLocaleDateString();
