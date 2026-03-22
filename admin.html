@@ -174,6 +174,156 @@
 </div>
 
 <script>
+    /* =========================================
+   PART 2: PRODUCT & CATEGORY ENGINE
+   ========================================= */
+
+// 8.11 CATEGORY MANAGEMENT MODULE
+function renderCategories() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Category Architect (8.11)</h1>
+                <p>Define the structure of SRP SHOPPING marketplace.</p>
+            </div>
+            <button class="btn-primary" onclick="openCategoryModal()" style="padding:12px 25px; border-radius:12px; border:none; color:#fff; cursor:pointer;">+ Add Category</button>
+        </div>
+
+        <div class="glass-panel" style="background:#fff; padding:25px; border-radius:20px; border:1px solid #e2e8f0;">
+            <div id="category-list-display" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;">
+                </div>
+        </div>
+    `;
+    syncCategories();
+}
+
+// 8.1 PRODUCT MANAGEMENT MODULE
+function renderProducts() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <div>
+                <h1 style="font-weight: 800;">Inventory Control (8.1)</h1>
+                <p>Manage MRP, Stock, and Global Visibility.</p>
+            </div>
+            <button class="btn-primary" onclick="openProductModal()" style="padding:12px 25px; border-radius:12px; border:none; background:#4f46e5; color:#fff;">+ Deploy New Product</button>
+        </div>
+
+        <div style="margin-bottom:20px; display:flex; gap:10px;">
+            <input type="text" id="p-search" placeholder="Search by Product ID..." style="flex:1; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+            <select id="p-filter-cat" style="padding:12px; border-radius:10px; border:1px solid #e2e8f0;"></select>
+        </div>
+
+        <div id="product-master-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+            </div>
+
+        <div id="p-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; overflow-y:auto; padding:20px;">
+            <div style="background:#fff; max-width:800px; margin:20px auto; border-radius:24px; padding:30px; position:relative;">
+                <span onclick="closePModal()" style="position:absolute; top:20px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
+                <h2 id="p-modal-title" style="margin-bottom:25px; font-weight:800;">Product Deployment</h2>
+                
+                <form id="p-form" onsubmit="saveProduct(event)">
+                    <input type="hidden" id="p-id-field">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                        <div>
+                            <label style="font-size:12px; font-weight:800;">PRODUCT NAME</label>
+                            <input type="text" id="p-name" class="form-input" required style="width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #e2e8f0;">
+                            
+                            <label style="font-size:12px; font-weight:800;">CATEGORY (8.11)</label>
+                            <select id="p-cat-select" class="form-input" style="width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #e2e8f0;"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:800;">PRODUCT IMAGE (8.1.4)</label>
+                            <input type="file" id="p-img-file" accept="image/*" onchange="previewImg(this)" style="margin:8px 0;">
+                            <div id="p-img-preview" style="width:100px; height:100px; background:#f1f5f9; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                                <i class="fas fa-camera text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-top:15px;">
+                        <div>
+                            <label style="font-size:12px; font-weight:800;">MRP (₹)</label>
+                            <input type="number" id="p-mrp" class="form-input" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:800;">DISCOUNT PRICE (₹)</label>
+                            <input type="number" id="p-disc" class="form-input" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:800;">STOCK QTY</label>
+                            <input type="number" id="p-stock" class="form-input" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px;">
+                        <label style="font-size:12px; font-weight:800;">DESCRIPTION (8.1.9)</label>
+                        <textarea id="p-desc" style="width:100%; height:100px; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-top:8px;"></textarea>
+                    </div>
+
+                    <button type="submit" style="width:100%; padding:15px; background:#4f46e5; color:#fff; border:none; border-radius:12px; margin-top:25px; font-weight:800; cursor:pointer;">
+                        SYNCHRONIZE TO DATABASE
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+    updateCatDropdown();
+    syncProducts();
+}
+
+// --- LOGIC FUNCTIONS ---
+
+async function syncCategories() {
+    db.collection("categories").onSnapshot(snap => {
+        const container = document.getElementById('category-list-display');
+        if(!container) return;
+        container.innerHTML = "";
+        snap.forEach(doc => {
+            const cat = doc.data();
+            container.innerHTML += `
+                <div style="padding:15px; background:#f8fafc; border-radius:15px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                    <span><i class="${cat.icon} shadow-sm"></i> ${cat.name}</span>
+                    <i class="fas fa-trash-alt text-danger" onclick="deleteCat('${doc.id}')" style="cursor:pointer; color:#ef4444;"></i>
+                </div>
+            `;
+        });
+    });
+}
+
+async function saveProduct(e) {
+    e.preventDefault();
+    const id = document.getElementById('p-id-field').value;
+    const data = {
+        name: document.getElementById('p-name').value,
+        category: document.getElementById('p-cat-select').value,
+        mrp: Number(document.getElementById('p-mrp').value),
+        discountPrice: Number(document.getElementById('p-disc').value),
+        stock: Number(document.getElementById('p-stock').value),
+        description: document.getElementById('p-desc').value,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if(id) {
+            await db.collection("products").doc(id).update(data);
+            logAction("Admin", `Updated Product: ${data.name}`, "Success");
+        } else {
+            await db.collection("products").add(data);
+            logAction("Admin", `Added New Product: ${data.name}`, "Success");
+        }
+        closePModal();
+        alert("Product Synchronized!");
+    } catch (err) {
+        logAction("Admin", `Product Error: ${err.message}`, "Failed");
+    }
+}
+
+// Helper: UI Controls
+function openProductModal() { document.getElementById('p-modal').style.display = 'block'; }
+function closePModal() { document.getElementById('p-modal').style.display = 'none'; document.getElementById('p-form').reset(); }
+
     // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
