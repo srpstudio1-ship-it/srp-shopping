@@ -323,6 +323,315 @@ async function saveProduct(e) {
 // Helper: UI Controls
 function openProductModal() { document.getElementById('p-modal').style.display = 'block'; }
 function closePModal() { document.getElementById('p-modal').style.display = 'none'; document.getElementById('p-form').reset(); }
+/* =========================================
+   PART 3: LOGISTICS & VENDOR ECOSYSTEM
+   ========================================= */
+
+// 8.2 & 8.6 GLOBAL ORDER MANAGEMENT
+function renderOrders() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Order Control Center (8.2)</h1>
+                <p>Monitor global traffic and update Tracking IDs.</p>
+            </div>
+            <div style="background:#fff; padding:10px 20px; border-radius:12px; border:1px solid #e2e8f0; font-weight:700;">
+                Live Orders: <span id="live-order-count" style="color:var(--srp-primary);">0</span>
+            </div>
+        </div>
+
+        <div class="log-table-container">
+            <div class="table-header" style="background:#f8fafc;">
+                <input type="text" id="order-search" placeholder="Search Order ID / Phone..." 
+                       style="width:100%; max-width:400px; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+            </div>
+            <table style="min-width: 1000px;">
+                <thead>
+                    <tr>
+                        <th>Order ID / Date</th>
+                        <th>Customer Details (8.2)</th>
+                        <th>Amount & Status</th>
+                        <th>Tracking ID (8.2)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-master-body">
+                    </tbody>
+            </table>
+        </div>
+    `;
+    syncGlobalOrders();
+}
+
+// 8.16 SELLER MANAGEMENT (Applications & Suspension)
+function renderSellers() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <div>
+                <h1 style="font-weight: 800;">Seller Management (8.16)</h1>
+                <p>Approve requests or suspend vendor accounts.</p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:30px;">
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+                <span class="lbl">Pending Requests</span>
+                <span class="val" id="pending-seller-count">0</span>
+            </div>
+            <div class="card" style="border-left: 4px solid #10b981;">
+                <span class="lbl">Active Vendors</span>
+                <span class="val" id="active-seller-count">0</span>
+            </div>
+        </div>
+
+        <div id="seller-request-container" class="animate-up">
+            </div>
+    `;
+    syncSellerRequests();
+}
+
+// --- CORE LOGIC FOR PART 3 ---
+
+async function syncGlobalOrders() {
+    // Requirements: 8.2 (User Name, Phone, Email, Address, Pincode, Tracking ID)
+    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+        const tbody = document.getElementById('orders-master-body');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+        
+        document.getElementById('live-order-count').innerText = snap.size;
+
+        snap.forEach(doc => {
+            const o = doc.data();
+            const date = o.timestamp ? new Date(o.timestamp.seconds * 1000).toLocaleDateString() : 'Pending';
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <strong style="color:var(--srp-primary);">#${doc.id.slice(-8).toUpperCase()}</strong><br>
+                        <small style="color:#64748b;">${date}</small>
+                    </td>
+                    <td>
+                        <div style="line-height:1.4;">
+                            <strong>${o.userName}</strong> | ${o.userPhone}<br>
+                            <small>${o.address}, ${o.pincode}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="font-size:16px;">₹${o.totalAmount}</strong><br>
+                        <span class="badge-log" style="background:#eef2ff; color:#4f46e5;">${o.status || 'Processing'}</span>
+                    </td>
+                    <td>
+                        <input type="text" value="${o.trackingId || ''}" 
+                               placeholder="Enter Tracking ID" 
+                               onchange="updateTracking('${doc.id}', this.value)"
+                               style="padding:6px; border-radius:5px; border:1px solid #cbd5e1; font-size:12px; width:150px;">
+                    </td>
+                    <td>
+                        <button onclick="viewOrderDetails('${doc.id}')" style="background:none; border:none; color:var(--srp-primary); cursor:pointer;"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    });
+}
+
+async function syncSellerRequests() {
+    // Requirements: 8.16 (Approve/Reject/Suspend)
+    db.collection("sellers").onSnapshot(snap => {
+        const container = document.getElementById('seller-request-container');
+        if(!container) return;
+        container.innerHTML = "";
+
+        let pending = 0;
+        let active = 0;
+
+        snap.forEach(doc => {
+            const s = doc.data();
+            if(s.status === 'Pending') pending++;
+            if(s.status === 'Active') active++;
+
+            container.innerHTML += `
+                <div class="card" style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h3 style="font-weight:800;">${s.storeName}</h3>
+                        <p style="font-size:13px; color:#64748b;">Owner: ${s.ownerName} | ID: ${doc.id.slice(-5)}</p>
+                        <div style="margin-top:10px;">
+                            <span class="badge-log" style="background:${s.status === 'Active' ? '#dcfce7':'#fef3c7'}; color:${s.status === 'Active' ? '#166534':'#92400e'}">
+                                ${s.status}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        ${s.status === 'Pending' ? 
+                            `<button onclick="updateSellerStatus('${doc.id}', 'Active')" style="padding:10px 20px; border-radius:10px; border:none; background:#10b981; color:#fff; font-weight:700;">Approve</button>` : 
+                            `<button onclick="updateSellerStatus('${doc.id}', 'Suspended')" style="padding:10px 20px; border-radius:10px; border:none; background:#ef4444; color:#fff; font-weight:700;">Suspend</button>`
+                        }
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('pending-seller-count').innerText = pending;
+        document.getElementById('active-seller-count').innerText = active;
+    });
+}
+
+// ACTION HANDLERS
+async function updateTracking(orderId, val) {
+    await db.collection("orders").doc(orderId).update({ trackingId: val });
+    logAction("Admin", `Updated Tracking for Order: ${orderId}`, "Success");
+}
+
+async function updateSellerStatus(sellerId, status) {
+    if(confirm(`Set seller status to ${status}?`)) {
+        await db.collection("sellers").doc(sellerId).update({ status: status });
+        logAction("Admin", `Seller ${sellerId} status changed to ${status}`, "Success");
+    }
+}
+/* =========================================
+   PART 4: FINANCIAL CLEARANCE & PROMOTIONS
+   ========================================= */
+
+// 8.3 SELLER WITHDRAWAL APPROVAL SYSTEM
+function renderWithdrawals() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Withdrawal Approval (8.3)</h1>
+                <p>Verify seller balances and mark payouts as paid.</p>
+            </div>
+        </div>
+
+        <div class="analytics-grid">
+            <div class="card" style="border-bottom: 4px solid #ef4444;">
+                <span class="lbl">Pending Payouts</span>
+                <span class="val" id="pending-payout-amt">₹0</span>
+            </div>
+            <div class="card" style="border-bottom: 4px solid #10b981;">
+                <span class="lbl">Total Paid Out</span>
+                <span class="val" id="total-paid-amt">₹0</span>
+            </div>
+        </div>
+
+        <div class="log-table-container">
+            <div class="table-header">
+                <h3 style="font-weight: 800;">Payout Requests (8.3)</h3>
+            </div>
+            <table style="min-width: 900px;">
+                <thead>
+                    <tr>
+                        <th>Seller ID</th>
+                        <th>Wallet Balance</th>
+                        <th>Request Amount</th>
+                        <th>Payment Method</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="withdrawal-body">
+                    </tbody>
+            </table>
+        </div>
+    `;
+    syncWithdrawals();
+}
+
+// 8.4 SELLER PROMOTION PAYMENT SYSTEM
+function renderPromotions() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <div>
+                <h1 style="font-weight: 800;">Promotion Audit (8.4)</h1>
+                <p>Track payments received for product advertisements.</p>
+            </div>
+        </div>
+
+        <div id="promo-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px;">
+            </div>
+    `;
+    syncPromotionPayments();
+}
+
+// --- CORE LOGIC FOR PART 4 ---
+
+async function syncWithdrawals() {
+    rdb.ref('withdrawals').on('value', (snap) => {
+        const tbody = document.getElementById('withdrawal-body');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+        
+        let pendingTotal = 0;
+        let paidTotal = 0;
+
+        snap.forEach((child) => {
+            const w = child.val();
+            if(w.status === 'Pending') pendingTotal += Number(w.amount);
+            if(w.status === 'Paid') paidTotal += Number(w.amount);
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${w.sellerName}</strong><br><small>${w.sellerId}</small></td>
+                    <td><span style="color:#64748b;">₹${w.currentBalance}</span></td>
+                    <td><strong style="color:#ef4444;">₹${w.amount}</strong></td>
+                    <td>
+                        <div style="font-size:12px; background:#f1f5f9; padding:8px; border-radius:8px;">
+                            ${w.paymentDetails} </div>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="processPayout('${child.key}', 'Paid')" style="background:#10b981; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:700;">Approve</button>
+                            <button onclick="processPayout('${child.key}', 'Rejected')" style="background:#ef4444; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:700;">Reject</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('pending-payout-amt').innerText = `₹${pendingTotal}`;
+        document.getElementById('total-paid-amt').innerText = `₹${paidTotal}`;
+    });
+}
+
+async function syncPromotionPayments() {
+    // Requirements: 8.4 (Aadhar, PAN, GST, Promo Payment Received)
+    db.collection("promotions").onSnapshot(snap => {
+        const container = document.getElementById('promo-container');
+        if(!container) return;
+        container.innerHTML = "";
+
+        snap.forEach(doc => {
+            const p = doc.data();
+            container.innerHTML += `
+                <div class="card animate-up">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <h3 style="font-weight:800; color:var(--srp-primary);">${p.sellerName}</h3>
+                        <span class="badge-log" style="background:#dcfce7; color:#166534;">PAID ₹${p.paymentAmount}</span>
+                    </div>
+                    <hr style="margin:15px 0; border:none; border-top:1px dashed #e2e8f0;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px;">
+                        <div><small class="lbl">AADHAR</small><br><strong>${p.aadhar}</strong></div>
+                        <div><small class="lbl">PAN</small><br><strong>${p.pan}</strong></div>
+                        <div><small class="lbl">GST</small><br><strong>${p.gst}</strong></div>
+                        <div><small class="lbl">PRODUCT REF</small><br><strong>${p.productId}</strong></div>
+                    </div>
+                    <div style="margin-top:15px; font-size:11px; color:#64748b;">
+                        <i class="fas fa-phone"></i> ${p.mobile} | Ref: ${doc.id.slice(-6)}
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+async function processPayout(payoutId, status) {
+    if(confirm(`Mark this request as ${status}?`)) {
+        await rdb.ref(`withdrawals/${payoutId}`).update({ status: status });
+        logAction("Admin", `${status} Payout ID: ${payoutId}`, "Success");
+        alert(`Payout ${status}`);
+    }
+}
 
     // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
