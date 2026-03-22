@@ -910,6 +910,140 @@ const firebaseConfig = {
     if(module === 'promotions') renderPromotions();
     if(module === 'coupons') renderCoupons();
     if(module === 'banners') renderBanners();
+        if(module === 'users') renderUsers();
+    if(module === 'security') renderReviews(); // Assuming 8.7 or 8.14 is linked to Reviews
+
+}
+/* =========================================
+   PART 6: USER MANAGEMENT & REVIEWS
+   ========================================= */
+
+// 8.15 USER MANAGEMENT MODULE
+function renderUsers() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">User Registry (8.15)</h1>
+                <p>View registered customers and manage account status.</p>
+            </div>
+            <div id="u-count-badge" style="background:var(--srp-primary); color:#fff; padding:10px 20px; border-radius:12px; font-weight:800;">
+                Loading Users...
+            </div>
+        </div>
+
+        <div class="log-table-container">
+            <table style="min-width: 800px;">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Contact Info</th>
+                        <th>Joined Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-list-body"></tbody>
+            </table>
+        </div>
+    `;
+    syncUsers();
+}
+
+// 8.14 REVIEW MODERATION SYSTEM
+function renderReviews() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <div>
+                <h1 style="font-weight: 800;">Review Moderation (8.14)</h1>
+                <p>Approve or delete customer product reviews.</p>
+            </div>
+        </div>
+
+        <div id="reviews-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
+            <p style="color:#64748b;">Scanning for feedback...</p>
+        </div>
+    `;
+    syncReviews();
+}
+
+// --- CORE LOGIC FOR PART 6 ---
+
+async function syncUsers() {
+    db.collection("users").orderBy("createdAt", "desc").onSnapshot(snap => {
+        const tbody = document.getElementById('user-list-body');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+        document.getElementById('u-count-badge').innerText = `Total Users: ${snap.size}`;
+
+        snap.forEach(doc => {
+            const u = doc.data();
+            const joined = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td><div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:35px; height:35px; background:#e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800;">${u.name.charAt(0)}</div>
+                        <strong>${u.name}</strong>
+                    </div></td>
+                    <td>${u.email}<br><small>${u.phone || 'No Phone'}</small></td>
+                    <td>${joined}</td>
+                    <td><span class="badge-log" style="background:#dcfce7; color:#166534;">Active</span></td>
+                    <td>
+                        <button onclick="deleteUser('${doc.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-user-slash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    });
+}
+
+async function syncReviews() {
+    db.collection("reviews").onSnapshot(snap => {
+        const container = document.getElementById('reviews-container');
+        if(!container) return;
+        container.innerHTML = "";
+
+        if(snap.empty) {
+            container.innerHTML = "<div class='card'>No reviews found in database.</div>";
+            return;
+        }
+
+        snap.forEach(doc => {
+            const r = doc.data();
+            const stars = '⭐'.repeat(r.rating);
+            
+            container.innerHTML += `
+                <div class="card animate-up">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="font-size:12px; font-weight:800; color:var(--srp-primary);">${r.productName}</span>
+                        <span>${stars}</span>
+                    </div>
+                    <p style="font-size:14px; font-style:italic; color:#1e293b;">"${r.comment}"</p>
+                    <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
+                        <small style="color:#64748b;">By: ${r.userName}</small>
+                        <button onclick="removeReview('${doc.id}')" style="background:#fee2e2; color:#991b1b; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">DELETE</button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+// Action Handlers
+async function deleteUser(id) {
+    if(confirm("Are you sure you want to ban this user?")) {
+        await db.collection("users").doc(id).delete();
+        logAction("Admin", `Deleted User ID: ${id}`, "Warning");
+    }
+}
+
+async function removeReview(id) {
+    if(confirm("Remove this review from public view?")) {
+        await db.collection("reviews").doc(id).delete();
+        logAction("Admin", `Removed Review ID: ${id}`, "Success");
+    }
 }
 
 
