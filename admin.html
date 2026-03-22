@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SRP MASTER | Enterprise Management Console</title>
@@ -107,10 +108,12 @@ function toggleMenu() {
         
         <div class="nav-scroller">
             <div class="nav-group-label">Intelligence</div>
-            <div class="nav-link active" onclick="loadModule('dashboard')"><i class="fas fa-chart-line"></i> 8.6 Global Dashboard</div>
-            <div class="nav-link" onclick="loadModule('analytics')"><i class="fas fa-microchip"></i> 8.8 Website Analytics</div>
-            <div class="nav-link" onclick="loadModule('sales')"><i class="fas fa-wallet"></i> 8.9 Sales Analytics</div>
-            <div class="nav-link" onclick="loadModule('income')"><i class="fas fa-indian-rupee-sign"></i> 8.10 Admin Income</div>
+<div class="nav-link active" onclick="loadModule('dashboard')">
+    <i class="fas fa-chart-line"></i> 8.6 Dashboard 
+    <span id="session-count" style="margin-left:auto; font-size:10px; opacity:0.6;">0</span>
+</div>
+<div class="nav-link" onclick="loadModule('sales')"><i class="fas fa-receipt"></i> 8.9 Sales Analytics</div>
+<div class="nav-link" onclick="loadModule('income')"><i class="fas fa-piggy-bank"></i> 8.10 Admin Income</div>
 
             <div class="nav-group-label">Core Management</div>
             <div class="nav-link" onclick="loadModule('products')"><i class="fas fa-box"></i> 8.1 Products</div>
@@ -152,6 +155,17 @@ function toggleMenu() {
                 <span class="lbl">Total Orders (8.6)</span>
                 <span class="val" id="total-orders">0</span>
             </div>
+            <div style="display: flex; gap: 20px; align-items: center; background: #fff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0;">
+    <div style="width: 150px; height: 150px;">
+        <canvas id="globalStatsChart"></canvas>
+    </div>
+    <div>
+        <h4 style="font-weight:800;">Platform Composition</h4>
+        <p style="font-size:13px; color:#64748b;">Live Users: <span id="stat-total-users" style="color:#4f46e5; font-weight:700;">0</span></p>
+        <p style="font-size:13px; color:#64748b;">Live Sellers: <span id="stat-total-sellers" style="color:#10b981; font-weight:700;">0</span></p>
+    </div>
+</div>
+
             <div class="card">
                 <div class="card-icon" style="background: #ecfdf5; color: #10b981;"><i class="fas fa-chart-pie"></i></div>
                 <span class="lbl">Commission Earned (8.6)</span>
@@ -1085,8 +1099,54 @@ async function processRefund(refundId, userId, amount, status) {
         });
     }
 
-    // 5. --- DATA INTELLIGENCE ---
-    async function initializeIntelligence() {
+    // 5. --- DATA INTELLIGENCE ---// --- 8.6 ENHANCED GLOBAL INTELLIGENCE ---
+let sessionChart;
+
+async function initializeIntelligence() {
+    // 1. Track Admin Access (Session Logic)
+    const sessionRef = rdb.ref('admin_sessions');
+    sessionRef.transaction(current => (current || 0) + 1);
+    
+    sessionRef.on('value', snap => {
+        const count = snap.val() || 0;
+        if(document.getElementById('session-count')) {
+            document.getElementById('session-count').innerText = count;
+        }
+    });
+
+    // 2. Global Counters (Users & Sellers)
+    db.collection("users").onSnapshot(snap => {
+        document.getElementById('stat-total-users').innerText = snap.size;
+        updateRoundChart();
+    });
+
+    db.collection("sellers").onSnapshot(snap => {
+        document.getElementById('stat-total-sellers').innerText = snap.size;
+        updateRoundChart();
+    });
+}
+
+function updateRoundChart() {
+    const ctx = document.getElementById('globalStatsChart')?.getContext('2d');
+    if(!ctx) return;
+
+    const u = parseInt(document.getElementById('stat-total-users').innerText) || 0;
+    const s = parseInt(document.getElementById('stat-total-sellers').innerText) || 0;
+
+    if(sessionChart) sessionChart.destroy();
+    sessionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Users', 'Sellers'],
+            datasets: [{
+                data: [u, s],
+                backgroundColor: ['#4f46e5', '#10b981'],
+                borderWidth: 0
+            }]
+        },
+        options: { cutout: '80%', plugins: { legend: { display: false } } }
+    });
+}
         db.collection("orders").onSnapshot(snap => {
             const ordEl = document.getElementById('total-orders');
             if(ordEl) ordEl.innerText = snap.size;
@@ -1466,6 +1526,112 @@ async function loadCurrentSettings() {
         document.getElementById('s-upi').value = s.masterUPI || "";
         document.getElementById('s-comm').value = s.commission || 10;
     }
+}
+// --- 8.9 SALES ANALYTICS MODULE ---
+function renderSalesAnalytics() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <h1 style="font-weight: 800;">Sales Intelligence (8.9)</h1>
+        </div>
+        <div class="analytics-grid">
+            <div class="card">
+                <span class="lbl">Today's Sales</span>
+                <span class="val" id="sales-today">₹0</span>
+            </div>
+            <div class="card">
+                <span class="lbl">Lifetime Sales</span>
+                <span class="val" id="sales-overall">₹0</span>
+            </div>
+        </div>
+        <div class="log-table-container">
+            <div class="table-header"><h3>Recent Shipments</h3></div>
+            <table>
+                <thead>
+                    <tr><th>Order #</th><th>Product Name</th><th>Buyer</th><th>Amount</th></tr>
+                </thead>
+                <tbody id="sales-ledger-body"></tbody>
+            </table>
+        </div>
+    `;
+    
+    const today = new Date().setHours(0,0,0,0);
+    
+    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+        let daily = 0; let total = 0;
+        const tbody = document.getElementById('sales-ledger-body');
+        tbody.innerHTML = "";
+
+        snap.forEach(doc => {
+            const o = doc.data();
+            const amt = Number(o.totalAmount || 0);
+            total += amt;
+            if(o.timestamp && o.timestamp.toDate() >= today) daily += amt;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>#${doc.id.slice(-6).toUpperCase()}</td>
+                    <td><strong>${o.productName || 'Marketplace Item'}</strong></td>
+                    <td>${o.userName}<br><small>${o.userPhone}</small></td>
+                    <td>₹${amt}</td>
+                </tr>`;
+        });
+        document.getElementById('sales-today').innerText = `₹${daily}`;
+        document.getElementById('sales-overall').innerText = `₹${total}`;
+    });
+}
+
+// --- 8.10 ADMIN INCOME MODULE ---
+async function renderAdminIncome() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <h1 style="font-weight: 800;">Income Streams (8.10)</h1>
+        </div>
+        <div class="analytics-grid">
+            <div class="card" style="background:#4f46e5; color:#fff;">
+                <span class="lbl" style="color:rgba(255,255,255,0.7)">Today's Total Profit</span>
+                <span class="val" id="admin-income-today">₹0</span>
+            </div>
+            <div class="card">
+                <span class="lbl">Promo Income</span>
+                <span class="val" id="income-promo">₹0</span>
+            </div>
+            <div class="card">
+                <span class="lbl">Sales Commission (10%)</span>
+                <span class="val" id="income-commission">₹0</span>
+            </div>
+        </div>
+    `;
+
+    // Calculate Promo Income
+    db.collection("promotions").onSnapshot(snap => {
+        let promoTotal = 0;
+        snap.forEach(doc => promoTotal += Number(doc.data().paymentAmount || 0));
+        document.getElementById('income-promo').innerText = `₹${promoTotal}`;
+        calculateFinalProfit(promoTotal);
+    });
+
+    // Calculate Commissions
+    db.collection("orders").onSnapshot(snap => {
+        let commTotal = 0;
+        snap.forEach(doc => {
+            if(doc.data().status === "Delivered") {
+                commTotal += (Number(doc.data().totalAmount) * 0.10);
+            }
+        });
+        document.getElementById('income-commission').innerText = `₹${commTotal.toFixed(2)}`;
+        calculateFinalProfit(null, commTotal);
+    });
+}
+
+let runningPromo = 0; let runningComm = 0;
+function calculateFinalProfit(p, c) {
+    if(p !== null) runningPromo = p;
+    if(c !== null) runningComm = c;
+    const total = runningPromo + runningComm;
+    const el = document.getElementById('admin-income-today');
+    if(el) el.innerText = `₹${total.toFixed(2)}`;
 }
 
 </script>
