@@ -85,6 +85,18 @@
     </style>
 </head>
 <body>
+<button onclick="toggleMenu()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: var(--srp-primary); color: #fff; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <i class="fas fa-bars"></i>
+</button>
+
+<script>
+function toggleMenu() {
+    const sb = document.querySelector('.sidebar');
+    sb.style.display = (sb.style.display === 'flex') ? 'none' : 'flex';
+    sb.style.position = 'fixed';
+    sb.style.width = '100%';
+}
+</script>
 
 <div class="admin-container">
     <aside class="sidebar">
@@ -833,15 +845,17 @@ function openCouponModal() { document.getElementById('c-modal').style.display = 
 function closeCModal() { document.getElementById('c-modal').style.display = 'none'; }
 
     // --- FIREBASE INITIALIZATION ---
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "srp-shopping.firebaseapp.com",
-        databaseURL: "https://srp-shopping-rtdb.firebaseio.com",
-        projectId: "srp-shopping",
-        storageBucket: "srp-shopping.appspot.com",
-        messagingSenderId: "SENDER_ID",
-        appId: "APP_ID"
-    };
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+  authDomain: "srp-shopping-54bbb.firebaseapp.com",
+  databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+  projectId: "srp-shopping-54bbb",
+  storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+  messagingSenderId: "491906168702",
+  appId: "1:491906168702:web:2873565fcd2d561077252f",
+  measurementId: "G-3S7X8V8EFQ"
+};
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const rdb = firebase.database();
@@ -876,8 +890,12 @@ function closeCModal() { document.getElementById('c-modal').style.display = 'non
 
     // --- MODULE ROUTER ---
     function loadModule(module) {
-    logAction("Admin", `Accessed Module: ${module}`, "Success");
-    
+    // ... your existing code ...
+    if(window.innerWidth < 900) {
+        document.querySelector('.sidebar').style.display = 'none';
+    }
+}
+
     // Update active UI state
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     // Note: You can add logic here to highlight the clicked link
