@@ -632,6 +632,164 @@ async function processPayout(payoutId, status) {
         alert(`Payout ${status}`);
     }
 }
+/* =========================================
+   PART 5: PROMOTIONS & VISUAL OVERLAYS
+   ========================================= */
+
+// 8.12 COUPON MANAGEMENT SYSTEM
+function renderCoupons() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Coupon Architect (8.12)</h1>
+                <p>Create discounts, set expiry dates, and limit usage.</p>
+            </div>
+            <button class="btn-primary" onclick="openCouponModal()" style="padding:12px 25px; border-radius:12px; border:none; background:#4f46e5; color:#fff; cursor:pointer;">+ New Coupon</button>
+        </div>
+
+        <div id="coupon-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
+            </div>
+
+        <div id="c-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:3000; padding:20px;">
+            <div style="background:#fff; max-width:500px; margin:50px auto; border-radius:24px; padding:30px; position:relative;">
+                <h2 style="margin-bottom:20px; font-weight:800;">Generate Coupon</h2>
+                <form id="c-form" onsubmit="saveCoupon(event)">
+                    <label class="lbl">COUPON CODE</label>
+                    <input type="text" id="c-code" placeholder="e.g. SAVE50" required style="width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #e2e8f0; font-family:'JetBrains Mono';">
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:10px;">
+                        <div>
+                            <label class="lbl">DISCOUNT %</label>
+                            <input type="number" id="c-perc" max="100" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+                        </div>
+                        <div>
+                            <label class="lbl">USER LIMIT</label>
+                            <input type="number" id="c-limit" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+                        </div>
+                    </div>
+
+                    <label class="lbl" style="display:block; margin-top:15px;">EXPIRY DATE</label>
+                    <input type="date" id="c-expiry" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+
+                    <div style="margin-top:25px; display:flex; gap:10px;">
+                        <button type="submit" style="flex:1; padding:15px; background:#4f46e5; color:#fff; border:none; border-radius:12px; font-weight:800;">ACTIVATE</button>
+                        <button type="button" onclick="closeCModal()" style="padding:15px; background:#f1f5f9; border:none; border-radius:12px; font-weight:700;">CANCEL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    syncCoupons();
+}
+
+// 8.13 BANNER MANAGEMENT SYSTEM
+function renderBanners() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <div>
+                <h1 style="font-weight: 800;">Banner Management (8.13)</h1>
+                <p>Upload homepage banners and festival sale assets.</p>
+            </div>
+        </div>
+
+        <div style="background:#fff; padding:25px; border-radius:20px; border:1px solid #e2e8f0; margin-bottom:30px;">
+            <h3 style="margin-bottom:15px;">Upload New Banner</h3>
+            <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                <input type="file" id="b-file" accept="image/*" style="padding:10px; background:#f8fafc; border-radius:10px; flex:1;">
+                <input type="text" id="b-link" placeholder="Product ID to Link (8.13)" style="padding:12px; border-radius:10px; border:1px solid #e2e8f0; width:250px;">
+                <button onclick="uploadBanner()" style="padding:12px 30px; background:var(--srp-accent); color:#fff; border:none; border-radius:10px; font-weight:800;">DEPLOY</button>
+            </div>
+        </div>
+
+        <div id="banner-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
+            </div>
+    `;
+    syncBanners();
+}
+
+// --- CORE LOGIC FOR PART 5 ---
+
+async function syncCoupons() {
+    db.collection("coupons").orderBy("expiryDate", "asc").onSnapshot(snap => {
+        const grid = document.getElementById('coupon-grid');
+        if(!grid) return;
+        grid.innerHTML = "";
+        snap.forEach(doc => {
+            const c = doc.data();
+            grid.innerHTML += `
+                <div class="card animate-up" style="border-left:5px solid #4f46e5; position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <code style="font-size:20px; font-weight:800; color:var(--srp-primary);">${c.code}</code>
+                        <span style="font-size:24px; font-weight:800;">${c.discount}% OFF</span>
+                    </div>
+                    <div style="margin-top:15px; font-size:13px; color:#64748b;">
+                        <p><i class="fas fa-users"></i> Limit: ${c.usageLimit} Users</p>
+                        <p><i class="fas fa-calendar-times"></i> Expires: ${c.expiryDate}</p>
+                    </div>
+                    <button onclick="deleteCoupon('${doc.id}')" style="position:absolute; bottom:15px; right:15px; background:none; border:none; color:#ef4444;"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+        });
+    });
+}
+
+async function saveCoupon(e) {
+    e.preventDefault();
+    const data = {
+        code: document.getElementById('c-code').value.toUpperCase(),
+        discount: Number(document.getElementById('c-perc').value),
+        usageLimit: Number(document.getElementById('c-limit').value),
+        expiryDate: document.getElementById('c-expiry').value,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection("coupons").add(data);
+    logAction("Admin", `Created Coupon: ${data.code}`, "Success");
+    closeCModal();
+}
+
+async function uploadBanner() {
+    const file = document.getElementById('b-file').files[0];
+    const link = document.getElementById('b-link').value;
+    if(!file) return alert("Select an image first!");
+
+    // Note: Since you use AIDE/Termux, ensure Firebase Storage is initialized in Part 1
+    const storageRef = firebase.storage().ref(`banners/${Date.now()}_${file.name}`);
+    const task = await storageRef.put(file);
+    const url = await task.ref.getDownloadURL();
+
+    await db.collection("banners").add({
+        imageUrl: url,
+        productLink: link,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    logAction("Admin", "Uploaded Homepage Banner", "Success");
+    alert("Banner Deployed!");
+}
+
+async function syncBanners() {
+    db.collection("banners").onSnapshot(snap => {
+        const list = document.getElementById('banner-list');
+        if(!list) return;
+        list.innerHTML = "";
+        snap.forEach(doc => {
+            const b = doc.data();
+            list.innerHTML += `
+                <div class="card animate-up" style="padding:10px;">
+                    <img src="${b.imageUrl}" style="width:100%; height:150px; object-fit:cover; border-radius:12px;">
+                    <div style="padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <small style="color:#64748b;">Link ID: ${b.productLink || 'None'}</small>
+                        <button onclick="deleteBanner('${doc.id}')" style="background:none; border:none; color:#ef4444;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+function openCouponModal() { document.getElementById('c-modal').style.display = 'block'; }
+function closeCModal() { document.getElementById('c-modal').style.display = 'none'; }
 
     // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
