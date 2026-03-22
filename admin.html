@@ -1018,6 +1018,71 @@ function renderWithdrawalRequests() {
         });
     });
 }
+        
+/* =========================================
+   PART 4: CORE NAVIGATION & ACTION HANDLERS
+   ========================================= */
+
+// 1. THE NAVIGATION ENGINE
+function switchTab(tabId) {
+    // Update Sidebar UI
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    // Route to correct module
+    switch(tabId) {
+        case 'dashboard':
+            location.reload(); // Simplest way to return to main stats
+            break;
+        case 'products':
+            renderProductManagement();
+            break;
+        case 'orders':
+            renderOrderManagement();
+            break;
+        case 'sellers':
+            renderWithdrawalRequests();
+            break;
+        default:
+            document.getElementById('dynamic-view').innerHTML = 
+                `<div style="padding:100px; text-align:center;"><h3>Module ${tabId} coming in Part 4...</h3></div>`;
+    }
+}
+
+// 2. PRODUCT ACTIONS (Missing in your snippet)
+async function deleteProduct(id) {
+    if(confirm("Permanently remove this product from the marketplace?")) {
+        await db.collection("products").doc(id).delete();
+        showToast("Product deleted successfully");
+        logAdminAction(`Deleted Product ID: ${id}`);
+    }
+}
+
+async function editProduct(id) {
+    const doc = await db.collection("products").doc(id).get();
+    const p = doc.data();
+    
+    openProductModal();
+    document.getElementById('modal-mode-title').innerText = "Edit Product Architecture";
+    
+    // Fill form with existing data
+    document.getElementById('p-id').value = id;
+    document.getElementById('p-name').value = p.name;
+    document.getElementById('p-category').value = p.category;
+    document.getElementById('p-mrp').value = p.mrp;
+    document.getElementById('p-price').value = p.price;
+    document.getElementById('p-stock').value = p.stock;
+    document.getElementById('p-desc').value = p.description;
+    document.getElementById('p-featured').checked = p.isFeatured;
+    document.getElementById('img-preview').innerHTML = `<img src="${p.image}" style="width:100%; height:100%; object-fit:cover;">`;
+}
+
+async function deleteCategory(id) {
+    if(confirm("Delete this category? Products won't be deleted, but they will lose this tag.")) {
+        await db.collection("categories").doc(id).delete();
+        showToast("Category Removed");
+    }
+}
 
 // 4. FINANCIAL LOGIC (Requirement 8.18.2)
 async function processWithdrawal(id, status, sellerId, amount) {
