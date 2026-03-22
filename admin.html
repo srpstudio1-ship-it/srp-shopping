@@ -570,8 +570,21 @@
             renderDashboard();
             logAdminAction("Admin Panel Initialized (v2.0)");
         };
-    </script>
-    <script>
+    function switchTab(tabId) {
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    
+    // Add active class to clicked item
+    event.currentTarget.classList.add('active');
+
+    if(tabId === 'dashboard') renderDashboard();
+    else if(tabId === 'products') renderProductManagement();
+    else if(tabId === 'orders') renderOrderManagement();
+    else if(tabId === 'sellers') renderWithdrawalRequests(); // Or your seller hub
+    // Add other cases as you build them
+}
+
+    
     /* =========================================
    PART 2: INVENTORY & CATEGORY ARCHITECTURE
    ========================================= */
