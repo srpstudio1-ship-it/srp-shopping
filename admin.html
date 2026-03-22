@@ -888,32 +888,34 @@ const firebaseConfig = {
         });
     }
 
-    // --- MODULE ROUTER ---
+        // --- MODULE ROUTER ---
     function loadModule(module) {
-    // ... your existing code ...
-    if(window.innerWidth < 900) {
-        document.querySelector('.sidebar').style.display = 'none';
-    }
-}
+        // Auto-hide sidebar on mobile
+        if(window.innerWidth < 900) {
+            document.querySelector('.sidebar').style.display = 'none';
+        }
 
-    // Update active UI state
-    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    // Note: You can add logic here to highlight the clicked link
-    
-    // Router logic
-    if(module === 'dashboard') location.reload(); // Refresh to main dashboard
-    if(module === 'products') renderProducts();
-    if(module === 'categories') renderCategories();
-    if(module === 'orders') renderOrders();
-    if(module === 'sellers') renderSellers();
-    if(module === 'payouts') renderWithdrawals();
-    if(module === 'promotions') renderPromotions();
-    if(module === 'coupons') renderCoupons();
-    if(module === 'banners') renderBanners();
+        // Update active UI state
+        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+        if(event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
+        
+        // Router logic inside the function!
+        if(module === 'dashboard') location.reload();
+        if(module === 'products') renderProducts();
+        if(module === 'categories') renderCategories();
+        if(module === 'orders') renderOrders();
+        if(module === 'sellers') renderSellers();
+        if(module === 'payouts') renderWithdrawals();
+        if(module === 'promotions') renderPromotions();
+        if(module === 'coupons') renderCoupons();
+        if(module === 'banners') renderBanners();
         if(module === 'users') renderUsers();
-    if(module === 'security') renderReviews(); // Assuming 8.7 or 8.14 is linked to Reviews
+        if(module === 'security') alert("Security Module Loading..."); // Placeholder
+        if(module === 'settings') renderSettings();
+    }
 
-}
 /* =========================================
    PART 6: USER MANAGEMENT & REVIEWS
    ========================================= */
