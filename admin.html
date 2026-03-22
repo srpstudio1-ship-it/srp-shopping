@@ -174,6 +174,47 @@
 </div>
 
 <script>
+    // Missing Helper for Product Image Preview
+function previewImg(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('p-img-preview').innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Missing Category Dropdown Sync (Used in Product Modal)
+async function updateCatDropdown() {
+    const select = document.getElementById('p-cat-select');
+    if(!select) return;
+    db.collection("categories").get().then(snap => {
+        select.innerHTML = '<option value="">Select Category</option>';
+        snap.forEach(doc => {
+            select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`;
+        });
+    });
+}
+
+// Missing Sync Products (Used in renderProducts)
+async function syncProducts() {
+    db.collection("products").onSnapshot(snap => {
+        const grid = document.getElementById('product-master-grid');
+        if(!grid) return;
+        grid.innerHTML = "";
+        snap.forEach(doc => {
+            const p = doc.data();
+            grid.innerHTML += `
+                <div class="card">
+                    <div style="font-weight:800;">${p.name}</div>
+                    <div style="color:var(--srp-primary); font-weight:700;">₹${p.discountPrice} <del style="color:#64748b; font-size:12px;">₹${p.mrp}</del></div>
+                    <div style="font-size:12px; margin-top:5px;">Stock: ${p.stock} | ${p.category}</div>
+                </div>`;
+        });
+    });
+}
+
     /* =========================================
    PART 2: PRODUCT & CATEGORY ENGINE
    ========================================= */
