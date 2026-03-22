@@ -843,6 +843,172 @@ async function syncBanners() {
 
 function openCouponModal() { document.getElementById('c-modal').style.display = 'block'; }
 function closeCModal() { document.getElementById('c-modal').style.display = 'none'; }
+/* =========================================
+   PART 9: FINANCIAL LEDGER & REFUNDS (8.17 & 8.18)
+   ========================================= */
+
+// 8.17 PAYMENT HISTORY MODULE
+function renderPaymentHistory() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Master Ledger (8.17)</h1>
+                <p>Track all platform transactions, user payments, and seller payouts.</p>
+            </div>
+            <div style="background:#fff; padding:10px 20px; border-radius:12px; border:1px solid #e2e8f0;">
+                <select id="txn-filter" onchange="syncPayments(this.value)" style="border:none; outline:none; font-weight:700; color:var(--srp-primary);">
+                    <option value="ALL">All Transactions</option>
+                    <option value="USER">User Payments</option>
+                    <option value="SELLER">Seller Payouts</option>
+                    <option value="REFUND">Refunds</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="log-table-container">
+            <table style="min-width: 900px;">
+                <thead>
+                    <tr>
+                        <th>Transaction ID / Date</th>
+                        <th>Type</th>
+                        <th>Details</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="payment-history-body">
+                    <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading ledger...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    syncPayments('ALL');
+}
+
+// 8.18 REFUND SYSTEM MODULE
+function renderRefunds() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top">
+            <div>
+                <h1 style="font-weight: 800;">Refund Management (8.18)</h1>
+                <p>Process customer returns and refund money directly to User Wallet.</p>
+            </div>
+        </div>
+
+        <div id="refund-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
+            <p style="color:#64748b;">Scanning for pending refund requests...</p>
+        </div>
+    `;
+    syncRefunds();
+}
+
+// --- CORE LOGIC FOR PART 9 ---
+
+async function syncPayments(filter) {
+    // In a real app, this pulls from a unified 'transactions' collection
+    db.collection("transactions").orderBy("timestamp", "desc").onSnapshot(snap => {
+        const tbody = document.getElementById('payment-history-body');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+
+        if(snap.empty) {
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No transactions found.</td></tr>";
+            return;
+        }
+
+        snap.forEach(doc => {
+            const t = doc.data();
+            // Basic filtering logic
+            if(filter !== 'ALL' && t.type !== filter) return;
+
+            const date = t.timestamp ? new Date(t.timestamp.seconds * 1000).toLocaleString() : 'Just now';
+            let typeColor = t.type === 'USER' ? '#3b82f6' : (t.type === 'SELLER' ? '#10b981' : '#ef4444');
+
+            tbody.innerHTML += `
+                <tr class="animate-up">
+                    <td><strong style="font-family:'JetBrains Mono'; color:#475569;">${doc.id.slice(-10).toUpperCase()}</strong><br><small>${date}</small></td>
+                    <td><span style="background:${typeColor}20; color:${typeColor}; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:800;">${t.type}</span></td>
+                    <td>${t.description}<br><small style="color:#64748b;">Ref: ${t.referenceId}</small></td>
+                    <td><strong style="font-size:15px;">₹${t.amount}</strong></td>
+                    <td><span class="badge-log" style="background:#dcfce7; color:#166534;">${t.status || 'Completed'}</span></td>
+                </tr>
+            `;
+        });
+    });
+}
+
+async function syncRefunds() {
+    // Listens for pending refunds
+    db.collection("refunds").where("status", "==", "Pending").onSnapshot(snap => {
+        const container = document.getElementById('refund-container');
+        if(!container) return;
+        container.innerHTML = "";
+
+        if(snap.empty) {
+            container.innerHTML = "<div class='card'>No pending refund requests.</div>";
+            return;
+        }
+
+        snap.forEach(doc => {
+            const r = doc.data();
+            container.innerHTML += `
+                <div class="card animate-up" style="border-top: 4px solid #f59e0b;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="font-size:12px; font-weight:800; color:#64748b;">Order: #${r.orderId}</span>
+                        <strong style="color:#ef4444; font-size:18px;">₹${r.amount}</strong>
+                    </div>
+                    <h4 style="margin-bottom:5px;">${r.userName}</h4>
+                    <p style="font-size:13px; color:#475569; margin-bottom:15px; background:#f1f5f9; padding:8px; border-radius:8px;">Reason: ${r.reason}</p>
+                    
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="processRefund('${doc.id}', '${r.userId}', ${r.amount}, 'Approved')" style="flex:1; padding:10px; background:#10b981; color:#fff; border:none; border-radius:10px; font-weight:700; cursor:pointer;">
+                            <i class="fas fa-wallet"></i> Refund to Wallet
+                        </button>
+                        <button onclick="processRefund('${doc.id}', null, 0, 'Rejected')" style="padding:10px 15px; background:#fee2e2; color:#991b1b; border:none; border-radius:10px; font-weight:700; cursor:pointer;">
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+// Action Handler for 8.18
+async function processRefund(refundId, userId, amount, status) {
+    if(confirm(`Are you sure you want to mark this refund as ${status}?`)) {
+        try {
+            // 1. Update the refund document status
+            await db.collection("refunds").doc(refundId).update({ status: status });
+            
+            // 2. If approved, add money to User's Wallet
+            if(status === 'Approved' && userId) {
+                const userRef = db.collection("users").doc(userId);
+                await userRef.update({
+                    walletBalance: firebase.firestore.FieldValue.increment(amount)
+                });
+                
+                // 3. Log it in the transactions ledger (8.17)
+                await db.collection("transactions").add({
+                    type: "REFUND",
+                    amount: amount,
+                    description: "Refund to Wallet",
+                    referenceId: refundId,
+                    status: "Completed",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            logAction("Admin", `${status} Refund ID: ${refundId}`, "Success");
+            alert(`Refund ${status} successfully!`);
+        } catch (e) {
+            logAction("Admin", `Refund Error: ${e.message}`, "Failed");
+            alert("Error processing refund.");
+        }
+    }
+}
 
     // --- FIREBASE INITIALIZATION ---
     // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -914,6 +1080,9 @@ const firebaseConfig = {
         if(module === 'users') renderUsers();
         if(module === 'security') alert("Security Module Loading..."); // Placeholder
         if(module === 'settings') renderSettings();
+                if(module === 'payments') renderPaymentHistory();
+        if(module === 'refunds') renderRefunds();
+
     }
 
 /* =========================================
