@@ -835,13 +835,24 @@ function closeCModal() { document.getElementById('c-modal').style.display = 'non
 
     // --- MODULE ROUTER ---
     function loadModule(module) {
-        logAction("Admin", `Accessed Module: ${module}`, "Success");
-        const view = document.getElementById('app-view');
-        
-        // Modules will be filled in subsequent Parts
-        if(module === 'analytics') renderAnalytics(view);
-        if(module === 'sales') renderSales(view);
-    }
+    logAction("Admin", `Accessed Module: ${module}`, "Success");
+    
+    // Update active UI state
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    // Note: You can add logic here to highlight the clicked link
+    
+    // Router logic
+    if(module === 'dashboard') location.reload(); // Refresh to main dashboard
+    if(module === 'products') renderProducts();
+    if(module === 'categories') renderCategories();
+    if(module === 'orders') renderOrders();
+    if(module === 'sellers') renderSellers();
+    if(module === 'payouts') renderWithdrawals();
+    if(module === 'promotions') renderPromotions();
+    if(module === 'coupons') renderCoupons();
+    if(module === 'banners') renderBanners();
+}
+
 
     // Initial Sync
     syncLogs();
