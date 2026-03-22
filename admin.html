@@ -1009,65 +1009,42 @@ async function processRefund(refundId, userId, amount, status) {
         }
     }
 }
-
-    // --- FIREBASE INITIALIZATION ---
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-  authDomain: "srp-shopping-54bbb.firebaseapp.com",
-  databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-  projectId: "srp-shopping-54bbb",
-  storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-  messagingSenderId: "491906168702",
-  appId: "1:491906168702:web:2873565fcd2d561077252f",
-  measurementId: "G-3S7X8V8EFQ"
-};
-    firebase.initializeApp(firebaseConfig);
+    // 1. --- FIREBASE INITIALIZATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+        authDomain: "srp-shopping-54bbb.firebaseapp.com",
+        databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+        projectId: "srp-shopping-54bbb",
+        storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+        messagingSenderId: "491906168702",
+        appId: "1:491906168702:web:2873565fcd2d561077252f",
+        measurementId: "G-3S7X8V8EFQ"
+    };
+    
+    // Initialize only if not already initialized
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
     const rdb = firebase.database();
 
-    // --- 8.19 LOGGING ENGINE ---
-    function logAction(actor, event, status) {
-        const timestamp = new Date().toLocaleString();
-        const logRef = rdb.ref('system_logs').push();
-        logRef.set({ timestamp, actor, event, status });
+    // 2. --- MISSING UTILITY: DASHBOARD COUNTER UPDATER ---
+    function updateDashboardCounters(data) {
+        if (document.getElementById('total-orders')) {
+            document.getElementById('total-orders').innerText = data.totalOrders || 0;
+        }
+        // Add other counter updates here if needed
     }
 
-    function syncLogs() {
-        rdb.ref('system_logs').limitToLast(10).on('value', (snapshot) => {
-            const tbody = document.getElementById('logs-body');
-            tbody.innerHTML = '';
-            snapshot.forEach((child) => {
-                const log = child.val();
-                const statusColor = log.status === 'Success' ? '#dcfce7' : '#fee2e2';
-                const textColor = log.status === 'Success' ? '#166534' : '#991b1b';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-family: 'JetBrains Mono'; font-size: 12px;">${log.timestamp}</td>
-                        <td style="font-weight: 700;">${log.actor}</td>
-                        <td>${log.event}</td>
-                        <td><span class="badge-log" style="background: ${statusColor}; color: ${textColor}">${log.status}</span></td>
-                    </tr>
-                `;
-            });
-        });
-    }
-
-        // --- MODULE ROUTER ---
+    // 3. --- MODULE ROUTER (Critical for navigation) ---
     function loadModule(module) {
-        // Auto-hide sidebar on mobile
         if(window.innerWidth < 900) {
             document.querySelector('.sidebar').style.display = 'none';
         }
 
-        // Update active UI state
         document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-        if(event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
-        }
         
-        // Router logic inside the function!
+        // Dynamic loading
         if(module === 'dashboard') location.reload();
         if(module === 'products') renderProducts();
         if(module === 'categories') renderCategories();
@@ -1078,12 +1055,80 @@ const firebaseConfig = {
         if(module === 'coupons') renderCoupons();
         if(module === 'banners') renderBanners();
         if(module === 'users') renderUsers();
-        if(module === 'security') alert("Security Module Loading..."); // Placeholder
-        if(module === 'settings') renderSettings();
-                if(module === 'payments') renderPaymentHistory();
+        if(module === 'payments') renderPaymentHistory();
         if(module === 'refunds') renderRefunds();
-
+        if(module === 'settings') renderSettings();
     }
+
+    // 4. --- LOGGING ENGINE ---
+    function logAction(actor, event, status) {
+        const timestamp = new Date().toLocaleString();
+        rdb.ref('system_logs').push({ timestamp, actor, event, status });
+    }
+
+    function syncLogs() {
+        rdb.ref('system_logs').limitToLast(10).on('value', (snapshot) => {
+            const tbody = document.getElementById('logs-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            snapshot.forEach((child) => {
+                const log = child.val();
+                const statusColor = log.status === 'Success' ? '#dcfce7' : '#fee2e2';
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-family: 'JetBrains Mono'; font-size: 12px;">${log.timestamp}</td>
+                        <td style="font-weight: 700;">${log.actor}</td>
+                        <td>${log.event}</td>
+                        <td><span class="badge-log" style="background: ${statusColor}">${log.status}</span></td>
+                    </tr>`;
+            });
+        });
+    }
+
+    // 5. --- DATA INTELLIGENCE ---
+    async function initializeIntelligence() {
+        db.collection("orders").onSnapshot(snap => {
+            const ordEl = document.getElementById('total-orders');
+            if(ordEl) ordEl.innerText = snap.size;
+            
+            let revenue = 0;
+            snap.forEach(doc => {
+                if(doc.data().status === "Delivered") revenue += Number(doc.data().totalAmount);
+            });
+            const revEl = document.getElementById('total-comm');
+            if(revEl) revEl.innerText = "₹" + (revenue * 0.10).toFixed(2);
+        });
+
+        db.collection("sellers").onSnapshot(snap => {
+            const selEl = document.getElementById('total-sellers');
+            if(selEl) selEl.innerText = snap.size;
+        });
+    }
+
+    // 6. --- UI HELPERS ---
+    function toggleMenu() {
+        const sb = document.querySelector('.sidebar');
+        sb.style.display = (sb.style.display === 'flex') ? 'none' : 'flex';
+        sb.style.position = 'fixed';
+        sb.style.width = '100%';
+        sb.style.zIndex = '10000';
+    }
+
+    // 7. --- BOOTSTRAP ---
+    window.onload = () => {
+        // Inject styles
+        const style = document.createElement('style');
+        style.innerHTML = `.animate-up { animation: fadeInUp 0.5s ease forwards; } @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`;
+        document.head.appendChild(style);
+
+        initializeIntelligence();
+        syncLogs();
+        logAction("System", "Console Online", "Success");
+    };
+
+    // --- INCLUDE ALL YOUR RENDER FUNCTIONS BELOW THIS LINE ---
+    // (Keep your renderProducts, renderCategories, renderOrders, etc. exactly as they were)
+
 
 /* =========================================
    PART 6: USER MANAGEMENT & REVIEWS
