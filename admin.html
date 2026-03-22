@@ -505,7 +505,10 @@
 
         function getStatusClass(status) {
             switch(status) {
-                case 'Delivered': return 'bg-success';
+                case 'Delivered': .bg-success { background: #05cd99; color: white; }
+.bg-warning { background: #ffb547; color: white; }
+.bg-danger { background: #ee5d50; color: white; }
+.bg-primary { background: #4318ff; color: white; }
                 case 'Pending': return 'bg-warning';
                 case 'Cancelled': return 'bg-danger';
                 default: return 'bg-primary';
@@ -521,14 +524,15 @@
         function switchTab(tab) {
             // Update Active Link UI
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            <a href="#" class="nav-link active" onclick="switchTab('dashboard', event)">
             
             const title = document.getElementById('page-title-text');
             const view = document.getElementById('dynamic-view');
 
             switch(tab) {
-                case 'dashboard': 
-                    location.reload(); 
+                case 'dashboard':
+    renderDashboard();
+    break; 
                     break;
                 case 'products': 
                     renderProductManagement(); 
@@ -949,7 +953,9 @@ const extraStyles = `
         transition: var(--transition);
     }
 `;
-            
+         const styleTag = document.createElement("style");
+styleTag.innerHTML = extraStyles;
+document.head.appendChild(styleTag);   
     
     /* =========================================
    PART 3: GLOBAL ORDER COMMAND & LOGISTICS
@@ -1042,7 +1048,7 @@ function fetchOrders() {
             if(o.status === 'Shipped') shipped++;
             if(o.status === 'Delivered') {
                 delivered++;
-                totalComm += (o.totalAmount * 0.1); // Assuming 10% commission (8.10)
+                const COMMISSION = 0.1; // Assuming 10% commission (8.10)
             }
 
             // Search Filter Logic
@@ -1280,11 +1286,10 @@ function renderSellerManagement() {
 }
 
 // 2. DYNAMIC SUB-TAB SWITCHER
-function switchSellerTab(type, btn = null) {
-    if(btn) {
-        document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    }
+function switchTab(tab, event) {
+    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+    if(event) event.currentTarget.classList.add('active');
+}
 
     const container = document.getElementById('seller-content-area');
     container.innerHTML = `<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
@@ -2404,7 +2409,8 @@ function renderAnalyticsHub() {
 
 // 2. BI CALCULATION ENGINE (8.23.2)
 async function runBIEngine() {
-    const ordersSnap = await rdb.ref('orders').once('value');
+    const ordersSnap = await rdb.ref('orders').off();
+rdb.ref('orders').on(...)
     const productsSnap = await db.collection('products').get();
     
     let totalRevenue = 0;
@@ -2460,12 +2466,11 @@ function renderVelocityChart(data) {
 }
 
 // 4. PDF INVOICE GENERATOR (8.15)
-// This logic builds a print-optimized virtual document for the Galaxy A21s.
 function printInvoice(orderId) {
     rdb.ref(`orders/${orderId}`).once('value', snap => {
         const o = snap.val();
         const printWindow = window.open('', '_blank');
-        
+
         const invoiceHTML = `
             <html>
             <head>
@@ -2485,6 +2490,7 @@ function printInvoice(orderId) {
                 </style>
             </head>
             <body>
+
                 <div class="header">
                     <div class="logo">SRP SHOPPING</div>
                     <div class="meta">
@@ -2523,27 +2529,42 @@ function printInvoice(orderId) {
                 </table>
 
                 <div class="total-box">
-                    <div class="total-row"><span>Subtotal:</span><span>₹${o.totalAmount}</span></div>
-                    <div class="total-row"><span>GST (18%):</span><span>Included</span></div>
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span>₹${o.totalAmount}</span>
+                    </div>
+
+                    <div class="total-row">
+                        <span>GST (18%):</span>
+                        <span>Included</span>
+                    </div>
+
                     <div class="total-row" style="font-size: 20px; font-weight: 800; border-top: 2px solid #4f46e5; margin-top: 10px; padding-top: 10px;">
-                        <span>Grand Total:</span><span>₹${o.totalAmount}</span>
+                        <span>Grand Total:</span>
+                        <span>₹${o.totalAmount}</span>
                     </div>
                 </div>
 
                 <div style="margin-top: 100px; font-size: 12px; color: #94a3b8; text-align: center;">
-                    This is a computer-generated document. No signature required. 
+                    This is a computer-generated document. No signature required.<br>
                     Thank you for shopping at SRP.
                 </div>
 
-                <script>window.print();</script>
+                <!-- PRINT BUTTON -->
+                <div class="no-print" style="margin-top: 40px; text-align: center;">
+                    <button onclick="window.print()" 
+                        style="padding: 12px 20px; background:#4f46e5; color:white; border:none; border-radius:6px; cursor:pointer;">
+                        Print Invoice
+                    </button>
+                </div>
+
             </body>
             </html>
         `;
-<script>
+
         printWindow.document.write(invoiceHTML);
         printWindow.document.close();
     });
-}
 
 // 5. DATA UTILITIES
 function renderTopSellers(snap) {
