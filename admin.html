@@ -571,5 +571,301 @@
             logAdminAction("Admin Panel Initialized (v2.0)");
         };
     </script>
+    <script>
+    /* =========================================
+   PART 2: INVENTORY & CATEGORY ARCHITECTURE
+   ========================================= */
+
+// 1. PRODUCT HUB RENDERER (Requirement 8.1)
+function renderProductManagement() {
+    const view = document.getElementById('dynamic-view');
+    document.getElementById('page-title-text').innerText = "Inventory & Stock Control";
+
+    view.innerHTML = `
+        <div class="inventory-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <div class="search-wrap" style="flex:1; max-width:400px; position:relative;">
+                <i class="fas fa-search" style="position:absolute; left:15px; top:18px; color:var(--srp-text-muted);"></i>
+                <input type="text" class="form-input" style="padding-left:45px;" placeholder="Search by Product ID or Name..." onkeyup="filterProducts(this.value)">
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button class="btn" style="background:#fff; border:1px solid var(--srp-border);" onclick="renderCategoryManagement()">
+                    <i class="fas fa-tags"></i> Categories (8.11)
+                </button>
+                <button class="btn btn-primary" onclick="openProductModal()">
+                    <i class="fas fa-plus"></i> New Product
+                </button>
+            </div>
+        </div>
+
+        <div id="product-grid" class="animate-up" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:25px;">
+            </div>
+
+        <div id="product-modal" class="glass-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:95%; max-width:800px; height:85vh; overflow-y:auto; z-index:1000; box-shadow: 0 0 50px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <h2 id="modal-mode-title">Deploy New Product</h2>
+                <button onclick="closeProductModal()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+
+            <form id="product-form" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="p-id">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" id="p-name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Select Category (8.11)</label>
+                        <select id="p-category" class="form-input" required></select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-top:15px;">
+                    <div class="form-group">
+                        <label class="form-label">MRP (₹)</label>
+                        <input type="number" id="p-mrp" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Selling Price (₹)</label>
+                        <input type="number" id="p-price" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stock Qty</label>
+                        <input type="number" id="p-stock" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:15px;">
+                    <label class="form-label">Product Description</label>
+                    <textarea id="p-desc" class="form-input" style="height:100px; resize:none;" placeholder="Technical specifications..."></textarea>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:15px; align-items:center;">
+                    <div class="form-group">
+                        <label class="form-label">Product Image (8.1.4)</label>
+                        <input type="file" id="p-image" class="form-input" accept="image/*" onchange="previewImage(this)">
+                        <div id="img-preview" style="margin-top:10px; width:100px; height:100px; border-radius:10px; border:2px dashed var(--srp-border); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                            <i class="fas fa-image" style="color:#cbd5e1;"></i>
+                        </div>
+                    </div>
+                    <div style="background:#f8fafc; padding:20px; border-radius:15px;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                            <input type="checkbox" id="p-featured" style="width:20px; height:20px;">
+                            <span style="font-weight:700;">Pin to Homepage Top (8.5)</span>
+                        </label>
+                        <p style="font-size:11px; color:var(--srp-text-muted); margin-top:8px;">Priority display in user-end slider.</p>
+                    </div>
+                </div>
+
+                <div style="margin-top:30px; display:flex; gap:15px;">
+                    <button type="submit" id="save-btn" class="btn btn-primary" style="flex:1; justify-content:center; height:55px;">
+                        <i class="fas fa-cloud-arrow-up"></i> Synchronize to Marketplace
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    fetchCategoriesToDropdown();
+    fetchProducts();
+}
+
+// 2. PRODUCT DATA PIPELINE (Requirement 8.1.2 / 8.1.3)
+async function fetchProducts() {
+    const grid = document.getElementById('product-grid');
+    grid.innerHTML = '<div style="padding:100px; text-align:center;"><i class="fas fa-sync fa-spin fa-2x"></i></div>';
+
+    db.collection("products").orderBy("createdAt", "desc").onSnapshot(snap => {
+        grid.innerHTML = "";
+        snap.forEach(doc => {
+            const p = doc.data();
+            const discount = Math.round(((p.mrp - p.price) / p.mrp) * 100);
+            
+            grid.innerHTML += `
+                <div class="product-card" style="background:#fff; border-radius:20px; padding:15px; border:1px solid var(--srp-border); position:relative; transition:0.3s hover;">
+                    ${p.isFeatured ? '<div style="position:absolute; top:10px; right:10px; background:var(--srp-warning); color:#fff; padding:4px 10px; border-radius:8px; font-size:10px; font-weight:800; z-index:1;"><i class="fas fa-star"></i> FEATURED</div>' : ''}
+                    
+                    <div style="width:100%; height:180px; background:#f1f5f9; border-radius:15px; overflow:hidden; margin-bottom:15px;">
+                        <img src="${p.image || 'https://placehold.co/400x400/f1f5f9/cbd5e1?text=No+Image'}" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+
+                    <div style="padding:0 5px;">
+                        <small style="color:var(--srp-primary); font-weight:700; text-transform:uppercase; font-size:10px;">${p.category}</small>
+                        <h4 style="font-weight:800; margin:5px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</h4>
+                        
+                        <div style="display:flex; align-items:baseline; gap:10px; margin:10px 0;">
+                            <span style="font-size:18px; font-weight:900;">₹${p.price}</span>
+                            <span style="text-decoration:line-through; color:var(--srp-text-muted); font-size:12px;">₹${p.mrp}</span>
+                            <span style="color:var(--srp-accent); font-size:12px; font-weight:700;">${discount}% OFF</span>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:10px; margin-bottom:15px;">
+                            <small style="font-weight:700;">Stock: <span style="color:${p.stock < 10 ? 'var(--srp-danger)' : 'var(--srp-text-main)'}">${p.stock} units</span></small>
+                        </div>
+
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="editProduct('${doc.id}')" class="btn" style="flex:1; background:#f1f5f9; font-size:12px;"><i class="fas fa-edit"></i> Edit</button>
+                            <button onclick="deleteProduct('${doc.id}')" class="btn" style="background:#fff1f2; color:var(--srp-danger); border:none;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+// 3. PRODUCT SUBMISSION LOGIC (Requirement 8.1.1)
+async function handleProductSubmit(e) {
+    e.preventDefault();
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    const pId = document.getElementById('p-id').value;
+    const file = document.getElementById('p-image').files[0];
+    let imgUrl = "";
+
+    try {
+        // Handle Image Upload if new file selected (8.1.4)
+        if(file) {
+            const ref = storage.ref(`products/${Date.now()}_${file.name}`);
+            const task = await ref.put(file);
+            imgUrl = await task.ref.getDownloadURL();
+        } else if(pId) {
+            // Keep old image if editing
+            const oldDoc = await db.collection("products").doc(pId).get();
+            imgUrl = oldDoc.data().image;
+        }
+
+        const productData = {
+            name: document.getElementById('p-name').value,
+            category: document.getElementById('p-category').value,
+            mrp: parseFloat(document.getElementById('p-mrp').value),
+            price: parseFloat(document.getElementById('p-price').value),
+            stock: parseInt(document.getElementById('p-stock').value),
+            description: document.getElementById('p-desc').value,
+            isFeatured: document.getElementById('p-featured').checked,
+            image: imgUrl,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if(pId) {
+            await db.collection("products").doc(pId).update(productData);
+            showToast("Product Synchronized!");
+        } else {
+            productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            productData.salesCount = 0;
+            await db.collection("products").add(productData);
+            showToast("New Product Live!");
+        }
+
+        closeProductModal();
+        logAdminAction(`${pId ? 'Updated' : 'Created'} Product: ${productData.name}`);
+    } catch (err) {
+        alert("Sync Failed: " + err.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Synchronize to Marketplace';
+    }
+}
+
+// 4. CATEGORY MANAGEMENT (Requirement 8.11)
+function renderCategoryManagement() {
+    const view = document.getElementById('dynamic-view');
+    view.innerHTML = `
+        <div class="glass-panel animate-up" style="max-width:600px; margin:0 auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <button onclick="renderProductManagement()" class="btn" style="background:none;"><i class="fas fa-arrow-left"></i> Back</button>
+                <h3 style="font-weight:800;">Category Architect</h3>
+            </div>
+
+            <div style="background:#f8fafc; padding:20px; border-radius:15px; margin-bottom:30px;">
+                <div class="form-group">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" id="cat-name" class="form-input" placeholder="e.g. Electronics">
+                </div>
+                <div class="form-group" style="margin-top:10px;">
+                    <label class="form-label">Icon Class (FontAwesome)</label>
+                    <input type="text" id="cat-icon" class="form-input" placeholder="e.g. fas fa-laptop">
+                </div>
+                <button class="btn btn-primary" style="width:100%; margin-top:20px;" onclick="addCategory()">
+                    <i class="fas fa-plus"></i> Save Category
+                </button>
+            </div>
+
+            <div id="cat-list" style="display:flex; flex-direction:column; gap:10px;">
+                </div>
+        </div>
+    `;
+    fetchCategories();
+}
+
+// 5. DATA UTILITIES
+async function addCategory() {
+    const name = document.getElementById('cat-name').value;
+    const icon = document.getElementById('cat-icon').value;
+    if(!name) return alert("Name is required");
+
+    await db.collection("categories").add({ name, icon, createdAt: Date.now() });
+    document.getElementById('cat-name').value = "";
+    document.getElementById('cat-icon').value = "";
+    showToast("Category Added!");
+    logAdminAction(`Created Category: ${name}`);
+}
+
+function fetchCategories() {
+    db.collection("categories").onSnapshot(snap => {
+        const list = document.getElementById('cat-list');
+        if(!list) return;
+        list.innerHTML = "";
+        snap.forEach(doc => {
+            const c = doc.data();
+            list.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#fff; border-radius:12px; border:1px solid var(--srp-border);">
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <i class="${c.icon || 'fas fa-tag'}" style="color:var(--srp-primary);"></i>
+                        <span style="font-weight:700;">${c.name}</span>
+                    </div>
+                    <button onclick="deleteCategory('${doc.id}')" style="background:none; border:none; color:var(--srp-danger); cursor:pointer;">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+        });
+    });
+}
+
+function fetchCategoriesToDropdown() {
+    const dropdown = document.getElementById('p-category');
+    db.collection("categories").get().then(snap => {
+        dropdown.innerHTML = '<option value="">Choose Category...</option>';
+        snap.forEach(doc => {
+            dropdown.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`;
+        });
+    });
+}
+
+// MODAL CONTROLS
+function openProductModal() {
+    document.getElementById('product-form').reset();
+    document.getElementById('p-id').value = "";
+    document.getElementById('modal-mode-title').innerText = "Deploy New Product";
+    document.getElementById('product-modal').style.display = 'block';
+    document.getElementById('img-preview').innerHTML = '<i class="fas fa-image" style="color:#cbd5e1;"></i>';
+}
+
+function closeProductModal() {
+    document.getElementById('product-modal').style.display = 'none';
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('img-preview').innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 </body>
 </html>
