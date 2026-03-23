@@ -29,6 +29,8 @@ body { font-family: Arial; }
 <ul class="space-y-2">
 <li onclick="openTab('dashboard')" class="cursor-pointer">Dashboard</li>
 <li onclick="openTab('products')" class="cursor-pointer">Products</li>
+<li onclick="openTab('orders')" class="cursor-pointer">Orders</li>
+<li onclick="openTab('withdraw')" class="cursor-pointer">Withdrawals</li>
 <li onclick="openTab('category')" class="cursor-pointer">Category</li>
 <li onclick="openTab('banner')" class="cursor-pointer">Banner</li>
 </ul>
@@ -38,24 +40,26 @@ body { font-family: Arial; }
 <div class="flex-1 p-4 overflow-y-auto">
 
 <div id="dashboard" class="tab">
-<h2 class="text-xl font-bold mb-4">Dashboard</h2>
-<p>Welcome Admin</p>
+<h2 class="text-xl font-bold">Dashboard</h2>
 </div>
 
 <!-- PRODUCTS -->
 <div id="products" class="tab hidden">
 
-<h2 class="text-xl mb-2">Add Product</h2>
-
 <input id="pName" placeholder="Name" class="border p-2 w-full mb-2">
 <input id="pPrice" placeholder="Price" class="border p-2 w-full mb-2">
 <input type="file" id="pImage" class="mb-2">
-
-<button onclick="addProduct()" class="bg-blue-600 text-white px-4 py-2">Save</button>
+<button onclick="addProduct()" class="bg-blue-600 text-white px-3 py-1">Save</button>
 
 <div id="productList" class="mt-4 grid grid-cols-2 gap-2"></div>
 
 </div>
+
+<!-- ORDERS -->
+<div id="orders" class="tab hidden"></div>
+
+<!-- WITHDRAW -->
+<div id="withdraw" class="tab hidden"></div>
 
 <!-- CATEGORY -->
 <div id="category" class="tab hidden">
@@ -76,7 +80,7 @@ body { font-family: Arial; }
 
 <script>
 
-// ✅ YOUR FIREBASE CONFIG (ALREADY SET)
+// FIREBASE (YOUR CONFIG)
 firebase.initializeApp({
   apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
   authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -92,86 +96,116 @@ const storage = firebase.storage();
 function openTab(tab){
 document.querySelectorAll('.tab').forEach(t=>t.classList.add('hidden'));
 document.getElementById(tab).classList.remove('hidden');
+
+if(tab==="orders") loadOrders();
+if(tab==="withdraw") loadWithdraw();
 }
 
-// ADD PRODUCT
+// PRODUCT
 function addProduct(){
+let file=pImage.files[0];
+if(!file) return alert("Select image");
 
-let file = document.getElementById("pImage").files[0];
-let name = pName.value;
-let price = pPrice.value;
-
-if(!file || !name) return alert("Fill all");
-
-let id = Date.now();
-
-let ref = storage.ref("products/"+id);
+let id=Date.now();
+let ref=storage.ref("products/"+id);
 
 ref.put(file).then(()=>{
-
 ref.getDownloadURL().then(url=>{
-
 db.ref("products/"+id).set({
-name:name,
-price:price,
+name:pName.value,
+price:pPrice.value,
 image:url
 });
-
-alert("Saved");
 loadProducts();
-
 });
-
 });
-
 }
 
-// LOAD PRODUCTS
 function loadProducts(){
 db.ref("products").on("value",snap=>{
-
-let html="";
-
+let h="";
 snap.forEach(d=>{
-let p = d.val();
-
-html+=`
-<div class="bg-white p-2">
-<img src="${p.image}" class="h-24 w-full object-cover">
+let p=d.val();
+h+=`<div class="bg-white p-2">
+<img src="${p.image}" class="h-24 w-full">
 <p>${p.name}</p>
 <p>₹${p.price}</p>
-</div>
-`;
+</div>`;
 });
-
-productList.innerHTML = html;
-
+productList.innerHTML=h;
 });
+}
+
+// ORDERS
+function loadOrders(){
+db.ref("orders").on("value",snap=>{
+let h="<h2 class='text-xl mb-2'>Orders</h2>";
+snap.forEach(d=>{
+let o=d.val();
+h+=`<div class="bg-white p-2 mb-2">
+<p>ID: ${d.key}</p>
+<p>${o.name||''} ${o.phone||''}</p>
+<p>Status: ${o.status||'Pending'}</p>
+
+<input id="t_${d.key}" placeholder="Tracking ID" class="border p-1">
+
+<button onclick="saveTracking('${d.key}')" class="bg-black text-white px-2">Save</button>
+<button onclick="updateStatus('${d.key}','Shipped')" class="bg-blue-500 text-white px-2">Ship</button>
+<button onclick="updateStatus('${d.key}','Delivered')" class="bg-green-500 text-white px-2">Done</button>
+</div>`;
+});
+orders.innerHTML=h;
+});
+}
+
+function saveTracking(id){
+let val=document.getElementById("t_"+id).value;
+db.ref("orders/"+id).update({tracking:val});
+}
+
+function updateStatus(id,s){
+db.ref("orders/"+id).update({status:s});
+}
+
+// WITHDRAW
+function loadWithdraw(){
+db.ref("withdrawals").on("value",snap=>{
+let h="<h2 class='text-xl mb-2'>Withdrawals</h2>";
+snap.forEach(d=>{
+let w=d.val();
+h+=`<div class="bg-white p-2 mb-2">
+${w.name} ₹${w.amount} (${w.status||'Pending'})
+<button onclick="updateWithdraw('${d.key}','Approved')" class="bg-green-500 text-white px-2">Approve</button>
+<button onclick="updateWithdraw('${d.key}','Rejected')" class="bg-red-500 text-white px-2">Reject</button>
+</div>`;
+});
+withdraw.innerHTML=h;
+});
+}
+
+function updateWithdraw(id,s){
+db.ref("withdrawals/"+id).update({status:s});
 }
 
 // CATEGORY
 function addCategory(){
-let id = Date.now();
+let id=Date.now();
 db.ref("categories/"+id).set({name:catName.value});
 loadCategories();
 }
-
 function loadCategories(){
 db.ref("categories").on("value",snap=>{
 let h="";
-snap.forEach(d=> h+=`<div>${d.val().name}</div>`);
+snap.forEach(d=>h+=`<div>${d.val().name}</div>`);
 catList.innerHTML=h;
 });
 }
 
 // BANNER
 function uploadBanner(){
-
-let file = bannerImage.files[0];
-if(!file) return alert("Select image");
-
-let id = Date.now();
-let ref = storage.ref("banners/"+id);
+let file=bannerImage.files[0];
+let id=Date.now();
+let ref=storage.ref("banners/"+id);
 
 ref.put(file).then(()=>{
 ref.getDownloadURL().then(url=>{
@@ -179,19 +213,17 @@ db.ref("banners/"+id).set({image:url});
 loadBanners();
 });
 });
-
 }
-
 function loadBanners(){
 db.ref("banners").on("value",snap=>{
 let h="";
-snap.forEach(d=> h+=`<img src="${d.val().image}" class="h-20 mb-2">`);
+snap.forEach(d=>h+=`<img src="${d.val().image}" class="h-20">`);
 bannerList.innerHTML=h;
 });
 }
 
 // INIT
-window.onload = ()=>{
+window.onload=()=>{
 openTab("dashboard");
 loadProducts();
 loadCategories();
@@ -201,4 +233,4 @@ loadBanners();
 </script>
 
 </body>
-  </html>
+</html>
