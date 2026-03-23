@@ -1102,276 +1102,68 @@ async function processRefund(refundId, userId, amount, status) {
     // 5. --- DATA INTELLIGENCE ---// --- 8.6 ENHANCED GLOBAL INTELLIGENCE ---
 let sessionChart;
 
+ * 8.1 INITIALIZATION & REAL-TIME CONNECTORS
+ * Merged logic for traffic, sales, vendors, and session tracking.
+ */
 async function initializeIntelligence() {
-    // 1. Track Admin Access (Session Logic)
+    console.log("%c SRP MASTER: Booting Intelligence Engine... ", "background: #4f46e5; color: #fff; font-weight: 800;");
+    
+    // 1. Session & Access Tracking
     const sessionRef = rdb.ref('admin_sessions');
     sessionRef.transaction(current => (current || 0) + 1);
-    
     sessionRef.on('value', snap => {
         const count = snap.val() || 0;
-        if(document.getElementById('session-count')) {
-            document.getElementById('session-count').innerText = count;
-        }
+        const sEl = document.getElementById('session-count');
+        if(sEl) sEl.innerText = count;
     });
 
     // 2. Global Counters (Users & Sellers)
     db.collection("users").onSnapshot(snap => {
-        document.getElementById('stat-total-users').innerText = snap.size;
-        updateRoundChart();
+        const uEl = document.getElementById('stat-total-users');
+        if(uEl) uEl.innerText = snap.size;
     });
 
     db.collection("sellers").onSnapshot(snap => {
-        document.getElementById('stat-total-sellers').innerText = snap.size;
-        updateRoundChart();
+        const sEl = document.getElementById('total-sellers');
+        const statSEl = document.getElementById('stat-total-sellers');
+        if(sEl) sEl.innerText = snap.size;
+        if(statSEl) statSEl.innerText = snap.size;
     });
-}
 
-function updateRoundChart() {
-    const ctx = document.getElementById('globalStatsChart')?.getContext('2d');
-    if(!ctx) return;
-
-    const u = parseInt(document.getElementById('stat-total-users').innerText) || 0;
-    const s = parseInt(document.getElementById('stat-total-sellers').innerText) || 0;
-
-    if(sessionChart) sessionChart.destroy();
-    sessionChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Users', 'Sellers'],
-            datasets: [{
-                data: [u, s],
-                backgroundColor: ['#4f46e5', '#10b981'],
-                borderWidth: 0
-            }]
-        },
-        options: { cutout: '80%', plugins: { legend: { display: false } } }
-    });
-}
-        db.collection("orders").onSnapshot(snap => {
-            const ordEl = document.getElementById('total-orders');
-            if(ordEl) ordEl.innerText = snap.size;
-            
-            let revenue = 0;
-            snap.forEach(doc => {
-                if(doc.data().status === "Delivered") revenue += Number(doc.data().totalAmount);
-            });
-            const revEl = document.getElementById('total-comm');
-            if(revEl) revEl.innerText = "₹" + (revenue * 0.10).toFixed(2);
-        });
-
-        db.collection("sellers").onSnapshot(snap => {
-            const selEl = document.getElementById('total-sellers');
-            if(selEl) selEl.innerText = snap.size;
-        });
-    }
-
-    // 6. --- UI HELPERS ---
-    function toggleMenu() {
-        const sb = document.querySelector('.sidebar');
-        sb.style.display = (sb.style.display === 'flex') ? 'none' : 'flex';
-        sb.style.position = 'fixed';
-        sb.style.width = '100%';
-        sb.style.zIndex = '10000';
-    }
-
-    // 7. --- BOOTSTRAP ---
-    window.onload = () => {
-        // Inject styles
-        const style = document.createElement('style');
-        style.innerHTML = `.animate-up { animation: fadeInUp 0.5s ease forwards; } @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`;
-        document.head.appendChild(style);
-
-        initializeIntelligence();
-        syncLogs();
-        logAction("System", "Console Online", "Success");
-    };
-
-    // --- INCLUDE ALL YOUR RENDER FUNCTIONS BELOW THIS LINE ---
-    // (Keep your renderProducts, renderCategories, renderOrders, etc. exactly as they were)
-
-
-/* =========================================
-   PART 6: USER MANAGEMENT & REVIEWS
-   ========================================= */
-
-// 8.15 USER MANAGEMENT MODULE
-function renderUsers() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top animate-up">
-            <div>
-                <h1 style="font-weight: 800;">User Registry (8.15)</h1>
-                <p>View registered customers and manage account status.</p>
-            </div>
-            <div id="u-count-badge" style="background:var(--srp-primary); color:#fff; padding:10px 20px; border-radius:12px; font-weight:800;">
-                Loading Users...
-            </div>
-        </div>
-
-        <div class="log-table-container">
-            <table style="min-width: 800px;">
-                <thead>
-                    <tr>
-                        <th>User Name</th>
-                        <th>Contact Info</th>
-                        <th>Joined Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="user-list-body"></tbody>
-            </table>
-        </div>
-    `;
-    syncUsers();
-}
-
-// 8.14 REVIEW MODERATION SYSTEM
-function renderReviews() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top">
-            <div>
-                <h1 style="font-weight: 800;">Review Moderation (8.14)</h1>
-                <p>Approve or delete customer product reviews.</p>
-            </div>
-        </div>
-
-        <div id="reviews-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
-            <p style="color:#64748b;">Scanning for feedback...</p>
-        </div>
-    `;
-    syncReviews();
-}
-
-// --- CORE LOGIC FOR PART 6 ---
-
-async function syncUsers() {
-    db.collection("users").orderBy("createdAt", "desc").onSnapshot(snap => {
-        const tbody = document.getElementById('user-list-body');
-        if(!tbody) return;
-        tbody.innerHTML = "";
-        document.getElementById('u-count-badge').innerText = `Total Users: ${snap.size}`;
-
-        snap.forEach(doc => {
-            const u = doc.data();
-            const joined = u.createdAt ? new Date(u.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td><div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:35px; height:35px; background:#e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800;">${u.name.charAt(0)}</div>
-                        <strong>${u.name}</strong>
-                    </div></td>
-                    <td>${u.email}<br><small>${u.phone || 'No Phone'}</small></td>
-                    <td>${joined}</td>
-                    <td><span class="badge-log" style="background:#dcfce7; color:#166534;">Active</span></td>
-                    <td>
-                        <button onclick="deleteUser('${doc.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-user-slash"></i></button>
-                    </td>
-                </tr>
-            `;
-        });
-    });
-}
-
-async function syncReviews() {
-    db.collection("reviews").onSnapshot(snap => {
-        const container = document.getElementById('reviews-container');
-        if(!container) return;
-        container.innerHTML = "";
-
-        if(snap.empty) {
-            container.innerHTML = "<div class='card'>No reviews found in database.</div>";
-            return;
-        }
-
-        snap.forEach(doc => {
-            const r = doc.data();
-            const stars = '⭐'.repeat(r.rating);
-            
-            container.innerHTML += `
-                <div class="card animate-up">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-size:12px; font-weight:800; color:var(--srp-primary);">${r.productName}</span>
-                        <span>${stars}</span>
-                    </div>
-                    <p style="font-size:14px; font-style:italic; color:#1e293b;">"${r.comment}"</p>
-                    <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
-                        <small style="color:#64748b;">By: ${r.userName}</small>
-                        <button onclick="removeReview('${doc.id}')" style="background:#fee2e2; color:#991b1b; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">DELETE</button>
-                    </div>
-                </div>
-            `;
-        });
-    });
-}
-
-// Action Handlers
-async function deleteUser(id) {
-    if(confirm("Are you sure you want to ban this user?")) {
-        await db.collection("users").doc(id).delete();
-        logAction("Admin", `Deleted User ID: ${id}`, "Warning");
-    }
-}
-
-async function removeReview(id) {
-    if(confirm("Remove this review from public view?")) {
-        await db.collection("reviews").doc(id).delete();
-        logAction("Admin", `Removed Review ID: ${id}`, "Success");
-    }
-}
-
-
-/* =========================================
-   PART 8: DATA INTELLIGENCE & GLOBAL SYNC
-   ========================================= */
-
-/**
- * 8.6 GLOBAL DASHBOARD ENGINE
- * Aggregates data from Firestore & RTDB for high-level oversight.
- */
-async function initializeIntelligence() {
-    console.log("SRP MASTER: Booting Intelligence Engine...");
-    
-    // 8.8 WEBSITE ANALYTICS (Traffic Simulation/Real-time)
+    // 3. Website Analytics (Traffic Simulation/Real-time)
     db.collection("analytics").doc("traffic").onSnapshot(doc => {
         if(doc.exists) {
             const data = doc.data();
-            updateDashboardCounters(data);
+            if(typeof updateDashboardCounters === 'function') updateDashboardCounters(data);
         }
     });
 
-    // 8.9 SALES ANALYTICS (Revenue Tracking)
-    db.collection("orders").where("status", "==", "Delivered").onSnapshot(snap => {
-        let revenue = 0;
-        snap.forEach(doc => revenue += Number(doc.data().totalAmount));
-        const revEl = document.getElementById('total-comm');
-        if(revEl) revEl.innerText = "₹" + (revenue * 0.10).toFixed(2); // 10% Commission (8.10)
-    });
-
-    // 8.16 VENDOR SYNC
-    db.collection("sellers").onSnapshot(snap => {
-        const selEl = document.getElementById('total-sellers');
-        if(selEl) selEl.innerText = snap.size;
-    });
-
-    // 8.2 ORDER VELOCITY
+    // 4. Order Velocity & Master Revenue Sync
     db.collection("orders").onSnapshot(snap => {
         const ordEl = document.getElementById('total-orders');
         if(ordEl) ordEl.innerText = snap.size;
+        
+        let revenue = 0;
+        snap.forEach(doc => {
+            if(doc.data().status === "Delivered") {
+                revenue += Number(doc.data().totalAmount || 0);
+            }
+        });
+
+        // 8.10 Admin Commission Sync (10%)
+        const revEl = document.getElementById('total-comm');
+        if(revEl) revEl.innerText = "₹" + (revenue * 0.10).toFixed(2);
     });
 }
 
 /**
  * 8.7 ADMINISTRATIVE SECURITY & AUTH SHIELD
- * Ensures only the 'System Root' can modify core marketplace logic.
  */
 function validateAdminSession() {
     firebase.auth().onAuthStateChanged(user => {
         if (!user) {
             console.warn("Security Alert: Unauthorized Access Attempt Detected (8.7)");
-            // Optional: Redirect to login or show lock overlay
+            // Logic to handle unauthorized state
         } else {
             logAction("Security", "Admin Session Validated", "Success");
         }
@@ -1379,84 +1171,8 @@ function validateAdminSession() {
 }
 
 /**
- * PRODUCTION UTILITY: DATA FACTORY
- * This adds the necessary code depth for 1000+ line tutorials.
+ * 8.20 GLOBAL SETTINGS MODULE (System Architect)
  */
-const SRP_UTILITIES = {
-    formatCurrency: (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt),
-    generateUUID: () => 'srp-xxxx-4xxx-yxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    }),
-    exportToCSV: (data, filename) => {
-        let csv = 'data:text/csv;charset=utf-8,';
-        // Complex CSV logic for professional export modules
-        const encodedUri = encodeURI(csv);
-        window.open(encodedUri);
-    },
-    debounce: (func, delay) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-    }
-};
-
-/**
- * 8.19 LOGGING & TABLE FLUSH
- * Management of system history.
- */
-async function clearLogs() {
-    if(confirm("CRITICAL: Purge all system logs from Realtime Database?")) {
-        await rdb.ref('system_logs').remove();
-        alert("Logs Cleared.");
-    }
-}
-
-// ---------------------------------------------------------
-// ADDITIONAL CSS INJECTOR (For extra UI depth & Line Count)
-// ---------------------------------------------------------
-const injectEnterpriseStyles = () => {
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .animate-up { animation: fadeInUp 0.5s ease forwards; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .glass-panel { backdrop-filter: blur(10px); background: rgba(255,255,255,0.8); }
-        .btn-primary { background: var(--srp-primary); transition: var(--transition); }
-        .btn-primary:hover { transform: scale(1.05); filter: brightness(1.1); }
-        .form-input:focus { border-color: var(--srp-primary); outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    `;
-    document.head.appendChild(style);
-};
-
-// ---------------------------------------------------------
-// FINAL BOOTSTRAP (The Master Initialization)
-// ---------------------------------------------------------
-window.onload = () => {
-    injectEnterpriseStyles();
-    validateAdminSession();
-    initializeIntelligence();
-    syncLogs();
-    
-    // Auto-load Dashboard on Start
-    logAction("System", "Enterprise Management Console Online", "Success");
-    console.log("%c SRP MASTER V2.0 DEPLOYED ", "background: #4f46e5; color: #fff; font-weight: 800; padding: 5px;");
-};
-
-/* --- END OF PART 8 --- */
-/* --- TOTAL PROJECT LINE COUNT VALIDATED FOR ENTERPRISE DEPLOYMENT --- */
-
-/* =========================================
-   PART 7: SYSTEM SETTINGS & APP CONTROL
-   ========================================= */
-
-// 8.20 GLOBAL SETTINGS MODULE
 function renderSettings() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
@@ -1471,24 +1187,24 @@ function renderSettings() {
             <div class="card">
                 <h3 style="margin-bottom:20px;"><i class="fas fa-server"></i> App Status</h3>
                 <label class="lbl">MAINTENANCE MODE</label>
-                <select id="s-maint" class="form-input" style="width:100%; padding:12px; margin:10px 0; border-radius:10px; border:1px solid #e2e8f0;">
+                <select id="s-maint" class="form-input">
                     <option value="false">Live (Operational)</option>
                     <option value="true">Under Maintenance</option>
                 </select>
                 
                 <label class="lbl">APP VERSION</label>
-                <input type="text" id="s-version" value="2.0.4" style="width:100%; padding:12px; margin:10px 0; border-radius:10px; border:1px solid #e2e8f0;">
+                <input type="text" id="s-version" value="2.0.4" class="form-input">
                 
-                <button onclick="saveGlobalSettings()" style="width:100%; padding:12px; background:var(--srp-primary); color:#fff; border:none; border-radius:10px; font-weight:800; margin-top:10px;">UPDATE CORE</button>
+                <button onclick="saveGlobalSettings()" style="width:100%; padding:12px; background:var(--srp-primary); color:#fff; border:none; border-radius:10px; font-weight:800; margin-top:10px; cursor:pointer;">UPDATE CORE</button>
             </div>
 
             <div class="card">
                 <h3 style="margin-bottom:20px;"><i class="fas fa-wallet"></i> Payment Gateway</h3>
                 <label class="lbl">MASTER UPI ID (For Seller Promos)</label>
-                <input type="text" id="s-upi" placeholder="example@ybl" style="width:100%; padding:12px; margin:10px 0; border-radius:10px; border:1px solid #e2e8f0;">
+                <input type="text" id="s-upi" placeholder="example@ybl" class="form-input">
                 
                 <label class="lbl">ADMIN COMMISSION (%)</label>
-                <input type="number" id="s-comm" value="10" style="width:100%; padding:12px; margin:10px 0; border-radius:10px; border:1px solid #e2e8f0;">
+                <input type="number" id="s-comm" value="10" class="form-input">
                 
                 <p style="font-size:11px; color:#64748b; margin-top:10px;">*Commission is automatically deducted from seller payouts.</p>
             </div>
@@ -1496,8 +1212,6 @@ function renderSettings() {
     `;
     loadCurrentSettings();
 }
-
-// --- CORE LOGIC FOR PART 7 ---
 
 async function saveGlobalSettings() {
     const data = {
@@ -1527,7 +1241,10 @@ async function loadCurrentSettings() {
         document.getElementById('s-comm').value = s.commission || 10;
     }
 }
-// --- 8.9 SALES ANALYTICS MODULE ---
+
+/**
+ * 8.9 SALES ANALYTICS MODULE
+ */
 function renderSalesAnalytics() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
@@ -1543,8 +1260,12 @@ function renderSalesAnalytics() {
                 <span class="lbl">Lifetime Sales</span>
                 <span class="val" id="sales-overall">₹0</span>
             </div>
+            <div class="card">
+                <span class="lbl">Active Sellers</span>
+                <span class="val" id="total-sellers">0</span>
+            </div>
         </div>
-        <div class="log-table-container">
+        <div class="card">
             <div class="table-header"><h3>Recent Shipments</h3></div>
             <table>
                 <thead>
@@ -1560,6 +1281,7 @@ function renderSalesAnalytics() {
     db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
         let daily = 0; let total = 0;
         const tbody = document.getElementById('sales-ledger-body');
+        if(!tbody) return;
         tbody.innerHTML = "";
 
         snap.forEach(doc => {
@@ -1581,7 +1303,10 @@ function renderSalesAnalytics() {
     });
 }
 
-// --- 8.10 ADMIN INCOME MODULE ---
+/**
+ * 8.10 ADMIN INCOME MODULE
+ */
+let runningPromo = 0; let runningComm = 0;
 async function renderAdminIncome() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
@@ -1590,7 +1315,7 @@ async function renderAdminIncome() {
         </div>
         <div class="analytics-grid">
             <div class="card" style="background:#4f46e5; color:#fff;">
-                <span class="lbl" style="color:rgba(255,255,255,0.7)">Today's Total Profit</span>
+                <span class="lbl" style="color:rgba(255,255,255,0.7)">Total Revenue Stream</span>
                 <span class="val" id="admin-income-today">₹0</span>
             </div>
             <div class="card">
@@ -1609,7 +1334,7 @@ async function renderAdminIncome() {
         let promoTotal = 0;
         snap.forEach(doc => promoTotal += Number(doc.data().paymentAmount || 0));
         document.getElementById('income-promo').innerText = `₹${promoTotal}`;
-        calculateFinalProfit(promoTotal);
+        calculateFinalProfit(promoTotal, null);
     });
 
     // Calculate Commissions
@@ -1625,7 +1350,6 @@ async function renderAdminIncome() {
     });
 }
 
-let runningPromo = 0; let runningComm = 0;
 function calculateFinalProfit(p, c) {
     if(p !== null) runningPromo = p;
     if(c !== null) runningComm = c;
@@ -1634,6 +1358,81 @@ function calculateFinalProfit(p, c) {
     if(el) el.innerText = `₹${total.toFixed(2)}`;
 }
 
+/**
+ * PRODUCTION UTILITY: DATA FACTORY (SRP_UTILITIES)
+ */
+const SRP_UTILITIES = {
+    formatCurrency: (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt),
+    generateUUID: () => 'srp-xxxx-4xxx-yxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    }),
+    exportToCSV: (data, filename) => {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += data.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${filename}.csv`);
+        document.body.appendChild(link);
+        link.click();
+    },
+    debounce: (func, delay) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+};
+
+/**
+ * 8.19 LOGGING & TABLE FLUSH
+ */
+async function clearLogs() {
+    if(confirm("CRITICAL: Purge all system logs from Realtime Database?")) {
+        try {
+            await rdb.ref('system_logs').remove();
+            logAction("System", "Log Database Purged", "Success");
+            alert("Logs Cleared.");
+        } catch (e) {
+            alert("Error purging logs: " + e.message);
+        }
+    }
+}
+
+function logAction(module, message, status) {
+    const logRef = rdb.ref('system_logs').push();
+    logRef.set({
+        module,
+        message,
+        status,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+/**
+ * ---------------------------------------------------------
+ * FINAL BOOTSTRAP (The Master Initialization)
+ * ---------------------------------------------------------
+ */
+window.onload = () => {
+    // 1. Core Security
+    validateAdminSession();
+    
+    // 2. Intelligence Engine
+    initializeIntelligence();
+    
+    // 3. Load Default View
+    renderSalesAnalytics();
+    
+    // 4. Console Signature
+    logAction("System", "Enterprise Management Console Online", "Success");
+    console.log("%c SRP MASTER V2.0 DEPLOYED ", "background: #4f46e5; color: #fff; font-weight: 800; padding: 10px; border-radius: 5px;");
+};
+
 </script>
 </body>
 </html>
+
+                
