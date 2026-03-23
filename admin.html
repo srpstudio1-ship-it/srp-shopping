@@ -386,6 +386,165 @@ function saveSettings() {
     };
     db.ref('settings').set(settings).then(() => alert("Settings Updated"));
 }
+// --- 8.2 ORDER MANAGEMENT & 8.6 GLOBAL DASHBOARD ---
+function loadOrders() {
+    db.ref('orders').on('value', snap => {
+        const orderList = document.getElementById('order-list');
+        const globalList = document.getElementById('global-order-list');
+        orderList.innerHTML = ""; globalList.innerHTML = "";
+        
+        snap.forEach(child => {
+            const o = child.val();
+            const row = `<tr>
+                <td>${o.id}</td>
+                <td>${o.userName}</td>
+                <td>${o.phone}</td>
+                <td><span class="status-badge" style="background:#ffeaa7">${o.status}</span></td>
+                <td><input type="text" value="${o.trackingId || ''}" onchange="updateTracking('${o.id}', this.value)"></td>
+                <td><button onclick="viewOrderDetails('${o.id}')">View</button></td>
+            </tr>`;
+            orderList.innerHTML += row;
+            
+            // Populate Global Dashboard (8.6)
+            globalList.innerHTML += `<tr>
+                <td>${o.id}</td>
+                <td>${o.sellerName}</td>
+                <td>₹${o.amount}</td>
+                <td>₹${(o.amount * 0.1).toFixed(2)}</td>
+            </tr>`;
+        });
+    });
+}
+
+function updateTracking(orderId, val) {
+    db.ref('orders/' + orderId).update({ trackingId: val, status: 'Shipped' });
+    logAction("Updated Tracking for Order: " + orderId);
+}
+
+// --- 8.3 & 8.16 SELLER MANAGEMENT ---
+function loadSellers() {
+    db.ref('sellers').on('value', snap => {
+        const withdrawalList = document.getElementById('withdrawal-list');
+        const sellerApproval = document.getElementById('seller-approval-list');
+        withdrawalList.innerHTML = ""; sellerApproval.innerHTML = "";
+
+        snap.forEach(child => {
+            const s = child.val();
+            // 8.16 Approval UI
+            sellerApproval.innerHTML += `<div class="card">
+                ${s.shopName} (${s.email}) 
+                <button onclick="updateSellerStatus('${s.id}', 'Approved')">Approve</button>
+                <button class="btn-delete" onclick="updateSellerStatus('${s.id}', 'Suspended')">Suspend</button>
+            </div>`;
+        });
+    });
+}
+
+// --- 8.5 FEATURED PRODUCTS ---
+function pinProduct() {
+    const id = document.getElementById('feat-prod-id').value;
+    const priority = document.getElementById('feat-priority').value;
+    if(!id) return;
+    db.ref('featured_products/' + id).set({
+        productId: id,
+        priority: priority,
+        timestamp: Date.now()
+    }).then(() => alert("Product Pinned to Homepage"));
+}
+
+// --- 8.12 COUPON MANAGEMENT ---
+function createCoupon() {
+    const code = document.getElementById('cp-code').value;
+    const perc = document.getElementById('cp-perc').value;
+    const expiry = document.getElementById('cp-expiry').value;
+    if(!code || !perc) return;
+    db.ref('coupons/' + code).set({
+        code: code,
+        discount: perc,
+        expiry: expiry,
+        usageLimit: 1
+    }).then(() => alert("Coupon Created: " + code));
+}
+
+// --- 8.14 REVIEW MODERATION ---
+function loadReviews() {
+    db.ref('reviews').on('value', snap => {
+        const container = document.getElementById('review-moderation-list');
+        container.innerHTML = "";
+        snap.forEach(child => {
+            const r = child.val();
+            container.innerHTML += `<div class="card">
+                <b>Prod ID: ${r.productId}</b>: "${r.comment}" 
+                <button class="btn-delete" onclick="deleteReview('${child.key}')">Delete Fake Review</button>
+            </div>`;
+        });
+    });
+}
+
+function deleteReview(key) {
+    if(confirm("Delete this review?")) db.ref('reviews/' + key).remove();
+}
+
+// --- 8.15 USER MANAGEMENT ---
+function loadUsers() {
+    db.ref('users').on('value', snap => {
+        const body = document.getElementById('user-list-body');
+        body.innerHTML = "";
+        snap.forEach(child => {
+            const u = child.val();
+            body.innerHTML += `<tr>
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td>${u.status || 'Active'}</td>
+                <td>
+                    <button class="btn-delete" onclick="toggleUserStatus('${child.key}', 'Blocked')">Block</button>
+                </td>
+            </tr>`;
+        });
+    });
+}
+
+// --- 8.18 REFUND SYSTEM ---
+function loadRefunds() {
+    db.ref('refunds').on('value', snap => {
+        const container = document.getElementById('refund-requests-container');
+        container.innerHTML = "";
+        snap.forEach(child => {
+            const ref = child.val();
+            container.innerHTML += `<div class="card">
+                Order: ${ref.orderId} - Amount: ₹${ref.amount}
+                <button onclick="processRefund('${child.key}', 'Approved')">Approve to Wallet</button>
+                <button class="btn-delete" onclick="processRefund('${child.key}', 'Rejected')">Reject</button>
+            </div>`;
+        });
+    });
+}
+
+// --- 8.13 BANNER MANAGEMENT ---
+function uploadBanner() {
+    const file = document.getElementById('banner-upload').files[0];
+    const link = document.getElementById('banner-link').value;
+    if(!file) return alert("Select an image");
+
+    const storageRef = storage.ref('banners/' + file.name);
+    storageRef.put(file).then(snapshot => {
+        snapshot.ref.getDownloadURL().then(url => {
+            db.ref('banners').push({ url, link });
+            alert("Banner Uploaded!");
+        });
+    });
+}
+
+// --- UPDATE THE INITIALIZE FUNCTION ---
+const originalInit = window.onload;
+window.onload = () => {
+    if (originalInit) originalInit();
+    loadOrders();
+    loadSellers();
+    loadUsers();
+    loadReviews();
+    loadRefunds();
+};
 
 // Initialize on Load
 window.onload = () => {
