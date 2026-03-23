@@ -213,29 +213,7 @@ loadProducts();
 }
 
 // LOAD PRODUCTS
-function (){
-db.ref('products').on('value',snap=>{
 
-let html='';
-snap.forEach(d=>{
-
-let p = d.val();
-
-html+=`
-<div class="bg-white p-3 rounded shadow">
-<img src="${p.image}" class="h-32 w-full object-cover">
-<h3>${p.name}</h3>
-<p>₹${p.price}</p>
-<button onclick="deleteProduct('${d.key}')" class="bg-red-500 text-white px-2 py-1">Delete</button>
-</div>
-`;
-
-});
-
-productList.innerHTML = html;
-
-});
-}
 
 function deleteProduct(id){
 db.ref('products/'+id).remove();
@@ -334,7 +312,7 @@ bannerList.innerHTML = html;
 
 });
 }
-<!-- ORDERS -->
+
 
 // ================= DASHBOARD =================
 
@@ -604,10 +582,7 @@ Save Tracking
 
 });
 
-document.getElementById("orders").innerHTML = html;
 
-});
-}
 
 document.getElementById("orders").innerHTML = html;
 
