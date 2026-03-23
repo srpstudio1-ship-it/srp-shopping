@@ -667,6 +667,407 @@ function getStatusColor(status) {
         default: return '#64748b';
     }
 }
+/* =========================================
+   PART 4: FINANCIAL HUB & LEDGER (8.4, 8.6, 8.7)
+   ========================================= */
+
+/**
+ * 8.6 WALLET & 8.7 TRANSACTION CENTER
+ * The master view for monitoring user balances and movement of funds.
+ */
+function renderFinance() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Financial Hub (8.6/8.7)</h1>
+                <p>Track user wallets, top-ups, and internal credits.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div class="card" style="padding:10px 20px; margin:0; display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:12px; color:#64748b;">System Liability:</span>
+                    <span id="total-wallet-liability" style="font-weight:800; color:var(--srp-primary);">₹0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px;">
+            <div class="card animate-up">
+                <h3 style="margin-bottom:20px; font-weight:800;">Global Transaction Ledger</h3>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align:left; border-bottom:2px solid #f1f5f9; color:#64748b; font-size:13px;">
+                                <th style="padding:12px;">Type</th>
+                                <th>User</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-ledger-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card animate-up">
+                <h3 style="margin-bottom:20px; font-weight:800;">Manual Adjustments</h3>
+                <p style="font-size:12px; color:#64748b; margin-bottom:15px;">Use this to resolve disputes or award promotional credits.</p>
+                
+                <label class="lbl">User Email/ID</label>
+                <input type="text" id="wallet-user-id" placeholder="user@example.com" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:15px;">
+                
+                <label class="lbl">Adjustment Amount (Use - for deduction)</label>
+                <input type="number" id="wallet-amount" placeholder="e.g. 500 or -100" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:15px;">
+                
+                <label class="lbl">Reason/Note</label>
+                <input type="text" id="wallet-note" placeholder="Refund for Order #123" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:20px;">
+                
+                <button onclick="adjustWallet()" style="width:100%; padding:15px; background:var(--srp-dark); color:#fff; border:none; border-radius:12px; font-weight:800; cursor:pointer;">
+                    EXECUTE ADJUSTMENT
+                </button>
+            </div>
+        </div>
+
+        <div class="card animate-up" style="margin-top:20px;">
+            <h3 style="margin-bottom:20px; font-weight:800;">Gateway Logs (Razorpay/Cashfree)</h3>
+            <div id="payment-logs-container" style="display:flex; flex-direction:column; gap:10px;">
+                </div>
+        </div>
+    `;
+    syncFinanceData();
+}
+
+/* --- LOGIC HANDLERS --- */
+
+async function syncFinanceData() {
+    // 1. Sync Transaction Ledger
+    db.collection("transactions").orderBy("timestamp", "desc").limit(20).onSnapshot(snap => {
+        const body = document.getElementById('transaction-ledger-body');
+        if(!body) return;
+        body.innerHTML = "";
+        
+        snap.forEach(doc => {
+            const tx = doc.data();
+            const isCredit = tx.type === 'credit' || tx.type === 'topup';
+            body.innerHTML += `
+                <tr style="border-bottom:1px solid #f1f5f9; font-size:13px;">
+                    <td style="padding:12px;">
+                        <span style="font-weight:700; color:${isCredit ? '#10b981' : '#ef4444'}">
+                            <i class="fas ${isCredit ? 'fa-arrow-down' : 'fa-arrow-up'}"></i> ${tx.type.toUpperCase()}
+                        </span>
+                    </td>
+                    <td>${tx.userName || 'System'}</td>
+                    <td style="font-weight:700;">₹${tx.amount}</td>
+                    <td><span style="font-size:11px; padding:3px 8px; border-radius:5px; background:#f1f5f9;">${tx.status}</span></td>
+                    <td style="color:#94a3b8; font-size:11px;">${tx.timestamp ? new Date(tx.timestamp.toDate()).toLocaleDateString() : 'Pending'}</td>
+                </tr>
+            `;
+        });
+    });
+
+    // 2. Sync Liability Total
+    db.collection("wallets").onSnapshot(snap => {
+        let total = 0;
+        snap.forEach(doc => total += (doc.data().balance || 0));
+        const el = document.getElementById('total-wallet-liability');
+        if(el) el.innerText = `₹${total.toLocaleString('en-IN')}`;
+    });
+
+    // 3. Sync Gateway Logs (8.4)
+    db.collection("payment_logs").orderBy("timestamp", "desc").limit(10).onSnapshot(snap => {
+        const container = document.getElementById('payment-logs-container');
+        if(!container) return;
+        container.innerHTML = "";
+        
+        snap.forEach(doc => {
+            const log = doc.data();
+            container.innerHTML += `
+                <div style="background:#f8fafc; padding:12px; border-radius:10px; border-left:4px solid ${log.success ? '#10b981' : '#ef4444'}; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700; font-size:13px;">${log.gateway.toUpperCase()} - ${log.orderId}</div>
+                        <div style="font-size:11px; color:#64748b;">Response: ${log.message}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:800;">₹${log.amount}</div>
+                        <div style="font-size:10px; font-family:monospace;">${log.paymentId || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+/**
+ * MANUAL WALLET ADJUSTMENT (8.6)
+ * Updates the user's wallet and creates a transaction record simultaneously.
+ */
+async function adjustWallet() {
+    const userEmail = document.getElementById('wallet-user-id').value;
+    const amount = Number(document.getElementById('wallet-amount').value);
+    const note = document.getElementById('wallet-note').value;
+
+    if(!userEmail || !amount) return alert("User ID and Amount are required.");
+
+    const batch = db.batch();
+    const walletRef = db.collection("wallets").doc(userEmail);
+    const txRef = db.collection("transactions").doc();
+
+    try {
+        // Atomic update: Ensure wallet and transaction log happen together
+        batch.set(walletRef, { 
+            balance: firebase.firestore.FieldValue.increment(amount),
+            lastUpdated: firebase.util.Timestamp.now()
+        }, { merge: true });
+
+        batch.set(txRef, {
+            type: amount > 0 ? 'credit' : 'debit',
+            amount: Math.abs(amount),
+            userName: userEmail,
+            note: note,
+            status: 'completed',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await batch.commit();
+        alert("Wallet synchronized successfully.");
+        logAction("Finance", `Adjusted wallet for ${userEmail} by ₹${amount}`, "Success");
+    } catch (err) {
+        alert("Finance Error: " + err.message);
+    }
+}
+/* =========================================
+   PART 5: COMMUNICATION & AUDIT (8.8, 8.12)
+   ========================================= */
+
+/**
+ * 8.12 NOTIFICATION ENGINE
+ * Interface to send global or targeted alerts to the User App.
+ */
+function renderNotifications() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">Notification Engine (8.12)</h1>
+                <p>Broadcast messages and promotional alerts to all users.</p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:25px;">
+            <div class="card animate-up">
+                <h3 style="margin-bottom:20px; font-weight:800;">Broadcast Composer</h3>
+                
+                <label class="lbl">Notification Title</label>
+                <input type="text" id="notif-title" placeholder="e.g. Mega Sale Alert! 🚀" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:15px;">
+                
+                <label class="lbl">Message Body</label>
+                <textarea id="notif-body" placeholder="Get 50% off on all organic products today..." style="width:100%; height:100px; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:15px;"></textarea>
+                
+                <label class="lbl">Target URL / Route (Optional)</label>
+                <input type="text" id="notif-link" placeholder="e.g. /category/electronics" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:20px;">
+                
+                <button onclick="sendBroadcast()" style="width:100%; padding:15px; background:var(--srp-primary); color:#fff; border:none; border-radius:12px; font-weight:800; cursor:pointer;">
+                    <i class="fas fa-paper-plane"></i> DEPLOY NOTIFICATION
+                </button>
+            </div>
+
+            <div class="card animate-up">
+                <h3 style="margin-bottom:20px; font-weight:800;">Recent Broadcasts</h3>
+                <div id="notif-history" style="display:flex; flex-direction:column; gap:12px;">
+                    </div>
+            </div>
+        </div>
+    `;
+    syncNotificationHistory();
+}
+
+/**
+ * 8.8 SYSTEM LOGS
+ * The "Black Box" of the application. Tracks every admin click and database change.
+ */
+function renderLogs() {
+    const view = document.getElementById('app-view');
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <div>
+                <h1 style="font-weight: 800;">System Logs (8.8)</h1>
+                <p>Real-time audit trail of all administrative activities.</p>
+            </div>
+            <button onclick="clearSystemLogs()" style="padding:10px 20px; background:#fef2f2; color:#ef4444; border:1px solid #fee2e2; border-radius:10px; font-weight:700; cursor:pointer;">
+                Clear Logs
+            </button>
+        </div>
+
+        <div class="card animate-up" style="background:#0f172a; border:none;">
+            <div id="log-terminal" style="font-family:'Courier New', monospace; font-size:13px; color:#94a3b8; height:500px; overflow-y:auto; line-height:1.6; padding:10px;">
+                </div>
+        </div>
+    `;
+    syncSystemLogs();
+}
+
+/* --- LOGIC HANDLERS --- */
+
+async function sendBroadcast() {
+    const title = document.getElementById('notif-title').value;
+    const body = document.getElementById('notif-body').value;
+    const link = document.getElementById('notif-link').value;
+
+    if(!title || !body) return alert("Title and Body are mandatory.");
+
+    try {
+        await db.collection("notifications").add({
+            title,
+            body,
+            link: link || null,
+            target: 'all',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        alert("Notification broadcasted successfully.");
+        logAction("Marketing", `Broadcast Sent: ${title}`, "Info");
+        document.getElementById('notif-title').value = "";
+        document.getElementById('notif-body').value = "";
+    } catch (err) {
+        alert("Broadcast Failed: " + err.message);
+    }
+}
+
+function syncNotificationHistory() {
+    db.collection("notifications").orderBy("timestamp", "desc").limit(10).onSnapshot(snap => {
+        const container = document.getElementById('notif-history');
+        if(!container) return;
+        container.innerHTML = "";
+        
+        snap.forEach(doc => {
+            const n = doc.data();
+            container.innerHTML += `
+                <div style="padding:15px; border:1px solid #f1f5f9; border-radius:12px; background:#f8fafc;">
+                    <div style="font-weight:800; font-size:14px; margin-bottom:4px;">${n.title}</div>
+                    <div style="font-size:12px; color:#64748b;">${n.body}</div>
+                    <div style="font-size:10px; color:#94a3b8; margin-top:8px;">
+                        <i class="fas fa-clock"></i> ${n.timestamp ? new Date(n.timestamp.toDate()).toLocaleString() : 'Just now'}
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+function syncSystemLogs() {
+    db.collection("admin_logs").orderBy("timestamp", "desc").limit(50).onSnapshot(snap => {
+        const term = document.getElementById('log-terminal');
+        if(!term) return;
+        term.innerHTML = "";
+        
+        snap.forEach(doc => {
+            const log = doc.data();
+            const time = log.timestamp ? new Date(log.timestamp.toDate()).toLocaleTimeString() : '--:--';
+            let color = "#10b981"; // Success green
+            if(log.level === 'Warning') color = "#f59e0b";
+            if(log.level === 'Info') color = "#3b82f6";
+
+            term.innerHTML += `
+                <div style="margin-bottom:5px;">
+                    <span style="color:#475569;">[${time}]</span> 
+                    <span style="color:${color}; font-weight:bold;">${log.level.toUpperCase()}</span>: 
+                    <span style="color:#e2e8f0;">${log.message}</span> 
+                    <span style="color:#64748b; font-size:11px;">(By ${log.user})</span>
+                </div>
+            `;
+        });
+    });
+}
+
+async function clearSystemLogs() {
+    if(confirm("Are you sure? This will wipe the audit trail.")) {
+        // In a real app, you might want to archive these instead of delete
+        const snap = await db.collection("admin_logs").get();
+        const batch = db.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        logAction("Admin", "System logs cleared manually", "Warning");
+    }
+}
+
+/* --- FINAL APP INITIALIZATION --- */
+window.onload = () => {
+    // Check Auth Status (Ensure only admin can enter)
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            renderDashboard(); // Default view
+            logAction("Security", `Admin Session Started: ${user.email}`, "Info");
+        } else {
+            // Redirect to your login page if not authenticated
+            console.log("No active admin session.");
+        }
+    });
+};
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if the requester is the Admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'subhashrajpurohit10@gmail.com';
+    }
+
+    // 8.1 & 8.11: Products & Categories
+    match /products/{productId} {
+      allow read: if true; // Everyone can see products
+      allow write: if isAdmin(); // Only Admin can add/edit/delete
+    }
+    
+    match /categories/{catId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 8.2: Orders
+    match /orders/{orderId} {
+      allow read: if request.auth != null && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null; // Any logged-in user can place an order
+      allow update, delete: if isAdmin(); // Only Admin can change status or tracking
+    }
+
+    // 8.6: Wallets
+    match /wallets/{walletId} {
+      // Users can only see their own balance
+      allow read: if request.auth != null && (request.auth.token.email == walletId || isAdmin());
+      // ONLY the Admin (or a Cloud Function) can adjust balances
+      allow write: if isAdmin(); 
+    }
+
+    // 8.7 & 8.4: Transactions & Payment Logs
+    match /transactions/{txId} {
+      allow read: if request.auth != null && (resource.data.userName == request.auth.token.email || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    match /payment_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 8.5: Sellers
+    match /sellers/{sellerId} {
+      allow read: if true;
+      allow create: if request.auth != null; // Anyone can apply to be a seller
+      allow update, delete: if isAdmin(); // Only Admin can approve/suspend
+    }
+
+    // 8.8 & 8.12: System Logs & Notifications
+    match /admin_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /notifications/{notifId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
 
 </body>
 </html>
