@@ -346,15 +346,193 @@ loadCategories();
 loadBanners();
 loadDashboard();
 
-// ==========================
-// 🔥 ORDERS MANAGEMENT
-// ==========================
+// =========================
+// 🔥 GLOBAL UI HELPERS
+// =========================
 
-function loadOrders(){
+function showLoader(text="Loading..."){
+let div = document.createElement("div");
+div.id="loader";
+div.innerHTML = `
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div class="bg-white p-6 rounded shadow text-center">
+<p>${text}</p>
+</div>
+</div>`;
+document.body.appendChild(div);
+}
+
+function hideLoader(){
+let l = document.getElementById("loader");
+if(l) l.remove();
+}
+
+function showToast(msg){
+let t = document.createElement("div");
+t.className="fixed bottom-5 right-5 bg-black text-white px-4 py-2 rounded";
+t.innerText = msg;
+document.body.appendChild(t);
+setTimeout(()=>t.remove(),2000);
+}
+
+// =========================
+// 🔥 VALIDATION
+// =========================
+
+function validateProduct(){
+if(!pName.value) return "Product name required";
+if(!pMRP.value) return "MRP required";
+if(!pPrice.value) return "Price required";
+if(!pStock.value) return "Stock required";
+if(!pCategory.value) return "Category required";
+return null;
+}
+
+// =========================
+// 🔥 EDIT PRODUCT FEATURE
+// =========================
+
+function editProduct(id){
+
+db.ref('products/'+id).once('value',snap=>{
+let p = snap.val();
+
+pName.value = p.name;
+pMRP.value = p.mrp;
+pPrice.value = p.price;
+pStock.value = p.stock;
+pCategory.value = p.category;
+pDesc.value = p.desc;
+
+window.editingProduct = id;
+
+});
+
+}
+
+const oldAddProduct = addProduct;
+
+addProduct = function(){
+
+let err = validateProduct();
+if(err){
+alert(err);
+return;
+}
+
+showLoader("Saving Product...");
+
+let id = window.editingProduct || Date.now();
+let file = pImage.files[0];
+
+if(file){
+
+let ref = storage.ref('products/'+id);
+
+ref.put(file).then(()=>{
+ref.getDownloadURL().then(url=>{
+
+saveProduct(id,url);
+
+});
+});
+
+}else{
+
+db.ref('products/'+id).once('value',snap=>{
+let old = snap.val();
+saveProduct(id, old?.image || "");
+});
+
+}
+
+};
+
+function saveProduct(id,imageUrl){
+
+db.ref('products/'+id).set({
+name: pName.value,
+mrp: Number(pMRP.value),
+price: Number(pPrice.value),
+stock: Number(pStock.value),
+category: pCategory.value,
+desc: pDesc.value,
+image: imageUrl
+});
+
+hideLoader();
+showToast("Product Saved");
+
+window.editingProduct = null;
+
+}
+
+// =========================
+// 🔥 IMPROVED PRODUCT UI
+// =========================
+
+function loadProducts(){
+
+db.ref('products').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let p = d.val();
+
+html+=`
+<div class="bg-white p-3 rounded shadow">
+
+<img src="${p.image}" class="h-32 w-full object-cover mb-2">
+
+<h3 class="font-bold">${p.name}</h3>
+<p>₹${p.price}</p>
+<p class="text-xs text-gray-500">Stock: ${p.stock}</p>
+
+<div class="flex gap-2 mt-2">
+
+<button onclick="editProduct('${d.key}')" 
+class="bg-yellow-500 text-white px-2 py-1">Edit</button>
+
+<button onclick="deleteProduct('${d.key}')" 
+class="bg-red-500 text-white px-2 py-1">Delete</button>
+
+</div>
+
+</div>
+`;
+
+});
+
+productList.innerHTML = html;
+
+});
+
+}
+
+// =========================
+// 🔥 ORDER STATUS CONTROL
+// =========================
+
+function updateOrderStatus(id,status){
+
+db.ref('orders/'+id).update({
+status:status
+});
+
+showToast("Order Updated");
+
+}
+
+// PATCH loadOrders UI
+loadOrders = function(){
 
 db.ref('orders').on('value',snap=>{
 
-let html='';
+let html = `
+<h2 class="text-2xl font-bold mb-4">Orders Management</h2>
+`;
 
 snap.forEach(d=>{
 
@@ -365,20 +543,29 @@ html+=`
 
 <h3 class="font-bold">Order ID: ${d.key}</h3>
 
-<p><b>User:</b> ${o.userName}</p>
-<p><b>Phone:</b> ${o.phone}</p>
-<p><b>Email:</b> ${o.email}</p>
-<p><b>Address:</b> ${o.address}</p>
-<p><b>Pincode:</b> ${o.pincode}</p>
+<p>${o.userName} | ${o.phone}</p>
+<p>${o.address}</p>
 
-<p><b>Status:</b> ${o.status || 'Pending'}</p>
-<p><b>Tracking ID:</b> ${o.tracking || 'Not Assigned'}</p>
+<p>Status: <b>${o.status || 'Pending'}</b></p>
 
-<input placeholder="Enter Tracking ID" id="track_${d.key}" class="border p-2 mt-2">
+<div class="flex gap-2 mt-2">
+
+<button onclick="updateOrderStatus('${d.key}','Packed')" 
+class="bg-yellow-500 text-white px-2 py-1">Packed</button>
+
+<button onclick="updateOrderStatus('${d.key}','Shipped')" 
+class="bg-blue-500 text-white px-2 py-1">Shipped</button>
+
+<button onclick="updateOrderStatus('${d.key}','Delivered')" 
+class="bg-green-600 text-white px-2 py-1">Delivered</button>
+
+</div>
+
+<input placeholder="Tracking ID" id="track_${d.key}" class="border p-2 mt-2">
 
 <button onclick="updateTracking('${d.key}')" 
-class="bg-blue-600 text-white px-3 py-1 mt-2">
-Update Tracking
+class="bg-black text-white px-3 py-1 mt-2">
+Save Tracking
 </button>
 
 </div>
@@ -386,191 +573,49 @@ Update Tracking
 
 });
 
-document.getElementById("orders").innerHTML = `
-<h2 class="text-2xl font-bold mb-4">Orders Management</h2>
-${html}
-`;
+document.getElementById("orders").innerHTML = html;
 
 });
 
 }
 
-function updateTracking(id){
+// =========================
+// 🔥 WITHDRAWAL FILTER
+// =========================
 
-let val = document.getElementById("track_"+id).value;
+function filterWithdrawals(status){
 
-db.ref('orders/'+id).update({
-tracking: val,
-status: "Shipped"
-});
-
-alert("Tracking Updated");
-
-}
-
-// ==========================
-// 🌍 GLOBAL ORDERS DASHBOARD
-// ==========================
-
-function loadGlobalOrders(){
-
-db.ref('orders').on('value',snap=>{
+db.ref('withdrawals').once('value',snap=>{
 
 let html='';
 
 snap.forEach(d=>{
-
-let o = d.val();
-
-let commission = (o.amount * 0.1) || 0;
-
-html+=`
-<tr class="border">
-
-<td class="p-2">${d.key}</td>
-<td>${o.userName}</td>
-<td>${o.sellerName || '-'}</td>
-<td>₹${o.amount}</td>
-<td>${o.paymentStatus || 'Pending'}</td>
-<td>₹${commission}</td>
-
-</tr>
-`;
-
-});
-
-document.getElementById("globalOrders").innerHTML = `
-<h2 class="text-xl font-bold mb-3">Global Orders</h2>
-
-<table class="w-full bg-white shadow">
-<tr class="bg-gray-200">
-<th>ID</th>
-<th>User</th>
-<th>Seller</th>
-<th>Amount</th>
-<th>Payment</th>
-<th>Commission</th>
-</tr>
-
-${html}
-
-</table>
-`;
-
-});
-
-}
-
-// ==========================
-// 💸 SELLER WITHDRAWAL SYSTEM
-// ==========================
-
-function loadWithdrawals(){
-
-db.ref('withdrawals').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
 let w = d.val();
 
+if(status==="all" || w.status===status){
+
 html+=`
-<div class="bg-white p-4 shadow mb-2">
+<div class="bg-white p-3 mb-2 shadow">
 
-<p><b>Seller:</b> ${w.sellerName}</p>
-<p><b>Balance:</b> ₹${w.balance}</p>
-<p><b>Request:</b> ₹${w.amount}</p>
-<p><b>Status:</b> ${w.status || 'Pending'}</p>
-
-<button onclick="approveWithdraw('${d.key}')" class="bg-green-600 text-white px-3 py-1">
-Approve
-</button>
-
-<button onclick="rejectWithdraw('${d.key}')" class="bg-red-600 text-white px-3 py-1">
-Reject
-</button>
-
-<button onclick="markPaid('${d.key}')" class="bg-blue-600 text-white px-3 py-1">
-Mark Paid
-</button>
+<p>${w.sellerName} - ₹${w.amount}</p>
+<p>Status: ${w.status}</p>
 
 </div>
 `;
+
+}
 
 });
 
 document.getElementById("withdrawals").innerHTML = `
-<h2 class="text-xl font-bold mb-4">Withdrawals</h2>
-${html}
-`;
+<h2 class="text-xl font-bold">Withdrawals (${status})</h2>
 
-});
-
-}
-
-function approveWithdraw(id){
-
-db.ref('withdrawals/'+id).update({
-status:"Approved"
-});
-
-alert("Approved");
-
-}
-
-function rejectWithdraw(id){
-
-db.ref('withdrawals/'+id).update({
-status:"Rejected"
-});
-
-alert("Rejected");
-
-}
-
-function markPaid(id){
-
-db.ref('withdrawals/'+id).update({
-status:"Paid"
-});
-
-alert("Marked Paid");
-
-}
-
-// ==========================
-// 📢 PROMOTION PAYMENT SYSTEM
-// ==========================
-
-function loadPromotionPayments(){
-
-db.ref('promotionPayments').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let p = d.val();
-
-html+=`
-<div class="bg-white p-4 shadow mb-2">
-
-<p><b>Seller:</b> ${p.sellerName}</p>
-<p><b>Aadhar:</b> ${p.aadhar}</p>
-<p><b>PAN:</b> ${p.pan}</p>
-<p><b>GST:</b> ${p.gst}</p>
-<p><b>Product ID:</b> ${p.productId}</p>
-<p><b>Mobile:</b> ${p.mobile}</p>
-<p><b>Payment:</b> ₹${p.amount}</p>
-
+<div class="mb-2">
+<button onclick="filterWithdrawals('all')" class="bg-gray-300 px-2">All</button>
+<button onclick="filterWithdrawals('Pending')" class="bg-yellow-300 px-2">Pending</button>
+<button onclick="filterWithdrawals('Approved')" class="bg-green-300 px-2">Approved</button>
 </div>
-`;
 
-});
-
-document.getElementById("promotion").innerHTML = `
-<h2 class="text-xl font-bold mb-4">Promotion Payments</h2>
 ${html}
 `;
 
@@ -578,118 +623,85 @@ ${html}
 
 }
 
-// ==========================
-// ⭐ FEATURED PRODUCTS
-// ==========================
+// =========================
+// 🔥 FEATURED SORTING
+// =========================
 
-function loadFeatured(){
+function sortFeatured(){
 
-db.ref('featured').on('value',snap=>{
+db.ref('featured').once('value',snap=>{
+
+let arr=[];
+
+snap.forEach(d=>{
+let f = d.val();
+f.id = d.key;
+arr.push(f);
+});
+
+arr.sort((a,b)=>a.priority-b.priority);
 
 let html='';
 
-snap.forEach(d=>{
-
-let f = d.val();
+arr.forEach(f=>{
 
 html+=`
 <div class="bg-white p-2 mb-2 flex justify-between">
 <span>${f.productId}</span>
-<span>Priority: ${f.priority}</span>
-<button onclick="removeFeatured('${d.key}')" class="bg-red-500 text-white px-2">Remove</button>
+<span>${f.priority}</span>
 </div>
 `;
 
 });
 
-document.getElementById("featured").innerHTML = `
-<h2 class="text-xl font-bold mb-4">Featured Products</h2>
-
-<input id="fId" placeholder="Product ID" class="border p-2 mb-2">
-<input id="fPriority" placeholder="Priority" class="border p-2 mb-2">
-
-<button onclick="addFeatured()" class="bg-yellow-500 text-white px-4 py-2">Add Featured</button>
-
-${html}
-`;
+document.getElementById("featured").innerHTML += html;
 
 });
 
 }
 
-function addFeatured(){
+// =========================
+// 🔥 LOG SYSTEM (BASIC)
+// =========================
+
+function logAction(action){
 
 let id = Date.now();
 
-db.ref('featured/'+id).set({
-productId: fId.value,
-priority: fPriority.value
-});
-
-alert("Added Featured");
-
-}
-
-function removeFeatured(id){
-db.ref('featured/'+id).remove();
-}
-
-// ==========================
-// 💰 COMMISSION CALCULATION
-// ==========================
-
-function calculateAdminIncome(){
-
-db.ref('orders').once('value',snap=>{
-
-let totalCommission = 0;
-
-snap.forEach(d=>{
-let o = d.val();
-totalCommission += (o.amount * 0.1) || 0;
-});
-
-document.getElementById("income").innerHTML = `
-<h2 class="text-xl font-bold">Admin Income</h2>
-<p>Total Commission: ₹${totalCommission}</p>
-`;
-
+db.ref('logs/'+id).set({
+action:action,
+time:new Date().toLocaleString()
 });
 
 }
 
-// ==========================
-// 🔄 AUTO LOAD ON TAB SWITCH
-// ==========================
+const oldDeleteProduct = deleteProduct;
 
-const oldOpenTab = openTab;
+deleteProduct = function(id){
 
-openTab = function(tab){
+if(confirm("Delete product?")){
 
-oldOpenTab(tab);
-
-if(tab==="orders") loadOrders();
-if(tab==="withdrawals") loadWithdrawals();
-if(tab==="promotion") loadPromotionPayments();
-if(tab==="featured") loadFeatured();
-if(tab==="globalOrders") loadGlobalOrders();
-if(tab==="income") calculateAdminIncome();
+oldDeleteProduct(id);
+logAction("Deleted Product "+id);
 
 }
 
-// ==========================
-// INIT LOAD
-// ==========================
+}
 
+// =========================
+// 🔥 AUTO INIT PATCH
+// =========================
+
+setTimeout(()=>{
+loadProducts();
 loadOrders();
-loadWithdrawals();
-loadPromotionPayments();
-loadFeatured();
-loadGlobalOrders();
-calculateAdminIncome();
-
+},1000);
 
 </script>
+
+
+
+
 
 </body>
   </html>
