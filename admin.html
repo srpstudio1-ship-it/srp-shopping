@@ -7,200 +7,137 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Firebase -->
+<!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
+<style>
+body { font-family: 'Segoe UI', sans-serif; }
+.sidebar { width: 260px; }
+.activeTab { background:#1e40af; }
+</style>
 </head>
 
 <body class="bg-gray-100">
 
-<!-- SIDEBAR -->
-<div class="flex">
+<!-- MAIN -->
+<div class="flex h-screen">
 
-<div class="w-64 bg-black text-white min-h-screen p-4">
+<!-- SIDEBAR -->
+<div class="sidebar bg-blue-900 text-white p-4 overflow-y-auto">
 
 <h1 class="text-2xl font-bold mb-6">SRP ADMIN</h1>
 
 <ul class="space-y-2 text-sm">
 
-<li onclick="showSection('dashboard')" class="cursor-pointer">Dashboard</li>
-<li onclick="showSection('products')">Product Management</li>
-<li onclick="showSection('orders')">Orders</li>
-<li onclick="showSection('withdrawals')">Withdrawals</li>
-<li onclick="showSection('promotion')">Promotion Payment</li>
-<li onclick="showSection('featured')">Featured Products</li>
-<li onclick="showSection('globalOrders')">Global Orders</li>
-<li onclick="showSection('security')">Security</li>
-<li onclick="showSection('analytics')">Website Analytics</li>
-<li onclick="showSection('sales')">Sales Analytics</li>
-<li onclick="showSection('income')">Admin Income</li>
-<li onclick="showSection('category')">Category</li>
-<li onclick="showSection('coupon')">Coupon</li>
-<li onclick="showSection('banner')">Banner</li>
-<li onclick="showSection('reviews')">Reviews</li>
-<li onclick="showSection('users')">Users</li>
-<li onclick="showSection('sellers')">Sellers</li>
-<li onclick="showSection('payments')">Payments</li>
-<li onclick="showSection('refunds')">Refunds</li>
-<li onclick="showSection('logs')">Logs</li>
-<li onclick="showSection('settings')">Settings</li>
+<li onclick="openTab('dashboard')" class="cursor-pointer p-2 hover:bg-blue-700">📊 Dashboard</li>
+<li onclick="openTab('products')" class="cursor-pointer p-2 hover:bg-blue-700">📦 Product Management</li>
+<li onclick="openTab('orders')" class="cursor-pointer p-2 hover:bg-blue-700">🧾 Orders</li>
+<li onclick="openTab('withdrawals')" class="cursor-pointer p-2 hover:bg-blue-700">💸 Withdrawals</li>
+<li onclick="openTab('promotion')" class="cursor-pointer p-2 hover:bg-blue-700">📢 Promotion Payments</li>
+<li onclick="openTab('featured')" class="cursor-pointer p-2 hover:bg-blue-700">⭐ Featured Products</li>
+<li onclick="openTab('globalOrders')" class="cursor-pointer p-2 hover:bg-blue-700">🌍 Global Orders</li>
+<li onclick="openTab('security')" class="cursor-pointer p-2 hover:bg-blue-700">🔐 Security</li>
+<li onclick="openTab('analytics')" class="cursor-pointer p-2 hover:bg-blue-700">📈 Website Analytics</li>
+<li onclick="openTab('sales')" class="cursor-pointer p-2 hover:bg-blue-700">💰 Sales Analytics</li>
+<li onclick="openTab('income')" class="cursor-pointer p-2 hover:bg-blue-700">🏦 Admin Income</li>
+<li onclick="openTab('category')" class="cursor-pointer p-2 hover:bg-blue-700">📂 Categories</li>
+<li onclick="openTab('coupon')" class="cursor-pointer p-2 hover:bg-blue-700">🎟 Coupons</li>
+<li onclick="openTab('banner')" class="cursor-pointer p-2 hover:bg-blue-700">🖼 Banners</li>
+<li onclick="openTab('reviews')" class="cursor-pointer p-2 hover:bg-blue-700">⭐ Reviews</li>
+<li onclick="openTab('users')" class="cursor-pointer p-2 hover:bg-blue-700">👤 Users</li>
+<li onclick="openTab('sellers')" class="cursor-pointer p-2 hover:bg-blue-700">🧑‍💼 Sellers</li>
+<li onclick="openTab('payments')" class="cursor-pointer p-2 hover:bg-blue-700">💳 Payments</li>
+<li onclick="openTab('refunds')" class="cursor-pointer p-2 hover:bg-blue-700">↩ Refunds</li>
+<li onclick="openTab('logs')" class="cursor-pointer p-2 hover:bg-blue-700">📜 Logs</li>
+<li onclick="openTab('settings')" class="cursor-pointer p-2 hover:bg-blue-700">⚙ Settings</li>
 
 </ul>
-
 </div>
 
-<!-- MAIN CONTENT -->
-<div class="flex-1 p-6">
+<!-- CONTENT -->
+<div class="flex-1 p-6 overflow-y-auto">
 
 <!-- DASHBOARD -->
-<div id="dashboard" class="section">
-<h2 class="text-xl font-bold mb-4">Dashboard</h2>
-<div id="stats" class="grid grid-cols-3 gap-4"></div>
+<div id="dashboard" class="tab">
+<h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+
+<div class="grid grid-cols-4 gap-4">
+
+<div class="bg-white p-4 rounded shadow">
+<h3>Total Users</h3>
+<p id="totalUsers" class="text-xl font-bold">0</p>
+</div>
+
+<div class="bg-white p-4 rounded shadow">
+<h3>Total Sellers</h3>
+<p id="totalSellers">0</p>
+</div>
+
+<div class="bg-white p-4 rounded shadow">
+<h3>Total Products</h3>
+<p id="totalProducts">0</p>
+</div>
+
+<div class="bg-white p-4 rounded shadow">
+<h3>Total Orders</h3>
+<p id="totalOrders">0</p>
+</div>
+
+</div>
 </div>
 
 <!-- PRODUCT MANAGEMENT -->
-<div id="products" class="section hidden">
+<div id="products" class="tab hidden">
 
-<h2 class="text-xl font-bold mb-4">Product Management</h2>
+<h2 class="text-2xl font-bold mb-4">Product Management</h2>
 
-<input id="pname" placeholder="Product Name" class="border p-2 block mb-2">
-<input id="pmrp" placeholder="MRP" class="border p-2 block mb-2">
-<input id="pprice" placeholder="Discount Price" class="border p-2 block mb-2">
-<input id="pstock" placeholder="Stock" class="border p-2 block mb-2">
-<input id="pcategory" placeholder="Category" class="border p-2 block mb-2">
-<input type="file" id="pimage" class="mb-2">
-<textarea id="pdesc" placeholder="Description" class="border p-2 block mb-2"></textarea>
+<div class="bg-white p-4 rounded shadow mb-4">
 
-<button onclick="addProduct()" class="bg-black text-white px-4 py-2">Add Product</button>
+<input id="pName" placeholder="Product Name" class="border p-2 w-full mb-2">
+<input id="pMRP" placeholder="MRP" class="border p-2 w-full mb-2">
+<input id="pPrice" placeholder="Discount Price" class="border p-2 w-full mb-2">
+<input id="pStock" placeholder="Stock" class="border p-2 w-full mb-2">
+<input id="pCategory" placeholder="Category" class="border p-2 w-full mb-2">
+<textarea id="pDesc" placeholder="Description" class="border p-2 w-full mb-2"></textarea>
 
-<div id="productList" class="mt-6"></div>
+<input type="file" id="pImage" class="mb-2">
+
+<button onclick="addProduct()" class="bg-blue-600 text-white px-4 py-2">Add Product</button>
 
 </div>
 
-<!-- CATEGORY MANAGEMENT -->
-<div id="category" class="section hidden">
+<div id="productList" class="grid grid-cols-3 gap-4"></div>
+
+</div>
+
+<!-- CATEGORY -->
+<div id="category" class="tab hidden">
 
 <h2 class="text-xl font-bold mb-4">Category Management</h2>
 
-<input id="catName" placeholder="Category Name" class="border p-2">
-<button onclick="addCategory()" class="bg-black text-white px-4 py-2">Add</button>
+<input id="catName" placeholder="Category Name" class="border p-2 mb-2">
+<input id="catIcon" placeholder="Icon URL" class="border p-2 mb-2">
+
+<button onclick="addCategory()" class="bg-green-600 text-white px-4 py-2">Add</button>
 
 <div id="catList" class="mt-4"></div>
 
 </div>
 
-<!-- FEATURED -->
-<div id="featured" class="section hidden">
-
-<h2 class="text-xl font-bold mb-4">Featured Products</h2>
-
-<input id="featureId" placeholder="Product ID" class="border p-2">
-<button onclick="addFeatured()" class="bg-black text-white px-4 py-2">Add</button>
-
-<div id="featureList"></div>
-
-</div>
-
 <!-- BANNER -->
-<div id="banner" class="section hidden">
+<div id="banner" class="tab hidden">
 
 <h2 class="text-xl font-bold mb-4">Banner Management</h2>
 
-<input type="file" id="bannerImg">
-<input id="bannerLink" placeholder="Product ID Link" class="border p-2">
-<button onclick="uploadBanner()" class="bg-black text-white px-4 py-2">Upload</button>
+<input type="file" id="bannerImage" class="mb-2">
+<input id="bannerLink" placeholder="Product ID Link" class="border p-2 mb-2">
+
+<button onclick="uploadBanner()" class="bg-purple-600 text-white px-4 py-2">Upload Banner</button>
 
 <div id="bannerList"></div>
 
-</div>
-
-<!-- OTHER SECTIONS PLACEHOLDER -->
-<!-- ORDERS -->
-<div id="orders" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Orders</h2>
-<div id="orders"></div>
-</div>
-
-<!-- WITHDRAWALS -->
-<div id="withdrawals" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Withdrawals</h2>
-<div id="withdrawals"></div>
-</div>
-
-<!-- COUPON -->
-<div id="coupon" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Coupons</h2>
-<button onclick="createCoupon()" class="bg-black text-white px-3 py-1 mb-2">Create Coupon</button>
-<div id="coupon"></div>
-</div>
-
-<!-- USERS -->
-<div id="users" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Users</h2>
-<div id="users"></div>
-</div>
-
-<!-- SELLERS -->
-<div id="sellers" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Sellers</h2>
-<div id="sellers"></div>
-</div>
-
-<!-- REVIEWS -->
-<div id="reviews" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Reviews</h2>
-<div id="reviews"></div>
-</div>
-
-<!-- PAYMENTS -->
-<div id="payments" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Payments</h2>
-<div id="payments"></div>
-</div>
-
-<!-- ANALYTICS -->
-<div id="analytics" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Website Analytics</h2>
-<div id="analytics"></div>
-</div>
-
-<!-- SALES -->
-<div id="sales" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Sales Analytics</h2>
-<div id="sales"></div>
-</div>
-
-<!-- INCOME -->
-<div id="income" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Admin Income</h2>
-<div id="income"></div>
-</div>
-
-<!-- REFUNDS -->
-<div id="refunds" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Refunds</h2>
-<div id="refunds"></div>
-</div>
-
-<!-- LOGS -->
-<div id="logs" class="section hidden">
-<h2 class="text-xl font-bold mb-4">System Logs</h2>
-<div id="logs"></div>
-</div>
-
-<!-- SECURITY -->
-<div id="security" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Security</h2>
-<button onclick="changePassword()" class="bg-black text-white px-3 py-1 mr-2">Change Password</button>
-<button onclick="enable2FA()" class="bg-green-600 text-white px-3 py-1">Enable 2FA</button>
-</div>
-
-<!-- SETTINGS -->
-<div id="settings" class="section hidden">
-<h2 class="text-xl font-bold mb-4">Platform Settings</h2>
-<button onclick="saveSettings()" class="bg-black text-white px-4 py-2">Save Settings</button>
 </div>
 
 </div>
@@ -209,45 +146,44 @@
 <script>
 
 // FIREBASE CONFIG
-const firebaseConfig = {
+firebase.initializeApp({
 apiKey: "YOUR_KEY",
 authDomain: "YOUR_DOMAIN",
 databaseURL: "YOUR_DB",
 projectId: "YOUR_ID",
-storageBucket: "YOUR_BUCKET",
-};
-
-firebase.initializeApp(firebaseConfig);
+storageBucket: "YOUR_BUCKET"
+});
 
 const db = firebase.database();
 const storage = firebase.storage();
 
-// NAVIGATION
-function showSection(id){
-document.querySelectorAll('.section').forEach(s=>s.classList.add('hidden'));
-document.getElementById(id).classList.remove('hidden');
+// TAB SWITCH
+function openTab(tab){
+document.querySelectorAll('.tab').forEach(t=>t.classList.add('hidden'));
+document.getElementById(tab).classList.remove('hidden');
 }
 
-// ADD PRODUCT
+// ================= PRODUCT =================
+
 function addProduct(){
 
-const name = pname.value;
-const mrp = pmrp.value;
-const price = pprice.value;
-const stock = pstock.value;
-const category = pcategory.value;
-const desc = pdesc.value;
-const file = pimage.files[0];
+let file = document.getElementById('pImage').files[0];
+let id = Date.now();
 
-const id = Date.now();
+let ref = storage.ref('products/'+id);
 
-const ref = storage.ref('products/'+id);
 ref.put(file).then(()=>{
 
 ref.getDownloadURL().then(url=>{
 
 db.ref('products/'+id).set({
-name, mrp, price, stock, category, desc, image:url
+name: pName.value,
+mrp: pMRP.value,
+price: pPrice.value,
+stock: pStock.value,
+category: pCategory.value,
+desc: pDesc.value,
+image: url
 });
 
 alert("Product Added");
@@ -261,19 +197,19 @@ loadProducts();
 
 // LOAD PRODUCTS
 function loadProducts(){
-
 db.ref('products').on('value',snap=>{
 
-let html = '';
-
+let html='';
 snap.forEach(d=>{
 
 let p = d.val();
 
-html += `
-<div class="border p-2 mb-2">
-${p.name} - ₹${p.price}
-<button onclick="deleteProduct('${d.key}')">Delete</button>
+html+=`
+<div class="bg-white p-3 rounded shadow">
+<img src="${p.image}" class="h-32 w-full object-cover">
+<h3>${p.name}</h3>
+<p>₹${p.price}</p>
+<button onclick="deleteProduct('${d.key}')" class="bg-red-500 text-white px-2 py-1">Delete</button>
 </div>
 `;
 
@@ -282,21 +218,25 @@ ${p.name} - ₹${p.price}
 productList.innerHTML = html;
 
 });
-
 }
 
 function deleteProduct(id){
 db.ref('products/'+id).remove();
+alert("Deleted");
 }
 
-// CATEGORY
+// ================= CATEGORY =================
+
 function addCategory(){
 
-let name = catName.value;
 let id = Date.now();
 
-db.ref('categories/'+id).set({name});
+db.ref('categories/'+id).set({
+name: catName.value,
+icon: catIcon.value
+});
 
+alert("Category Added");
 loadCategories();
 
 }
@@ -305,59 +245,34 @@ function loadCategories(){
 
 db.ref('categories').on('value',snap=>{
 
-let html = '';
-
+let html='';
 snap.forEach(d=>{
 
-html += `<div>${d.val().name}
-<button onclick="delCat('${d.key}')">X</button>
-</div>`;
+let c = d.val();
+
+html+=`
+<div class="bg-white p-2 mb-2 flex justify-between">
+<span>${c.name}</span>
+<button onclick="deleteCategory('${d.key}')" class="bg-red-500 text-white px-2">X</button>
+</div>
+`;
 
 });
 
 catList.innerHTML = html;
 
 });
-
 }
 
-function delCat(id){
+function deleteCategory(id){
 db.ref('categories/'+id).remove();
 }
 
-// FEATURED
-function addFeatured(){
+// ================= BANNER =================
 
-let id = featureId.value;
-
-db.ref('featured/'+id).set(true);
-
-loadFeatured();
-
-}
-
-function loadFeatured(){
-
-db.ref('featured').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-html += `<div>${d.key}</div>`;
-});
-
-featureList.innerHTML = html;
-
-});
-
-}
-
-// BANNER
 function uploadBanner(){
 
-let file = bannerImg.files[0];
-let link = bannerLink.value;
-
+let file = bannerImage.files[0];
 let id = Date.now();
 
 let ref = storage.ref('banners/'+id);
@@ -368,9 +283,10 @@ ref.getDownloadURL().then(url=>{
 
 db.ref('banners/'+id).set({
 image:url,
-link
+link:bannerLink.value
 });
 
+alert("Banner Uploaded");
 loadBanners();
 
 });
@@ -384,31 +300,42 @@ function loadBanners(){
 db.ref('banners').on('value',snap=>{
 
 let html='';
-
 snap.forEach(d=>{
 
 let b = d.val();
 
-html += `<img src="${b.image}" class="w-40 mb-2">`;
+html+=`
+<div class="bg-white p-2 mb-2">
+<img src="${b.image}" class="h-20">
+<p>${b.link}</p>
+</div>
+`;
 
 });
 
 bannerList.innerHTML = html;
 
 });
-
 }
 
-// DASHBOARD STATS
-function loadStats(){
+// ================= DASHBOARD =================
 
-db.ref('users').once('value').then(s=>{
-let users = s.numChildren();
+function loadDashboard(){
 
-stats.innerHTML = `
-<div class="bg-white p-4">Users: ${users}</div>
-`;
+db.ref('users').once('value',snap=>{
+totalUsers.innerText = snap.numChildren();
+});
 
+db.ref('sellers').once('value',snap=>{
+totalSellers.innerText = snap.numChildren();
+});
+
+db.ref('products').once('value',snap=>{
+totalProducts.innerText = snap.numChildren();
+});
+
+db.ref('orders').once('value',snap=>{
+totalOrders.innerText = snap.numChildren();
 });
 
 }
@@ -416,545 +343,10 @@ stats.innerHTML = `
 // INIT
 loadProducts();
 loadCategories();
-loadFeatured();
 loadBanners();
-loadStats();
-// =========================
-// 8.2 ORDERS MANAGEMENT
-// =========================
+loadDashboard();
 
-function loadOrders(){
-db.ref('orders').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let o = d.val();
-
-html += `
-<div class="bg-white p-3 mb-2 border">
-<b>Order ID:</b> ${d.key}<br>
-<b>User:</b> ${o.name}<br>
-<b>Phone:</b> ${o.phone}<br>
-<b>Email:</b> ${o.email}<br>
-<b>Address:</b> ${o.address} - ${o.pincode}<br>
-<b>Status:</b> ${o.status}<br>
-
-<input placeholder="Tracking ID" id="track_${d.key}" class="border p-1">
-<button onclick="updateTracking('${d.key}')">Update</button>
-
-</div>
-`;
-
-});
-
-ordersList.innerHTML = html;
-
-});
-}
-
-function updateTracking(id){
-
-let tracking = document.getElementById('track_'+id).value;
-
-db.ref('orders/'+id).update({
-trackingId:tracking,
-status:"Shipped"
-});
-
-alert("Tracking Updated");
-
-}
-
-// =========================
-// 8.3 WITHDRAWALS
-// =========================
-
-function loadWithdrawals(){
-
-db.ref('withdrawals').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let w = d.val();
-
-html += `
-<div class="bg-white p-3 mb-2">
-Seller: ${w.seller}<br>
-Amount: ₹${w.amount}<br>
-
-<button onclick="approveW('${d.key}')">Approve</button>
-<button onclick="rejectW('${d.key}')">Reject</button>
-<button onclick="paidW('${d.key}')">Mark Paid</button>
-</div>
-`;
-
-});
-
-withdrawals.innerHTML = html;
-
-});
-}
-
-function approveW(id){
-db.ref('withdrawals/'+id).update({status:'Approved'});
-}
-
-function rejectW(id){
-db.ref('withdrawals/'+id).update({status:'Rejected'});
-}
-
-function paidW(id){
-db.ref('withdrawals/'+id).update({status:'Paid'});
-}
-
-// =========================
-// 8.12 COUPON SYSTEM
-// =========================
-
-function createCoupon(){
-
-let code = prompt("Enter Code");
-let discount = prompt("Discount %");
-let expiry = prompt("Expiry Date");
-let limit = prompt("Usage limit per user");
-
-db.ref('coupons/'+code).set({
-discount, expiry, limit
-});
-
-alert("Coupon Created");
-
-}
-
-function loadCoupons(){
-
-db.ref('coupons').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-let c = d.val();
-
-html += `<div>${d.key} - ${c.discount}% 
-<button onclick="delCoupon('${d.key}')">Delete</button></div>`;
-});
-
-coupon.innerHTML = html;
-
-});
-}
-
-function delCoupon(id){
-db.ref('coupons/'+id).remove();
-}
-
-// =========================
-// 8.15 USERS
-// =========================
-
-function loadUsers(){
-
-db.ref('users').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let u = d.val();
-
-html += `
-<div class="border p-2">
-${u.name} - ${u.email}
-<button onclick="blockUser('${d.key}')">Block</button>
-<button onclick="deleteUser('${d.key}')">Delete</button>
-</div>
-`;
-
-});
-
-users.innerHTML = html;
-
-});
-}
-
-function blockUser(id){
-db.ref('users/'+id).update({blocked:true});
-}
-
-function deleteUser(id){
-db.ref('users/'+id).remove();
-}
-
-// =========================
-// 8.16 SELLERS
-// =========================
-
-function loadSellers(){
-
-db.ref('sellers').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let s = d.val();
-
-html += `
-<div class="border p-2">
-${s.name}
-<button onclick="approveSeller('${d.key}')">Approve</button>
-<button onclick="rejectSeller('${d.key}')">Reject</button>
-<button onclick="suspendSeller('${d.key}')">Suspend</button>
-</div>
-`;
-
-});
-
-sellers.innerHTML = html;
-
-});
-}
-
-function approveSeller(id){
-db.ref('sellers/'+id).update({status:'Approved'});
-}
-
-function rejectSeller(id){
-db.ref('sellers/'+id).update({status:'Rejected'});
-}
-
-function suspendSeller(id){
-db.ref('sellers/'+id).update({status:'Suspended'});
-}
-
-// =========================
-// 8.14 REVIEWS
-// =========================
-
-function loadReviews(){
-
-db.ref('reviews').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let r = d.val();
-
-html += `
-<div class="border p-2">
-${r.text}
-<button onclick="approveReview('${d.key}')">Approve</button>
-<button onclick="deleteReview('${d.key}')">Delete</button>
-</div>
-`;
-
-});
-
-reviews.innerHTML = html;
-
-});
-}
-
-function approveReview(id){
-db.ref('reviews/'+id).update({approved:true});
-}
-
-function deleteReview(id){
-db.ref('reviews/'+id).remove();
-}
-
-// =========================
-// 8.17 PAYMENTS
-// =========================
-
-function loadPayments(){
-
-db.ref('payments').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let p = d.val();
-
-html += `
-<div class="border p-2">
-User: ${p.user}<br>
-Amount: ₹${p.amount}<br>
-Type: ${p.type}
-</div>
-`;
-
-});
-
-payments.innerHTML = html;
-
-});
-}
-
-// =========================
-// 8.8 WEBSITE ANALYTICS
-// =========================
-
-function loadAnalytics(){
-
-db.ref('analytics').once('value').then(s=>{
-
-let a = s.val() || {};
-
-analytics.innerHTML = `
-<div class="bg-white p-3">Total Users: ${a.users||0}</div>
-<div class="bg-white p-3">Total Sellers: ${a.sellers||0}</div>
-<div class="bg-white p-3">Today Users: ${a.todayUsers||0}</div>
-<div class="bg-white p-3">Visits: ${a.visits||0}</div>
-`;
-
-});
-
-}
-
-// =========================
-// INIT CALLS
-// =========================
-
-loadOrders();
-loadWithdrawals();
-loadCoupons();
-loadUsers();
-loadSellers();
-loadReviews();
-loadPayments();
-loadAnalytics();
-  // =========================
-// GLOBAL LOGGER (8.19)
-// =========================
-
-function logAction(action){
-
-let id = Date.now();
-
-db.ref('logs/'+id).set({
-action,
-time:new Date().toLocaleString()
-});
-
-}
-
-// =========================
-// 8.9 SALES ANALYTICS
-// =========================
-
-function loadSales(){
-
-db.ref('orders').once('value').then(snap=>{
-
-let totalSales = 0;
-let totalOrders = 0;
-let commission = 0;
-
-snap.forEach(d=>{
-
-let o = d.val();
-
-totalOrders++;
-
-let amount = Number(o.amount || 0);
-
-totalSales += amount;
-
-// 10% commission
-commission += amount * 0.10;
-
-});
-
-sales.innerHTML = `
-<div class="bg-white p-3">Total Orders: ${totalOrders}</div>
-<div class="bg-white p-3">Total Sales: ₹${totalSales}</div>
-<div class="bg-white p-3">Commission: ₹${commission}</div>
-`;
-
-});
-
-}
-
-// =========================
-// 8.10 ADMIN INCOME
-// =========================
-
-function loadIncome(){
-
-Promise.all([
-db.ref('orders').once('value'),
-db.ref('promotionPayments').once('value')
-]).then(res=>{
-
-let orderSnap = res[0];
-let promoSnap = res[1];
-
-let commission = 0;
-let promoIncome = 0;
-
-orderSnap.forEach(d=>{
-let o = d.val();
-commission += (o.amount || 0) * 0.10;
-});
-
-promoSnap.forEach(d=>{
-promoIncome += Number(d.val().amount || 0);
-});
-
-let total = commission + promoIncome;
-
-income.innerHTML = `
-<div class="bg-white p-3">Commission: ₹${commission}</div>
-<div class="bg-white p-3">Promotion Income: ₹${promoIncome}</div>
-<div class="bg-white p-3 font-bold">Total Income: ₹${total}</div>
-`;
-
-});
-
-}
-
-// =========================
-// 8.18 REFUND SYSTEM
-// =========================
-
-function loadRefunds(){
-
-db.ref('refunds').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let r = d.val();
-
-html += `
-<div class="border p-2">
-Order: ${r.orderId} - ₹${r.amount}
-<button onclick="approveRefund('${d.key}','${r.userId}',${r.amount})">Approve</button>
-<button onclick="rejectRefund('${d.key}')">Reject</button>
-</div>
-`;
-
-});
-
-refunds.innerHTML = html;
-
-});
-}
-
-function approveRefund(id,userId,amount){
-
-// add to wallet
-db.ref('users/'+userId+'/wallet').once('value').then(s=>{
-
-let current = s.val() || 0;
-
-db.ref('users/'+userId).update({
-wallet: current + amount
-});
-
-db.ref('refunds/'+id).update({status:'Approved'});
-
-logAction("Refund Approved: "+id);
-
-});
-
-}
-
-function rejectRefund(id){
-db.ref('refunds/'+id).update({status:'Rejected'});
-logAction("Refund Rejected: "+id);
-}
-
-// =========================
-// 8.19 VIEW LOGS
-// =========================
-
-function loadLogs(){
-
-db.ref('logs').on('value',snap=>{
-
-let html='';
-
-snap.forEach(d=>{
-
-let l = d.val();
-
-html += `<div>${l.time} - ${l.action}</div>`;
-
-});
-
-logs.innerHTML = html;
-
-});
-}
-
-// =========================
-// 8.7 ADMIN SECURITY
-// =========================
-
-function changePassword(){
-
-let pass = prompt("Enter New Password");
-
-db.ref('admin/security').set({
-password:pass
-});
-
-alert("Password Changed");
-
-logAction("Admin Password Changed");
-
-}
-
-function enable2FA(){
-
-db.ref('admin/security').update({
-twoFA:true
-});
-
-alert("2FA Enabled");
-
-logAction("2FA Enabled");
-
-}
-
-// =========================
-// 8.20 PLATFORM SETTINGS
-// =========================
-
-function saveSettings(){
-
-let commission = prompt("Set Commission %");
-let delivery = prompt("Delivery Days");
-
-db.ref('settings').set({
-commission,
-delivery
-});
-
-alert("Settings Saved");
-
-logAction("Settings Updated");
-
-}
-
-// =========================
-// AUTO INIT
-// =========================
-
-loadSales();
-loadIncome();
-loadRefunds();
-loadLogs();
 </script>
 
 </body>
-</html>
+  </html>
