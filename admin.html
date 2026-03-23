@@ -288,38 +288,87 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
+// --- 8.8 & 8.15 USER/SELLER ACTIVITY TRACKING ---
 
-// --- 8.8 ENHANCED ANALYTICS LOGIC ---
-function initAnalytics() {
-    // Listen for totals
-    db.ref('users').on('value', s => document.getElementById('stat-total-users').innerText = s.numChildren());
-    db.ref('sellers').on('value', s => document.getElementById('stat-total-sellers').innerText = s.numChildren());
-    db.ref('visits').on('value', s => document.getElementById('stat-today-visits').innerText = s.numChildren());
-
-    // Add Click Listeners for Detail View
-    document.getElementById('stat-total-users').parentElement.onclick = () => showDetailedData('users', 'User Details');
-    document.getElementById('stat-total-sellers').parentElement.onclick = () => showDetailedData('sellers', 'Seller Details');
-    document.getElementById('stat-today-visits').parentElement.onclick = () => showDetailedData('visits', 'Visitor Details');
-}
-
-function showDetailedData(path, title) {
-    db.ref(path).once('value', snap => {
-        let report = `--- ${title} ---\n\n`;
-        snap.forEach(child => {
-            const d = child.val();
-            report += `Name: ${d.name || d.shopName || 'N/A'}\n`;
-            report += `Email: ${d.email || 'N/A'}\n`;
-            report += `Phone: ${d.phone || 'N/A'}\n`;
-            report += `Address: ${d.address || 'N/A'}\n`;
-            report += `Joined/Visited: ${d.lastLogin || d.timestamp || 'N/A'}\n`;
-            report += `--------------------------\n`;
+// Function to log Activity (Login, Logout, Page Leave)
+function trackUserActivity(userId, userType, action) {
+    const activityRef = db.ref('activity_logs').push();
+    
+    // Get basic user data from their profile to include in the log
+    db.ref(`${userType}s/${userId}`).once('value', snap => {
+        const userData = snap.val() || {};
+        
+        activityRef.set({
+            uid: userId,
+            name: userData.name || userData.shopName || "Unknown",
+            email: userData.email || "N/A",
+            phone: userData.phone || "N/A",
+            address: userData.address || "N/A",
+            userType: userType, // 'user' or 'seller'
+            action: action,     // 'Login', 'Logout', 'Left Page'
+            timestamp: new Date().toLocaleString(),
+            device: navigator.userAgent.split(')')[0] + ')' // Records device type
         });
-        // Using a pre-styled div or simple alert/console for visualization
-        console.log(report);
-        alert("Detailed data sent to System Logs and Browser Console. Check Section 8.19 for history.");
-        logAction("Generated Detail Report for: " + path);
     });
 }
+
+// 8.15 ENHANCED VIEW: See User/Seller Details in the Admin Panel
+function showDetailedData(path, title) {
+    db.ref(path).once('value', snap => {
+        const container = document.getElementById('logs-container');
+        container.innerHTML = `<h3 style="color:#fff">--- ${title} ---</h3>`;
+        
+        snap.forEach(child => {
+            const d = child.val();
+            const logEntry = `
+                <div style="border-bottom: 1px solid #333; padding: 10px; font-size: 12px;">
+                    <b style="color:#3498db">NAME:</b> ${d.name || d.shopName || 'N/A'} | 
+                    <b style="color:#3498db">EMAIL:</b> ${d.email} <br>
+                    <b style="color:#3498db">PHONE:</b> ${d.phone || 'N/A'} | 
+                    <b style="color:#3498db">ADDRESS:</b> ${d.address || 'N/A'} <br>
+                    <b style="color:#3498db">LAST ACTIVE:</b> ${d.lastLogin || 'Unknown'}
+                </div>`;
+            container.innerHTML += logEntry;
+        });
+        
+        // Scroll to the detail view
+        document.getElementById('sec-logs').scrollIntoView();
+        showSection('sec-logs');
+    });
+}
+
+// --- DETECTING PAGE LEAVE (Logouts) ---
+// This code goes on your MAIN SHOPPING SITE (the one users use)
+window.addEventListener('beforeunload', function (e) {
+    // This triggers when a user closes the tab or leaves the site
+    const currentUser = firebase.auth().currentUser;
+    if (currentUser) {
+        trackUserActivity(currentUser.uid, 'user', 'Left Page/Closed Tab');
+    }
+});
+
+// --- UPDATED BOOTSTRAP ---
+window.onload = () => {
+    initAnalytics();
+    loadProducts();
+    
+    // Load Activity Logs (User/Seller Logins) into 8.19 instead of Admin Logs
+    db.ref('activity_logs').limitToLast(30).on('value', snap => {
+        const container = document.getElementById('logs-container');
+        container.innerHTML = "<h3 style='color:#0f0'>LIVE USER/SELLER ACTIVITY</h3>";
+        
+        snap.forEach(child => {
+            const log = child.val();
+            container.innerHTML += `
+                <div style="margin-bottom:8px">
+                    [${log.timestamp}] <b style="color:#fff">${log.name}</b> (${log.userType}) 
+                    - <span style="color:#f9ca24">${log.action}</span> 
+                    <br><small style="color:#888">Mail: ${log.email} | Addr: ${log.address}</small>
+                </div>`;
+        });
+    });
+};
+
 
 // --- 8.1 UPDATED PRODUCT MANAGEMENT (FIXED DELETE) ---
 function addProduct() {
@@ -553,24 +602,6 @@ function deleteReview(key) {
     if(confirm("Delete this review?")) db.ref('reviews/' + key).remove();
 }
 
-// --- 8.15 USER MANAGEMENT ---
-function loadUsers() {
-    db.ref('users').on('value', snap => {
-        const body = document.getElementById('user-list-body');
-        body.innerHTML = "";
-        snap.forEach(child => {
-            const u = child.val();
-            body.innerHTML += `<tr>
-                <td>${u.name}</td>
-                <td>${u.email}</td>
-                <td>${u.status || 'Active'}</td>
-                <td>
-                    <button class="btn-delete" onclick="toggleUserStatus('${child.key}', 'Blocked')">Block</button>
-                </td>
-            </tr>`;
-        });
-    });
-}
 
 // --- 8.18 REFUND SYSTEM ---
 function loadRefunds() {
