@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SRP ADMIN PANEL</title>
+<title>SRP ADMIN PANEL FINAL</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -13,7 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <style>
-body { font-family: 'Segoe UI', sans-serif; }
+body { font-family: 'Segoe UI'; }
 .sidebar { width:260px; }
 </style>
 </head>
@@ -28,84 +28,44 @@ body { font-family: 'Segoe UI', sans-serif; }
 
 <ul class="space-y-2 text-sm">
 <li onclick="openTab('dashboard')" class="p-2 hover:bg-blue-700 cursor-pointer">📊 Dashboard</li>
+<li onclick="openTab('users')" class="p-2 hover:bg-blue-700 cursor-pointer">👤 Users</li>
+<li onclick="openTab('sellers')" class="p-2 hover:bg-blue-700 cursor-pointer">🏪 Sellers</li>
 <li onclick="openTab('products')" class="p-2 hover:bg-blue-700 cursor-pointer">📦 Products</li>
 <li onclick="openTab('orders')" class="p-2 hover:bg-blue-700 cursor-pointer">🧾 Orders</li>
+<li onclick="openTab('payments')" class="p-2 hover:bg-blue-700 cursor-pointer">💳 Payments</li>
+<li onclick="openTab('refunds')" class="p-2 hover:bg-blue-700 cursor-pointer">↩ Refunds</li>
 <li onclick="openTab('withdrawals')" class="p-2 hover:bg-blue-700 cursor-pointer">💸 Withdrawals</li>
-<li onclick="openTab('promotion')" class="p-2 hover:bg-blue-700 cursor-pointer">📢 Promotion</li>
-<li onclick="openTab('featured')" class="p-2 hover:bg-blue-700 cursor-pointer">⭐ Featured</li>
-<li onclick="openTab('category')" class="p-2 hover:bg-blue-700 cursor-pointer">📂 Categories</li>
-<li onclick="openTab('banner')" class="p-2 hover:bg-blue-700 cursor-pointer">🖼 Banners</li>
+<li onclick="openTab('coupons')" class="p-2 hover:bg-blue-700 cursor-pointer">🎟 Coupons</li>
+<li onclick="openTab('reviews')" class="p-2 hover:bg-blue-700 cursor-pointer">⭐ Reviews</li>
+<li onclick="openTab('analytics')" class="p-2 hover:bg-blue-700 cursor-pointer">📈 Analytics</li>
+<li onclick="openTab('logs')" class="p-2 hover:bg-blue-700 cursor-pointer">📜 Logs</li>
+<li onclick="openTab('settings')" class="p-2 hover:bg-blue-700 cursor-pointer">⚙ Settings</li>
 </ul>
 </div>
 
 <!-- CONTENT -->
 <div class="flex-1 p-6 overflow-y-auto">
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="tab">
-<h2 class="text-2xl font-bold mb-4">Dashboard</h2>
-<div class="grid grid-cols-4 gap-4">
-<div class="bg-white p-4 rounded shadow"><h3>Users</h3><p id="totalUsers">0</p></div>
-<div class="bg-white p-4 rounded shadow"><h3>Products</h3><p id="totalProducts">0</p></div>
-<div class="bg-white p-4 rounded shadow"><h3>Orders</h3><p id="totalOrders">0</p></div>
-<div class="bg-white p-4 rounded shadow"><h3>Sellers</h3><p id="totalSellers">0</p></div>
-</div>
-</div>
-
-<!-- PRODUCTS -->
-<div id="products" class="tab hidden">
-<h2 class="text-2xl font-bold mb-4">Products</h2>
-
-<div class="bg-white p-4 rounded shadow mb-4">
-<input id="pName" placeholder="Name" class="border p-2 w-full mb-2">
-<input id="pMRP" placeholder="MRP" class="border p-2 w-full mb-2">
-<input id="pPrice" placeholder="Price" class="border p-2 w-full mb-2">
-<input id="pStock" placeholder="Stock" class="border p-2 w-full mb-2">
-<input id="pCategory" placeholder="Category" class="border p-2 w-full mb-2">
-<textarea id="pDesc" placeholder="Description" class="border p-2 w-full mb-2"></textarea>
-<input type="file" id="pImage" class="mb-2">
-<button onclick="addProduct()" class="bg-blue-600 text-white px-4 py-2">Save</button>
-</div>
-
-<div id="productList" class="grid grid-cols-3 gap-4"></div>
-</div>
-
-<!-- ORDERS -->
+<div id="dashboard" class="tab"><h2 class="text-xl font-bold">Dashboard</h2><p>Welcome Admin</p></div>
+<div id="users" class="tab hidden"></div>
+<div id="sellers" class="tab hidden"></div>
+<div id="products" class="tab hidden"></div>
 <div id="orders" class="tab hidden"></div>
-
-<!-- WITHDRAWALS -->
+<div id="payments" class="tab hidden"></div>
+<div id="refunds" class="tab hidden"></div>
 <div id="withdrawals" class="tab hidden"></div>
-
-<!-- PROMOTION -->
-<div id="promotion" class="tab hidden"></div>
-
-<!-- FEATURED -->
-<div id="featured" class="tab hidden"></div>
-
-<!-- CATEGORY -->
-<div id="category" class="tab hidden">
-<h2 class="text-xl font-bold mb-4">Categories</h2>
-<input id="catName" placeholder="Category" class="border p-2 mb-2">
-<input id="catIcon" placeholder="Icon URL" class="border p-2 mb-2">
-<button onclick="addCategory()" class="bg-green-600 text-white px-4 py-2">Add</button>
-<div id="catList"></div>
-</div>
-
-<!-- BANNER -->
-<div id="banner" class="tab hidden">
-<h2 class="text-xl font-bold mb-4">Banners</h2>
-<input type="file" id="bannerImage" class="mb-2">
-<input id="bannerLink" class="border p-2 mb-2" placeholder="Product Link">
-<button onclick="uploadBanner()" class="bg-purple-600 text-white px-4 py-2">Upload</button>
-<div id="bannerList"></div>
-</div>
+<div id="coupons" class="tab hidden"></div>
+<div id="reviews" class="tab hidden"></div>
+<div id="analytics" class="tab hidden"></div>
+<div id="logs" class="tab hidden"></div>
+<div id="settings" class="tab hidden"></div>
 
 </div>
 </div>
 
 <script>
 
-// CONFIG
+// FIREBASE
 firebase.initializeApp({
 apiKey:"YOUR_KEY",
 authDomain:"YOUR_DOMAIN",
@@ -115,140 +75,145 @@ storageBucket:"YOUR_BUCKET"
 });
 
 const db = firebase.database();
-const storage = firebase.storage();
 
 // TAB
-function openTab(tab){
-document.querySelectorAll('.tab').forEach(t=>t.classList.add('hidden'));
-document.getElementById(tab).classList.remove('hidden');
+function openTab(t){
+document.querySelectorAll('.tab').forEach(e=>e.classList.add('hidden'));
+document.getElementById(t).classList.remove('hidden');
 
-if(tab==="orders") loadOrders();
-if(tab==="withdrawals") loadWithdrawals();
-if(tab==="promotion") loadPromotion();
-if(tab==="featured") loadFeatured();
+if(t=="users") loadUsers();
+if(t=="sellers") loadSellers();
+if(t=="payments") loadPayments();
+if(t=="refunds") loadRefunds();
+if(t=="coupons") loadCoupons();
+if(t=="reviews") loadReviews();
+if(t=="analytics") loadAnalytics();
+if(t=="logs") loadLogs();
+if(t=="settings") loadSettings();
 }
 
-// DASHBOARD
-function loadDashboard(){
-db.ref('users').once('value',s=>totalUsers.innerText=s.numChildren());
-db.ref('products').once('value',s=>totalProducts.innerText=s.numChildren());
-db.ref('orders').once('value',s=>totalOrders.innerText=s.numChildren());
-db.ref('sellers').once('value',s=>totalSellers.innerText=s.numChildren());
-}
-
-// PRODUCT (same as part1)
-let editId=null;
-function addProduct(){ let file=pImage.files[0]; let id=editId||Date.now();
-if(file){let r=storage.ref('products/'+id);r.put(file).then(()=>r.getDownloadURL().then(u=>saveProduct(id,u))); }
-else{db.ref('products/'+id).once('value',s=>saveProduct(id,s.val()?.image||""));}}
-function saveProduct(id,img){db.ref('products/'+id).set({
-name:pName.value,mrp:Number(pMRP.value),price:Number(pPrice.value),
-stock:Number(pStock.value),category:pCategory.value,desc:pDesc.value,image:img
-}); editId=null; loadProducts();}
-function loadProducts(){db.ref('products').on('value',snap=>{
-let h=''; snap.forEach(d=>{let p=d.val();
-h+=`<div class="bg-white p-3 rounded shadow">
-<img src="${p.image}" class="h-32 w-full object-cover">
-<h3>${p.name}</h3><p>₹${p.price}</p>
-<button onclick="editProduct('${d.key}')" class="bg-yellow-500 px-2 py-1 text-white">Edit</button>
-<button onclick="deleteProduct('${d.key}')" class="bg-red-500 px-2 py-1 text-white">Delete</button>
-</div>`;});
-productList.innerHTML=h;});}
-function editProduct(id){db.ref('products/'+id).once('value',s=>{
-let p=s.val();pName.value=p.name;pMRP.value=p.mrp;pPrice.value=p.price;
-pStock.value=p.stock;pCategory.value=p.category;pDesc.value=p.desc;editId=id;});}
-function deleteProduct(id){db.ref('products/'+id).remove();}
-
-// ORDERS
-function loadOrders(){
-db.ref('orders').on('value',snap=>{
-let html=`<h2 class="text-2xl font-bold mb-4">Orders</h2>`;
+// USERS
+function loadUsers(){
+db.ref('users').on('value',snap=>{
+let h="<h2 class='text-xl font-bold mb-2'>Users</h2>";
 snap.forEach(d=>{
-let o=d.val();
-html+=`<div class="bg-white p-3 mb-2 shadow">
-<p><b>${d.key}</b></p>
-<p>${o.userName||''} | ${o.phone||''}</p>
-<p>Status: ${o.status||'Pending'}</p>
-<input id="track_${d.key}" placeholder="Tracking ID" class="border p-1">
-<button onclick="updateTracking('${d.key}')" class="bg-black text-white px-2">Save</button>
-</div>`;
+let u=d.val();
+h+=`<div class="bg-white p-2 mb-2">${u.name||''} ${u.email||''}</div>`;
 });
-orders.innerHTML=html;
+users.innerHTML=h;
 });
 }
-function updateTracking(id){
-let v=document.getElementById("track_"+id).value;
-db.ref('orders/'+id).update({trackingId:v});
-}
 
-// WITHDRAWALS
-function loadWithdrawals(){
-db.ref('withdrawals').on('value',snap=>{
-let h=`<h2 class="text-xl font-bold mb-2">Withdrawals</h2>`;
+// SELLERS
+function loadSellers(){
+db.ref('sellers').on('value',snap=>{
+let h="<h2 class='text-xl font-bold mb-2'>Sellers</h2>";
 snap.forEach(d=>{
-let w=d.val();
+let s=d.val();
 h+=`<div class="bg-white p-2 mb-2">
-${w.sellerName} ₹${w.amount} (${w.status})
-<button onclick="updateWithdraw('${d.key}','Approved')" class="bg-green-500 text-white px-2">Approve</button>
-<button onclick="updateWithdraw('${d.key}','Rejected')" class="bg-red-500 text-white px-2">Reject</button>
+${s.shopName} (${s.status})
+<button onclick="updateSeller('${d.key}','Approved')" class="bg-green-500 px-2 text-white">Approve</button>
+<button onclick="updateSeller('${d.key}','Blocked')" class="bg-red-500 px-2 text-white">Block</button>
 </div>`;
 });
-withdrawals.innerHTML=h;
+sellers.innerHTML=h;
 });
 }
-function updateWithdraw(id,s){db.ref('withdrawals/'+id).update({status:s});}
+function updateSeller(id,s){db.ref('sellers/'+id).update({status:s});}
 
-// PROMOTION
-function loadPromotion(){
-db.ref('promotion').on('value',snap=>{
-let h=`<h2 class="text-xl font-bold">Promotion Payments</h2>`;
+// PAYMENTS
+function loadPayments(){
+db.ref('payments').on('value',snap=>{
+let h="<h2 class='text-xl font-bold'>Payments</h2>";
 snap.forEach(d=>{
 let p=d.val();
+h+=`<div class="bg-white p-2 mb-2">${p.user} ₹${p.amount}</div>`;
+});
+payments.innerHTML=h;
+});
+}
+
+// REFUNDS
+function loadRefunds(){
+db.ref('refunds').on('value',snap=>{
+let h="<h2 class='text-xl font-bold'>Refunds</h2>";
+snap.forEach(d=>{
+let r=d.val();
 h+=`<div class="bg-white p-2 mb-2">
-${p.sellerName} | ${p.productId} | ₹${p.amount}
+${r.orderId} ₹${r.amount}
+<button onclick="updateRefund('${d.key}','Approved')" class="bg-green-500 text-white px-2">Approve</button>
 </div>`;
 });
-promotion.innerHTML=h;
+refunds.innerHTML=h;
 });
 }
+function updateRefund(id,s){db.ref('refunds/'+id).update({status:s});}
 
-// FEATURED
-function loadFeatured(){
-db.ref('featured').on('value',snap=>{
-let h=`<h2 class="text-xl font-bold">Featured</h2>`;
+// COUPONS
+function loadCoupons(){
+db.ref('coupons').on('value',snap=>{
+let h="<h2 class='text-xl font-bold'>Coupons</h2>";
 snap.forEach(d=>{
-let f=d.val();
-h+=`<div class="bg-white p-2 mb-2">${f.productId} | Priority ${f.priority}</div>`;
+let c=d.val();
+h+=`<div class="bg-white p-2">${c.code} - ${c.discount}%</div>`;
 });
-featured.innerHTML=h;
+coupons.innerHTML=h;
 });
 }
 
-// CATEGORY
-function addCategory(){let id=Date.now();
-db.ref('categories/'+id).set({name:catName.value,icon:catIcon.value});
+// REVIEWS
+function loadReviews(){
+db.ref('reviews').on('value',snap=>{
+let h="<h2 class='text-xl font-bold'>Reviews</h2>";
+snap.forEach(d=>{
+let r=d.val();
+h+=`<div class="bg-white p-2">
+${r.user} ⭐${r.rating}
+<button onclick="deleteReview('${d.key}')" class="bg-red-500 text-white px-2">Delete</button>
+</div>`;
+});
+reviews.innerHTML=h;
+});
 }
-function loadCategories(){db.ref('categories').on('value',snap=>{
-let h='';snap.forEach(d=>{h+=`<div>${d.val().name}</div>`;});catList.innerHTML=h;});}
+function deleteReview(id){db.ref('reviews/'+id).remove();}
 
-// BANNER
-function uploadBanner(){
-let f=bannerImage.files[0];let id=Date.now();
-let r=storage.ref('banners/'+id);
-r.put(f).then(()=>r.getDownloadURL().then(u=>{
-db.ref('banners/'+id).set({image:u,link:bannerLink.value});
-}));
+// ANALYTICS
+function loadAnalytics(){
+db.ref('orders').once('value',snap=>{
+let total=0;
+snap.forEach(d=> total += d.val().amount||0);
+analytics.innerHTML=`<h2 class="text-xl font-bold">Total Revenue ₹${total}</h2>`;
+});
 }
-function loadBanners(){db.ref('banners').on('value',snap=>{
-let h='';snap.forEach(d=>{h+=`<img src="${d.val().image}" class="h-20">`;});bannerList.innerHTML=h;});}
+
+// LOGS
+function loadLogs(){
+db.ref('logs').on('value',snap=>{
+let h="<h2 class='text-xl font-bold'>Logs</h2>";
+snap.forEach(d=>{
+h+=`<div class="bg-white p-1">${d.val()}</div>`;
+});
+logs.innerHTML=h;
+});
+}
+
+// SETTINGS
+function loadSettings(){
+settings.innerHTML=`
+<h2 class="text-xl font-bold">Settings</h2>
+<input placeholder="Commission %" id="commission" class="border p-2">
+<button onclick="saveSettings()" class="bg-blue-600 text-white px-3 py-1">Save</button>
+`;
+}
+function saveSettings(){
+let v=document.getElementById("commission").value;
+db.ref('settings').set({commission:v});
+alert("Saved");
+}
 
 // INIT
 window.onload=()=>{
 openTab('dashboard');
-loadDashboard();
-loadProducts();
-loadCategories();
-loadBanners();
 };
 
 </script>
