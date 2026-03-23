@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SRP MASTER | Enterprise Management Console</title>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
@@ -13,6 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <style>
         :root {
@@ -28,7 +29,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
         body { background: var(--srp-bg); color: var(--srp-text); overflow-x: hidden; }
 
-        /* --- 8.0 LAYOUT ENGINE --- */
+        /* --- LAYOUT ENGINE --- */
         .admin-container { display: flex; min-height: 100vh; }
 
         .sidebar {
@@ -41,6 +42,7 @@
             display: flex;
             flex-direction: column;
             z-index: 1000;
+            transition: var(--transition);
         }
 
         .brand-box { padding: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -56,51 +58,36 @@
             margin-bottom: 5px; font-weight: 600; font-size: 14px; transition: var(--transition);
             cursor: pointer;
         }
-        .nav-link i { width: 20px; font-size: 18px; }
+        .nav-link i { width: 20px; font-size: 18px; text-align: center; }
         .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-link.active { background: var(--srp-primary); color: #fff; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4); }
 
-        /* --- MAIN CONTENT --- */
         .main-content { flex: 1; padding: 30px; max-width: 1400px; }
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
         
-        /* --- 8.8, 8.9, 8.10 ANALYTICS CARDS --- */
+        /* --- ANALYTICS CARDS --- */
         .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background: var(--srp-card); padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card { background: var(--srp-card); padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: var(--transition); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .card-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; font-size: 20px; }
         .val { font-size: 28px; font-weight: 800; display: block; margin-top: 5px; }
         .lbl { font-size: 13px; color: #64748b; font-weight: 700; text-transform: uppercase; }
 
-        /* --- 8.19 LOGS TABLE --- */
-        .log-table-container { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .table-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 15px 20px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; }
-        td { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .badge-log { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        /* --- UTILS --- */
+        .animate-up { animation: fadeInUp 0.5s ease forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 900px) {
-            .sidebar { display: none; } /* Mobile toggle logic in Part 2 */
+            .sidebar { position: fixed; left: -100%; }
+            .sidebar.active { left: 0; width: 80%; }
             .main-content { padding: 15px; }
         }
     </style>
 </head>
 <body>
-<button onclick="toggleMenu()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: var(--srp-primary); color: #fff; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-    <i class="fas fa-bars"></i>
-</button>
-
-<script>
-function toggleMenu() {
-    const sb = document.querySelector('.sidebar');
-    sb.style.display = (sb.style.display === 'flex') ? 'none' : 'flex';
-    sb.style.position = 'fixed';
-    sb.style.width = '100%';
-}
-</script>
 
 <div class="admin-container">
-    <aside class="sidebar">
+    <aside class="sidebar" id="mainSidebar">
         <div class="brand-box">
             <h2>SRP <span>PRO</span></h2>
             <p style="font-size: 10px; color: #64748b; margin-top: 5px;">ENTERPRISE ADMIN v2.0</p>
@@ -108,239 +95,305 @@ function toggleMenu() {
         
         <div class="nav-scroller">
             <div class="nav-group-label">Intelligence</div>
-<div class="nav-link active" onclick="loadModule('dashboard')">
-    <i class="fas fa-chart-line"></i> 8.6 Dashboard 
-    <span id="session-count" style="margin-left:auto; font-size:10px; opacity:0.6;">0</span>
-</div>
-<div class="nav-link" onclick="loadModule('sales')"><i class="fas fa-receipt"></i> 8.9 Sales Analytics</div>
-<div class="nav-link" onclick="loadModule('income')"><i class="fas fa-piggy-bank"></i> 8.10 Admin Income</div>
+            <div class="nav-link active" onclick="loadModule('dashboard')">
+                <i class="fas fa-chart-line"></i> Dashboard
+                <span id="session-count" style="margin-left:auto; font-size:10px; opacity:0.6;">0</span>
+            </div>
+            <div class="nav-link" onclick="loadModule('sales')"><i class="fas fa-receipt"></i> Sales Analytics</div>
+            <div class="nav-link" onclick="loadModule('income')"><i class="fas fa-piggy-bank"></i> Admin Income</div>
 
             <div class="nav-group-label">Core Management</div>
-            <div class="nav-link" onclick="loadModule('products')"><i class="fas fa-box"></i> 8.1 Products</div>
-            <div class="nav-link" onclick="loadModule('categories')"><i class="fas fa-list"></i> 8.11 Categories</div>
-            <div class="nav-link" onclick="loadModule('orders')"><i class="fas fa-shopping-cart"></i> 8.2 Order Mgmt</div>
+            <div class="nav-link" onclick="loadModule('products')"><i class="fas fa-box"></i> Products</div>
+            <div class="nav-link" onclick="loadModule('categories')"><i class="fas fa-list"></i> Categories</div>
+            <div class="nav-link" onclick="loadModule('orders')"><i class="fas fa-shopping-cart"></i> Orders</div>
             
-            <div class="nav-group-label">Vendor Relations</div>
-            <div class="nav-link" onclick="loadModule('sellers')"><i class="fas fa-store"></i> 8.16 Seller Mgmt</div>
-            <div class="nav-link" onclick="loadModule('payouts')"><i class="fas fa-hand-holding-dollar"></i> 8.3 Withdrawals</div>
-            <div class="nav-link" onclick="loadModule('promotions')"><i class="fas fa-ad"></i> 8.4 Promo Payments</div>
-
-            <div class="nav-group-label">Marketing & Users</div>
-            <div class="nav-link" onclick="loadModule('users')"><i class="fas fa-users"></i> 8.15 User Mgmt</div>
-            <div class="nav-link" onclick="loadModule('coupons')"><i class="fas fa-ticket"></i> 8.12 Coupons</div>
-            <div class="nav-link" onclick="loadModule('banners')"><i class="fas fa-image"></i> 8.13 Banners</div>
-            <div class="nav-link" onclick="loadModule('featured')"><i class="fas fa-star"></i> 8.5 Featured Pin</div>
-
-            <div class="nav-group-label">System & Security</div>
-            <div class="nav-link" onclick="loadModule('security')"><i class="fas fa-shield-alt"></i> 8.7 Admin Security</div>
-            <div class="nav-link" onclick="loadModule('logs')"><i class="fas fa-terminal"></i> 8.19 System Logs</div>
-            <div class="nav-link" onclick="loadModule('settings')"><i class="fas fa-cog"></i> 8.20 Settings</div>
+            <div class="nav-group-label">System</div>
+            <div class="nav-link" onclick="loadModule('logs')"><i class="fas fa-terminal"></i> System Logs</div>
+            <div class="nav-link" onclick="loadModule('settings')"><i class="fas fa-cog"></i> Settings</div>
         </div>
     </aside>
 
     <main class="main-content" id="app-view">
-        <header class="header-top">
-            <div>
-                <h1 style="font-weight: 800; font-size: 32px; letter-spacing: -1.5px;">Global Command Center</h1>
-                <p style="color: #64748b; font-weight: 600;">Welcome back, System Root.</p>
-            </div>
-            <div id="connection-status" style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: #10b981;">
-                <i class="fas fa-circle"></i> NODE OPERATIONAL
-            </div>
-        </header>
-
-        <div class="analytics-grid">
-            <div class="card">
-                <div class="card-icon" style="background: #eef2ff; color: #4f46e5;"><i class="fas fa-shopping-bag"></i></div>
-                <span class="lbl">Total Orders (8.6)</span>
-                <span class="val" id="total-orders">0</span>
-            </div>
-            <div style="display: flex; gap: 20px; align-items: center; background: #fff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0;">
-    <div style="width: 150px; height: 150px;">
-        <canvas id="globalStatsChart"></canvas>
-    </div>
-    <div>
-        <h4 style="font-weight:800;">Platform Composition</h4>
-        <p style="font-size:13px; color:#64748b;">Live Users: <span id="stat-total-users" style="color:#4f46e5; font-weight:700;">0</span></p>
-        <p style="font-size:13px; color:#64748b;">Live Sellers: <span id="stat-total-sellers" style="color:#10b981; font-weight:700;">0</span></p>
-    </div>
-</div>
-
-            <div class="card">
-                <div class="card-icon" style="background: #ecfdf5; color: #10b981;"><i class="fas fa-chart-pie"></i></div>
-                <span class="lbl">Commission Earned (8.6)</span>
-                <span class="val" id="total-comm">₹0</span>
-            </div>
-            <div class="card">
-                <div class="card-icon" style="background: #fff7ed; color: #f59e0b;"><i class="fas fa-user-check"></i></div>
-                <span class="lbl">Active Sellers (8.16)</span>
-                <span class="val" id="total-sellers">0</span>
-            </div>
-        </div>
-
-        <div class="log-table-container">
-            <div class="table-header">
-                <h3 style="font-weight: 800;">Real-time System Logs (8.19)</h3>
-                <button onclick="clearLogs()" style="padding: 8px 15px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; font-weight: 700; cursor: pointer;">Clear Logs</button>
-            </div>
-            <table id="logs-table">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Actor</th>
-                        <th>Action Event</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="logs-body">
-                    </tbody>
-            </table>
-        </div>
-    </main>
+        </main>
 </div>
 
 <script>
-    // Missing Helper for Product Image Preview
-function previewImg(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('p-img-preview').innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// Missing Category Dropdown Sync (Used in Product Modal)
-async function updateCatDropdown() {
-    const select = document.getElementById('p-cat-select');
-    if(!select) return;
-    db.collection("categories").get().then(snap => {
-        select.innerHTML = '<option value="">Select Category</option>';
-        snap.forEach(doc => {
-            select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`;
-        });
-    });
-}
-
-// Missing Sync Products (Used in renderProducts)
-async function syncProducts() {
-    db.collection("products").onSnapshot(snap => {
-        const grid = document.getElementById('product-master-grid');
-        if(!grid) return;
-        grid.innerHTML = "";
-        snap.forEach(doc => {
-            const p = doc.data();
-            grid.innerHTML += `
-                <div class="card">
-                    <div style="font-weight:800;">${p.name}</div>
-                    <div style="color:var(--srp-primary); font-weight:700;">₹${p.discountPrice} <del style="color:#64748b; font-size:12px;">₹${p.mrp}</del></div>
-                    <div style="font-size:12px; margin-top:5px;">Stock: ${p.stock} | ${p.category}</div>
-                </div>`;
-        });
-    });
-}
-
     /* =========================================
-   PART 2: PRODUCT & CATEGORY ENGINE
+       CORE BOOTSTRAP & FIREBASE
+       ========================================= */
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+        authDomain: "srp-shopping-54bbb.firebaseapp.com",
+        databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+        projectId: "srp-shopping-54bbb",
+        storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+        messagingSenderId: "491906168702",
+        appId: "1:491906168702:web:2873565fcd2d561077252f",
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const rdb = firebase.database();
+
+    // 1. Module Router
+    function loadModule(module) {
+        // Update Active State UI
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        const activeLink = document.querySelector(`[onclick="loadModule('${module}')"]`);
+        if(activeLink) activeLink.classList.add('active');
+
+        // Route to Function
+        switch(module) {
+            case 'dashboard': renderDashboard(); break;
+            case 'sales': renderSalesAnalytics(); break;
+            case 'products': if(typeof renderProducts === 'function') renderProducts(); break;
+            // Add other cases as you include Parts 2, 3, etc.
+            default: renderDashboard();
+        }
+    }
+
+    // 2. Dashboard Renderer (8.6)
+    function renderDashboard() {
+        const view = document.getElementById('app-view');
+        view.innerHTML = `
+            <header class="header-top animate-up">
+                <div>
+                    <h1 style="font-weight: 800; font-size: 32px; letter-spacing: -1.5px;">Global Command Center</h1>
+                    <p style="color: #64748b; font-weight: 600;">System Operational • Real-time Data Active</p>
+                </div>
+                <div id="connection-status" style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: #10b981;">
+                    <i class="fas fa-circle"></i> NODE ONLINE
+                </div>
+            </header>
+
+            <div class="analytics-grid">
+                <div class="card animate-up" style="animation-delay: 0.1s">
+                    <div class="card-icon" style="background: #eef2ff; color: #4f46e5;"><i class="fas fa-shopping-bag"></i></div>
+                    <span class="lbl">Total Orders</span>
+                    <span class="val" id="total-orders">0</span>
+                </div>
+                <div class="card animate-up" style="animation-delay: 0.2s">
+                    <div class="card-icon" style="background: #ecfdf5; color: #10b981;"><i class="fas fa-users"></i></div>
+                    <span class="lbl">Total Users</span>
+                    <span class="val" id="stat-total-users">0</span>
+                </div>
+                <div class="card animate-up" style="animation-delay: 0.3s">
+                    <div class="card-icon" style="background: #fff7ed; color: #f59e0b;"><i class="fas fa-store"></i></div>
+                    <span class="lbl">Active Sellers</span>
+                    <span class="val" id="total-sellers">0</span>
+                </div>
+                <div class="card animate-up" style="animation-delay: 0.4s">
+                    <div class="card-icon" style="background: #fef2f2; color: #ef4444;"><i class="fas fa-indian-rupee-sign"></i></div>
+                    <span class="lbl">Platform Revenue</span>
+                    <span class="val" id="total-comm">₹0</span>
+                </div>
+            </div>
+
+            <div class="card animate-up" style="margin-top:20px;">
+                <h3 style="margin-bottom:20px; font-weight:800;">Real-time Sales Velocity</h3>
+                <canvas id="velocityChart" style="max-height: 300px;"></canvas>
+            </div>
+        `;
+        initDashboardLogic();
+    }
+
+    // 3. Data Intelligence Logic
+    async function initDashboardLogic() {
+        // Update Session Counts (RDB)
+        rdb.ref('admin_sessions').on('value', snap => {
+            const count = snap.val() || 0;
+            if(document.getElementById('session-count')) document.getElementById('session-count').innerText = count;
+        });
+
+        // Sync Users
+        db.collection("users").onSnapshot(snap => {
+            if(document.getElementById('stat-total-users')) document.getElementById('stat-total-users').innerText = snap.size;
+        });
+
+        // Sync Sellers
+        db.collection("sellers").onSnapshot(snap => {
+            if(document.getElementById('total-sellers')) document.getElementById('total-sellers').innerText = snap.size;
+        });
+
+        // Sync Orders & Revenue
+        db.collection("orders").onSnapshot(snap => {
+            const ordEl = document.getElementById('total-orders');
+            if(ordEl) ordEl.innerText = snap.size;
+            
+            let revenue = 0;
+            snap.forEach(doc => {
+                if(doc.data().status === "Delivered") revenue += Number(doc.data().totalAmount || 0);
+            });
+            const revEl = document.getElementById('total-comm');
+            if(revEl) revEl.innerText = "₹" + (revenue * 0.10).toFixed(2); // 10% Platform Commission
+            
+            updateChart(snap);
+        });
+    }
+
+    // 4. Charting Utility
+    let velChart;
+    function updateChart(snap) {
+        const ctx = document.getElementById('velocityChart');
+        if(!ctx) return;
+
+        // Data processing for Chart.js
+        const labels = ['Orders']; 
+        const data = [snap.size];
+
+        if(velChart) {
+            velChart.data.datasets[0].data = data;
+            velChart.update();
+        } else {
+            velChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Live Order Count',
+                        data: data,
+                        backgroundColor: '#4f46e5',
+                        borderRadius: 10
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    }
+
+    // Startup
+    window.onload = () => {
+        loadModule('dashboard');
+        console.log("%c SRP MASTER V2.0 ONLINE ", "background: #4f46e5; color: #fff; font-weight: 800; padding: 5px;");
+    };
+
+    function logAction(actor, event, status) {
+        const timestamp = new Date().toLocaleString();
+        rdb.ref('system_logs').push({ timestamp, actor, event, status });
+    }
+</script>
+    <script>    /* =========================================
+   PART 2: PRODUCT & CATEGORY ENGINE (8.1 & 8.11)
    ========================================= */
 
-// 8.11 CATEGORY MANAGEMENT MODULE
+/**
+ * 8.11 CATEGORY ARCHITECT
+ * Renders the interface to define marketplace structure.
+ */
 function renderCategories() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
         <div class="header-top animate-up">
             <div>
                 <h1 style="font-weight: 800;">Category Architect (8.11)</h1>
-                <p>Define the structure of SRP SHOPPING marketplace.</p>
+                <p>Define the high-level structure of SRP SHOPPING.</p>
             </div>
-            <button class="btn-primary" onclick="openCategoryModal()" style="padding:12px 25px; border-radius:12px; border:none; color:#fff; cursor:pointer;">+ Add Category</button>
+            <button class="btn-primary" onclick="openCatModal()" style="padding:12px 25px; border-radius:12px; border:none; background:var(--srp-primary); color:#fff; cursor:pointer; font-weight:700;">
+                <i class="fas fa-plus"></i> Add Category
+            </button>
         </div>
 
-        <div class="glass-panel" style="background:#fff; padding:25px; border-radius:20px; border:1px solid #e2e8f0;">
-            <div id="category-list-display" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;">
+        <div class="card animate-up">
+            <div id="category-list-display" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:15px;">
                 </div>
+        </div>
+
+        <div id="cat-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:3000; display:flex; align-items:center; justify-content:center;">
+            <div style="background:#fff; width:90%; max-width:400px; padding:30px; border-radius:24px;">
+                <h3 style="margin-bottom:20px; font-weight:800;">New Category</h3>
+                <input type="text" id="cat-name-input" placeholder="Category Name (e.g. Electronics)" style="width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:15px;">
+                <input type="text" id="cat-icon-input" placeholder="FontAwesome Icon (e.g. fas fa-mobile)" style="width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:20px;">
+                <div style="display:flex; gap:10px;">
+                    <button onclick="saveCategory()" style="flex:1; padding:12px; background:var(--srp-primary); color:#fff; border:none; border-radius:10px; font-weight:700;">Create</button>
+                    <button onclick="closeCatModal()" style="flex:1; padding:12px; background:#f1f5f9; border:none; border-radius:10px; font-weight:700;">Cancel</button>
+                </div>
+            </div>
         </div>
     `;
     syncCategories();
 }
 
-// 8.1 PRODUCT MANAGEMENT MODULE
+/**
+ * 8.1 PRODUCT INVENTORY CONTROL
+ * The master interface for adding/editing products.
+ */
 function renderProducts() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
-        <div class="header-top">
+        <div class="header-top animate-up">
             <div>
                 <h1 style="font-weight: 800;">Inventory Control (8.1)</h1>
-                <p>Manage MRP, Stock, and Global Visibility.</p>
+                <p>Manage pricing, stock levels, and marketplace visibility.</p>
             </div>
-            <button class="btn-primary" onclick="openProductModal()" style="padding:12px 25px; border-radius:12px; border:none; background:#4f46e5; color:#fff;">+ Deploy New Product</button>
+            <button class="btn-primary" onclick="openProductModal()" style="padding:12px 25px; border-radius:12px; border:none; background:var(--srp-primary); color:#fff; cursor:pointer; font-weight:700;">
+                <i class="fas fa-plus"></i> Deploy Product
+            </button>
         </div>
 
-        <div style="margin-bottom:20px; display:flex; gap:10px;">
-            <input type="text" id="p-search" placeholder="Search by Product ID..." style="flex:1; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-            <select id="p-filter-cat" style="padding:12px; border-radius:10px; border:1px solid #e2e8f0;"></select>
+        <div style="display:flex; gap:10px; margin-bottom:20px;" class="animate-up">
+            <input type="text" id="p-search" placeholder="Search products..." oninput="filterProducts(this.value)" style="flex:1; padding:12px; border-radius:12px; border:1px solid #e2e8f0;">
+            <select id="p-cat-filter" style="padding:12px; border-radius:12px; border:1px solid #e2e8f0;"></select>
         </div>
 
         <div id="product-master-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
             </div>
 
-        <div id="p-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; overflow-y:auto; padding:20px;">
+        <div id="p-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2500; overflow-y:auto; padding:20px;">
             <div style="background:#fff; max-width:800px; margin:20px auto; border-radius:24px; padding:30px; position:relative;">
-                <span onclick="closePModal()" style="position:absolute; top:20px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
                 <h2 id="p-modal-title" style="margin-bottom:25px; font-weight:800;">Product Deployment</h2>
-                
-                <form id="p-form" onsubmit="saveProduct(event)">
+                <form id="p-form" onsubmit="handleProductSubmit(event)">
                     <input type="hidden" id="p-id-field">
+                    
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                         <div>
-                            <label style="font-size:12px; font-weight:800;">PRODUCT NAME</label>
-                            <input type="text" id="p-name" class="form-input" required style="width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #e2e8f0;">
+                            <label class="lbl">Product Name</label>
+                            <input type="text" id="p-name" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin:8px 0;">
                             
-                            <label style="font-size:12px; font-weight:800;">CATEGORY (8.11)</label>
-                            <select id="p-cat-select" class="form-input" style="width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #e2e8f0;"></select>
+                            <label class="lbl">Category (8.11)</label>
+                            <select id="p-cat-select" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin:8px 0;"></select>
                         </div>
                         <div>
-                            <label style="font-size:12px; font-weight:800;">PRODUCT IMAGE (8.1.4)</label>
-                            <input type="file" id="p-img-file" accept="image/*" onchange="previewImg(this)" style="margin:8px 0;">
-                            <div id="p-img-preview" style="width:100px; height:100px; background:#f1f5f9; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
-                                <i class="fas fa-camera text-muted"></i>
-                            </div>
+                            <label class="lbl">Image URL (or upload)</label>
+                            <input type="text" id="p-img-url" placeholder="Direct Link" style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin:8px 0;">
+                            <input type="file" id="p-file-input" onchange="previewProductImage(this)" style="font-size:12px; margin-top:5px;">
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-top:15px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-top:20px;">
                         <div>
-                            <label style="font-size:12px; font-weight:800;">MRP (₹)</label>
-                            <input type="number" id="p-mrp" class="form-input" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                            <label class="lbl">MRP (₹)</label>
+                            <input type="number" id="p-mrp" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
                         </div>
                         <div>
-                            <label style="font-size:12px; font-weight:800;">DISCOUNT PRICE (₹)</label>
-                            <input type="number" id="p-disc" class="form-input" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                            <label class="lbl">Sale Price (₹)</label>
+                            <input type="number" id="p-sale" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
                         </div>
                         <div>
-                            <label style="font-size:12px; font-weight:800;">STOCK QTY</label>
-                            <input type="number" id="p-stock" class="form-input" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                            <label class="lbl">Stock Qty</label>
+                            <input type="number" id="p-stock" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
                         </div>
                     </div>
 
                     <div style="margin-top:20px;">
-                        <label style="font-size:12px; font-weight:800;">DESCRIPTION (8.1.9)</label>
-                        <textarea id="p-desc" style="width:100%; height:100px; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-top:8px;"></textarea>
+                        <label class="lbl">Description (Rich Text Support)</label>
+                        <textarea id="p-desc" style="width:100%; height:120px; padding:12px; border-radius:10px; border:1px solid #e2e8f0; margin-top:8px;"></textarea>
                     </div>
 
-                    <button type="submit" style="width:100%; padding:15px; background:#4f46e5; color:#fff; border:none; border-radius:12px; margin-top:25px; font-weight:800; cursor:pointer;">
-                        SYNCHRONIZE TO DATABASE
-                    </button>
+                    <div style="margin-top:30px; display:flex; gap:15px;">
+                        <button type="submit" style="flex:2; padding:15px; background:var(--srp-primary); color:#fff; border:none; border-radius:12px; font-weight:800; cursor:pointer;">
+                            SYNC TO DATABASE
+                        </button>
+                        <button type="button" onclick="closePModal()" style="flex:1; padding:15px; background:#f1f5f9; border:none; border-radius:12px; font-weight:700;">CANCEL</button>
+                    </div>
                 </form>
             </div>
         </div>
     `;
-    updateCatDropdown();
     syncProducts();
+    populateCategoryDropdowns();
 }
 
-// --- LOGIC FUNCTIONS ---
+/* --- LOGIC HANDLERS --- */
 
 async function syncCategories() {
     db.collection("categories").onSnapshot(snap => {
@@ -350,154 +403,196 @@ async function syncCategories() {
         snap.forEach(doc => {
             const cat = doc.data();
             container.innerHTML += `
-                <div style="padding:15px; background:#f8fafc; border-radius:15px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                    <span><i class="${cat.icon} shadow-sm"></i> ${cat.name}</span>
-                    <i class="fas fa-trash-alt text-danger" onclick="deleteCat('${doc.id}')" style="cursor:pointer; color:#ef4444;"></i>
+                <div class="card" style="padding:15px; display:flex; justify-content:space-between; align-items:center;">
+                    <span><i class="${cat.icon || 'fas fa-tag'}"></i> ${cat.name}</span>
+                    <button onclick="deleteDoc('categories', '${doc.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
                 </div>
             `;
         });
     });
 }
 
-async function saveProduct(e) {
+async function syncProducts() {
+    db.collection("products").orderBy("timestamp", "desc").onSnapshot(snap => {
+        const grid = document.getElementById('product-master-grid');
+        if(!grid) return;
+        grid.innerHTML = "";
+        snap.forEach(doc => {
+            const p = doc.data();
+            grid.innerHTML += `
+                <div class="card animate-up" style="padding:15px;">
+                    <img src="${p.imageUrl || 'https://via.placeholder.com/150'}" style="width:100%; height:180px; object-fit:cover; border-radius:12px; margin-bottom:15px;">
+                    <h3 style="font-weight:700; font-size:16px;">${p.name}</h3>
+                    <p style="color:#64748b; font-size:12px; margin-bottom:10px;">${p.category} | Stock: ${p.stock}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:800; color:var(--srp-primary);">₹${p.salePrice}</span>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="editProduct('${doc.id}')" style="background:#eef2ff; color:#4f46e5; border:none; padding:8px; border-radius:8px;"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteDoc('products', '${doc.id}')" style="background:#fef2f2; color:#ef4444; border:none; padding:8px; border-radius:8px;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
+
+async function handleProductSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('p-id-field').value;
-    const data = {
+    const productData = {
         name: document.getElementById('p-name').value,
         category: document.getElementById('p-cat-select').value,
         mrp: Number(document.getElementById('p-mrp').value),
-        discountPrice: Number(document.getElementById('p-disc').value),
+        salePrice: Number(document.getElementById('p-sale').value),
         stock: Number(document.getElementById('p-stock').value),
         description: document.getElementById('p-desc').value,
+        imageUrl: document.getElementById('p-img-url').value,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     try {
         if(id) {
-            await db.collection("products").doc(id).update(data);
-            logAction("Admin", `Updated Product: ${data.name}`, "Success");
+            await db.collection("products").doc(id).update(productData);
+            logAction("Admin", `Updated Product: ${productData.name}`, "Success");
         } else {
-            await db.collection("products").add(data);
-            logAction("Admin", `Added New Product: ${data.name}`, "Success");
+            await db.collection("products").add(productData);
+            logAction("Admin", `Added New Product: ${productData.name}`, "Success");
         }
         closePModal();
-        alert("Product Synchronized!");
     } catch (err) {
-        logAction("Admin", `Product Error: ${err.message}`, "Failed");
+        alert("Sync Failed: " + err.message);
     }
 }
 
-// Helper: UI Controls
-function openProductModal() { document.getElementById('p-modal').style.display = 'block'; }
-function closePModal() { document.getElementById('p-modal').style.display = 'none'; document.getElementById('p-form').reset(); }
+// UI Helpers
+function openCatModal() { document.getElementById('cat-modal').style.display = 'flex'; }
+function closeCatModal() { document.getElementById('cat-modal').style.display = 'none'; }
+function openProductModal() { 
+    document.getElementById('p-id-field').value = "";
+    document.getElementById('p-form').reset();
+    document.getElementById('p-modal').style.display = 'block'; 
+}
+function closePModal() { document.getElementById('p-modal').style.display = 'none'; }
+
+async function populateCategoryDropdowns() {
+    const snap = await db.collection("categories").get();
+    const select = document.getElementById('p-cat-select');
+    const filter = document.getElementById('p-cat-filter');
+    if(!select) return;
+    
+    let options = `<option value="">Select Category</option>`;
+    snap.forEach(doc => { options += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
+    select.innerHTML = options;
+    if(filter) filter.innerHTML = `<option value="ALL">All Categories</option>` + options;
+}
+
+async function deleteDoc(collection, id) {
+    if(confirm("Permanently delete this item? This cannot be undone.")) {
+        await db.collection(collection).doc(id).delete();
+        logAction("Admin", `Deleted from ${collection}: ${id}`, "Warning");
+    }
+}
 /* =========================================
-   PART 3: LOGISTICS & VENDOR ECOSYSTEM
+   PART 2: TRANSACTION & VENDOR ENGINE (8.2 & 8.5)
    ========================================= */
 
-// 8.2 & 8.6 GLOBAL ORDER MANAGEMENT
+/**
+ * 8.2 ORDER MANAGEMENT SYSTEM
+ * Handles order status, customer details, and tracking.
+ */
 function renderOrders() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
         <div class="header-top animate-up">
             <div>
-                <h1 style="font-weight: 800;">Order Control Center (8.2)</h1>
-                <p>Monitor global traffic and update Tracking IDs.</p>
+                <h1 style="font-weight: 800;">Order Management (8.2)</h1>
+                <p>Monitor transactions and update logistics status.</p>
             </div>
-            <div style="background:#fff; padding:10px 20px; border-radius:12px; border:1px solid #e2e8f0; font-weight:700;">
-                Live Orders: <span id="live-order-count" style="color:var(--srp-primary);">0</span>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-primary" onclick="filterOrders('Pending')" style="background:#fff; color:#64748b; border:1px solid #e2e8f0;">Pending</button>
+                <button class="btn-primary" onclick="filterOrders('Shipped')" style="background:#fff; color:#64748b; border:1px solid #e2e8f0;">Shipped</button>
             </div>
         </div>
 
-        <div class="log-table-container">
-            <div class="table-header" style="background:#f8fafc;">
-                <input type="text" id="order-search" placeholder="Search Order ID / Phone..." 
-                       style="width:100%; max-width:400px; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
-            </div>
-            <table style="min-width: 1000px;">
+        <div class="card animate-up" style="overflow-x:auto;">
+            <table style="width:100%; border-collapse: collapse; min-width:800px;">
                 <thead>
-                    <tr>
-                        <th>Order ID / Date</th>
-                        <th>Customer Details (8.2)</th>
-                        <th>Amount & Status</th>
-                        <th>Tracking ID (8.2)</th>
+                    <tr style="text-align:left; border-bottom:2px solid #f1f5f9; color:#64748b; font-size:14px;">
+                        <th style="padding:15px;">Order ID</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Tracking (India Post)</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="orders-master-body">
+                <tbody id="order-table-body">
                     </tbody>
             </table>
         </div>
     `;
-    syncGlobalOrders();
+    syncOrders();
 }
 
-// 8.16 SELLER MANAGEMENT (Applications & Suspension)
+/**
+ * 8.5 SELLER VERIFICATION HUB
+ * The gateway for approving or suspending multi-vendor accounts.
+ */
 function renderSellers() {
     const view = document.getElementById('app-view');
     view.innerHTML = `
-        <div class="header-top">
+        <div class="header-top animate-up">
             <div>
-                <h1 style="font-weight: 800;">Seller Management (8.16)</h1>
-                <p>Approve requests or suspend vendor accounts.</p>
+                <h1 style="font-weight: 800;">Vendor Verification (8.5)</h1>
+                <p>Audit and authorize marketplace sellers.</p>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:30px;">
-            <div class="card" style="border-left: 4px solid #f59e0b;">
-                <span class="lbl">Pending Requests</span>
-                <span class="val" id="pending-seller-count">0</span>
-            </div>
-            <div class="card" style="border-left: 4px solid #10b981;">
-                <span class="lbl">Active Vendors</span>
-                <span class="val" id="active-seller-count">0</span>
-            </div>
-        </div>
-
-        <div id="seller-request-container" class="animate-up">
+        <div id="seller-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
             </div>
     `;
-    syncSellerRequests();
+    syncSellers();
 }
 
-// --- CORE LOGIC FOR PART 3 ---
+/* --- LOGIC HANDLERS --- */
 
-async function syncGlobalOrders() {
-    // Requirements: 8.2 (User Name, Phone, Email, Address, Pincode, Tracking ID)
+async function syncOrders() {
     db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
-        const tbody = document.getElementById('orders-master-body');
-        if(!tbody) return;
-        tbody.innerHTML = "";
+        const body = document.getElementById('order-table-body');
+        if(!body) return;
+        body.innerHTML = "";
         
-        document.getElementById('live-order-count').innerText = snap.size;
-
         snap.forEach(doc => {
-            const o = doc.data();
-            const date = o.timestamp ? new Date(o.timestamp.seconds * 1000).toLocaleDateString() : 'Pending';
+            const order = doc.data();
+            const statusColor = getStatusColor(order.status);
             
-            tbody.innerHTML += `
-                <tr>
+            body.innerHTML += `
+                <tr style="border-bottom:1px solid #f1f5f9; font-size:14px;">
+                    <td style="padding:15px; font-family:monospace; font-weight:600;">#${doc.id.substring(0,8)}</td>
                     <td>
-                        <strong style="color:var(--srp-primary);">#${doc.id.slice(-8).toUpperCase()}</strong><br>
-                        <small style="color:#64748b;">${date}</small>
+                        <div style="font-weight:700;">${order.customerName}</div>
+                        <div style="font-size:12px; color:#94a3b8;">${order.customerPhone}</div>
+                    </td>
+                    <td style="font-weight:800;">₹${order.totalAmount}</td>
+                    <td>
+                        <span style="background:${statusColor}20; color:${statusColor}; padding:5px 12px; border-radius:20px; font-size:11px; font-weight:800;">
+                            ${order.status.toUpperCase()}
+                        </span>
                     </td>
                     <td>
-                        <div style="line-height:1.4;">
-                            <strong>${o.userName}</strong> | ${o.userPhone}<br>
-                            <small>${o.address}, ${o.pincode}</small>
-                        </div>
-                    </td>
-                    <td>
-                        <strong style="font-size:16px;">₹${o.totalAmount}</strong><br>
-                        <span class="badge-log" style="background:#eef2ff; color:#4f46e5;">${o.status || 'Processing'}</span>
-                    </td>
-                    <td>
-                        <input type="text" value="${o.trackingId || ''}" 
-                               placeholder="Enter Tracking ID" 
+                        <input type="text" placeholder="India Post ID" value="${order.trackingId || ''}" 
                                onchange="updateTracking('${doc.id}', this.value)"
-                               style="padding:6px; border-radius:5px; border:1px solid #cbd5e1; font-size:12px; width:150px;">
+                               style="padding:6px; border-radius:6px; border:1px solid #e2e8f0; font-size:12px; width:130px;">
                     </td>
                     <td>
-                        <button onclick="viewOrderDetails('${doc.id}')" style="background:none; border:none; color:var(--srp-primary); cursor:pointer;"><i class="fas fa-eye"></i></button>
+                        <select onchange="updateOrderStatus('${doc.id}', this.value)" style="padding:6px; border-radius:6px; border:1px solid #e2e8f0; font-size:12px;">
+                            <option value="">Update Status</option>
+                            <option value="Packed">Packed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
                     </td>
                 </tr>
             `;
@@ -505,483 +600,37 @@ async function syncGlobalOrders() {
     });
 }
 
-async function syncSellerRequests() {
-    // Requirements: 8.16 (Approve/Reject/Suspend)
+async function syncSellers() {
     db.collection("sellers").onSnapshot(snap => {
-        const container = document.getElementById('seller-request-container');
-        if(!container) return;
-        container.innerHTML = "";
-
-        let pending = 0;
-        let active = 0;
-
-        snap.forEach(doc => {
-            const s = doc.data();
-            if(s.status === 'Pending') pending++;
-            if(s.status === 'Active') active++;
-
-            container.innerHTML += `
-                <div class="card" style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <h3 style="font-weight:800;">${s.storeName}</h3>
-                        <p style="font-size:13px; color:#64748b;">Owner: ${s.ownerName} | ID: ${doc.id.slice(-5)}</p>
-                        <div style="margin-top:10px;">
-                            <span class="badge-log" style="background:${s.status === 'Active' ? '#dcfce7':'#fef3c7'}; color:${s.status === 'Active' ? '#166534':'#92400e'}">
-                                ${s.status}
-                            </span>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        ${s.status === 'Pending' ? 
-                            `<button onclick="updateSellerStatus('${doc.id}', 'Active')" style="padding:10px 20px; border-radius:10px; border:none; background:#10b981; color:#fff; font-weight:700;">Approve</button>` : 
-                            `<button onclick="updateSellerStatus('${doc.id}', 'Suspended')" style="padding:10px 20px; border-radius:10px; border:none; background:#ef4444; color:#fff; font-weight:700;">Suspend</button>`
-                        }
-                    </div>
-                </div>
-            `;
-        });
-        document.getElementById('pending-seller-count').innerText = pending;
-        document.getElementById('active-seller-count').innerText = active;
-    });
-}
-
-// ACTION HANDLERS
-async function updateTracking(orderId, val) {
-    await db.collection("orders").doc(orderId).update({ trackingId: val });
-    logAction("Admin", `Updated Tracking for Order: ${orderId}`, "Success");
-}
-
-async function updateSellerStatus(sellerId, status) {
-    if(confirm(`Set seller status to ${status}?`)) {
-        await db.collection("sellers").doc(sellerId).update({ status: status });
-        logAction("Admin", `Seller ${sellerId} status changed to ${status}`, "Success");
-    }
-}
-/* =========================================
-   PART 4: FINANCIAL CLEARANCE & PROMOTIONS
-   ========================================= */
-
-// 8.3 SELLER WITHDRAWAL APPROVAL SYSTEM
-function renderWithdrawals() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top animate-up">
-            <div>
-                <h1 style="font-weight: 800;">Withdrawal Approval (8.3)</h1>
-                <p>Verify seller balances and mark payouts as paid.</p>
-            </div>
-        </div>
-
-        <div class="analytics-grid">
-            <div class="card" style="border-bottom: 4px solid #ef4444;">
-                <span class="lbl">Pending Payouts</span>
-                <span class="val" id="pending-payout-amt">₹0</span>
-            </div>
-            <div class="card" style="border-bottom: 4px solid #10b981;">
-                <span class="lbl">Total Paid Out</span>
-                <span class="val" id="total-paid-amt">₹0</span>
-            </div>
-        </div>
-
-        <div class="log-table-container">
-            <div class="table-header">
-                <h3 style="font-weight: 800;">Payout Requests (8.3)</h3>
-            </div>
-            <table style="min-width: 900px;">
-                <thead>
-                    <tr>
-                        <th>Seller ID</th>
-                        <th>Wallet Balance</th>
-                        <th>Request Amount</th>
-                        <th>Payment Method</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="withdrawal-body">
-                    </tbody>
-            </table>
-        </div>
-    `;
-    syncWithdrawals();
-}
-
-// 8.4 SELLER PROMOTION PAYMENT SYSTEM
-function renderPromotions() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top">
-            <div>
-                <h1 style="font-weight: 800;">Promotion Audit (8.4)</h1>
-                <p>Track payments received for product advertisements.</p>
-            </div>
-        </div>
-
-        <div id="promo-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px;">
-            </div>
-    `;
-    syncPromotionPayments();
-}
-
-// --- CORE LOGIC FOR PART 4 ---
-
-async function syncWithdrawals() {
-    rdb.ref('withdrawals').on('value', (snap) => {
-        const tbody = document.getElementById('withdrawal-body');
-        if(!tbody) return;
-        tbody.innerHTML = "";
-        
-        let pendingTotal = 0;
-        let paidTotal = 0;
-
-        snap.forEach((child) => {
-            const w = child.val();
-            if(w.status === 'Pending') pendingTotal += Number(w.amount);
-            if(w.status === 'Paid') paidTotal += Number(w.amount);
-
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${w.sellerName}</strong><br><small>${w.sellerId}</small></td>
-                    <td><span style="color:#64748b;">₹${w.currentBalance}</span></td>
-                    <td><strong style="color:#ef4444;">₹${w.amount}</strong></td>
-                    <td>
-                        <div style="font-size:12px; background:#f1f5f9; padding:8px; border-radius:8px;">
-                            ${w.paymentDetails} </div>
-                    </td>
-                    <td>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="processPayout('${child.key}', 'Paid')" style="background:#10b981; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:700;">Approve</button>
-                            <button onclick="processPayout('${child.key}', 'Rejected')" style="background:#ef4444; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:700;">Reject</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-        document.getElementById('pending-payout-amt').innerText = `₹${pendingTotal}`;
-        document.getElementById('total-paid-amt').innerText = `₹${paidTotal}`;
-    });
-}
-
-async function syncPromotionPayments() {
-    // Requirements: 8.4 (Aadhar, PAN, GST, Promo Payment Received)
-    db.collection("promotions").onSnapshot(snap => {
-        const container = document.getElementById('promo-container');
-        if(!container) return;
-        container.innerHTML = "";
-
-        snap.forEach(doc => {
-            const p = doc.data();
-            container.innerHTML += `
-                <div class="card animate-up">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <h3 style="font-weight:800; color:var(--srp-primary);">${p.sellerName}</h3>
-                        <span class="badge-log" style="background:#dcfce7; color:#166534;">PAID ₹${p.paymentAmount}</span>
-                    </div>
-                    <hr style="margin:15px 0; border:none; border-top:1px dashed #e2e8f0;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px;">
-                        <div><small class="lbl">AADHAR</small><br><strong>${p.aadhar}</strong></div>
-                        <div><small class="lbl">PAN</small><br><strong>${p.pan}</strong></div>
-                        <div><small class="lbl">GST</small><br><strong>${p.gst}</strong></div>
-                        <div><small class="lbl">PRODUCT REF</small><br><strong>${p.productId}</strong></div>
-                    </div>
-                    <div style="margin-top:15px; font-size:11px; color:#64748b;">
-                        <i class="fas fa-phone"></i> ${p.mobile} | Ref: ${doc.id.slice(-6)}
-                    </div>
-                </div>
-            `;
-        });
-    });
-}
-
-async function processPayout(payoutId, status) {
-    if(confirm(`Mark this request as ${status}?`)) {
-        await rdb.ref(`withdrawals/${payoutId}`).update({ status: status });
-        logAction("Admin", `${status} Payout ID: ${payoutId}`, "Success");
-        alert(`Payout ${status}`);
-    }
-}
-/* =========================================
-   PART 5: PROMOTIONS & VISUAL OVERLAYS
-   ========================================= */
-
-// 8.12 COUPON MANAGEMENT SYSTEM
-function renderCoupons() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top animate-up">
-            <div>
-                <h1 style="font-weight: 800;">Coupon Architect (8.12)</h1>
-                <p>Create discounts, set expiry dates, and limit usage.</p>
-            </div>
-            <button class="btn-primary" onclick="openCouponModal()" style="padding:12px 25px; border-radius:12px; border:none; background:#4f46e5; color:#fff; cursor:pointer;">+ New Coupon</button>
-        </div>
-
-        <div id="coupon-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
-            </div>
-
-        <div id="c-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:3000; padding:20px;">
-            <div style="background:#fff; max-width:500px; margin:50px auto; border-radius:24px; padding:30px; position:relative;">
-                <h2 style="margin-bottom:20px; font-weight:800;">Generate Coupon</h2>
-                <form id="c-form" onsubmit="saveCoupon(event)">
-                    <label class="lbl">COUPON CODE</label>
-                    <input type="text" id="c-code" placeholder="e.g. SAVE50" required style="width:100%; padding:12px; margin:8px 0; border-radius:10px; border:1px solid #e2e8f0; font-family:'JetBrains Mono';">
-                    
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:10px;">
-                        <div>
-                            <label class="lbl">DISCOUNT %</label>
-                            <input type="number" id="c-perc" max="100" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-                        </div>
-                        <div>
-                            <label class="lbl">USER LIMIT</label>
-                            <input type="number" id="c-limit" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-                        </div>
-                    </div>
-
-                    <label class="lbl" style="display:block; margin-top:15px;">EXPIRY DATE</label>
-                    <input type="date" id="c-expiry" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
-
-                    <div style="margin-top:25px; display:flex; gap:10px;">
-                        <button type="submit" style="flex:1; padding:15px; background:#4f46e5; color:#fff; border:none; border-radius:12px; font-weight:800;">ACTIVATE</button>
-                        <button type="button" onclick="closeCModal()" style="padding:15px; background:#f1f5f9; border:none; border-radius:12px; font-weight:700;">CANCEL</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    syncCoupons();
-}
-
-// 8.13 BANNER MANAGEMENT SYSTEM
-function renderBanners() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top">
-            <div>
-                <h1 style="font-weight: 800;">Banner Management (8.13)</h1>
-                <p>Upload homepage banners and festival sale assets.</p>
-            </div>
-        </div>
-
-        <div style="background:#fff; padding:25px; border-radius:20px; border:1px solid #e2e8f0; margin-bottom:30px;">
-            <h3 style="margin-bottom:15px;">Upload New Banner</h3>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;">
-                <input type="file" id="b-file" accept="image/*" style="padding:10px; background:#f8fafc; border-radius:10px; flex:1;">
-                <input type="text" id="b-link" placeholder="Product ID to Link (8.13)" style="padding:12px; border-radius:10px; border:1px solid #e2e8f0; width:250px;">
-                <button onclick="uploadBanner()" style="padding:12px 30px; background:var(--srp-accent); color:#fff; border:none; border-radius:10px; font-weight:800;">DEPLOY</button>
-            </div>
-        </div>
-
-        <div id="banner-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px;">
-            </div>
-    `;
-    syncBanners();
-}
-
-// --- CORE LOGIC FOR PART 5 ---
-
-async function syncCoupons() {
-    db.collection("coupons").orderBy("expiryDate", "asc").onSnapshot(snap => {
-        const grid = document.getElementById('coupon-grid');
+        const grid = document.getElementById('seller-grid');
         if(!grid) return;
         grid.innerHTML = "";
+        
         snap.forEach(doc => {
-            const c = doc.data();
+            const s = doc.data();
+            const isVerified = s.status === 'approved';
+            
             grid.innerHTML += `
-                <div class="card animate-up" style="border-left:5px solid #4f46e5; position:relative;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <code style="font-size:20px; font-weight:800; color:var(--srp-primary);">${c.code}</code>
-                        <span style="font-size:24px; font-weight:800;">${c.discount}% OFF</span>
+                <div class="card animate-up" style="padding:20px;">
+                    <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                        <div style="width:50px; height:50px; background:#f1f5f9; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--srp-primary);">
+                            ${s.shopName ? s.shopName.charAt(0) : 'S'}
+                        </div>
+                        <div>
+                            <h3 style="margin:0; font-size:16px;">${s.shopName}</h3>
+                            <p style="margin:0; font-size:12px; color:#64748b;">UID: ${doc.id.substring(0,10)}</p>
+                        </div>
                     </div>
-                    <div style="margin-top:15px; font-size:13px; color:#64748b;">
-                        <p><i class="fas fa-users"></i> Limit: ${c.usageLimit} Users</p>
-                        <p><i class="fas fa-calendar-times"></i> Expires: ${c.expiryDate}</p>
+                    <div style="font-size:13px; margin-bottom:20px; line-height:1.6;">
+                        <div><strong>Owner:</strong> ${s.ownerName}</div>
+                        <div><strong>GST/PAN:</strong> ${s.taxId || 'Not Provided'}</div>
+                        <div><strong>Location:</strong> ${s.city || 'India'}</div>
                     </div>
-                    <button onclick="deleteCoupon('${doc.id}')" style="position:absolute; bottom:15px; right:15px; background:none; border:none; color:#ef4444;"><i class="fas fa-trash"></i></button>
-                </div>
-            `;
-        });
-    });
-}
-
-async function saveCoupon(e) {
-    e.preventDefault();
-    const data = {
-        code: document.getElementById('c-code').value.toUpperCase(),
-        discount: Number(document.getElementById('c-perc').value),
-        usageLimit: Number(document.getElementById('c-limit').value),
-        expiryDate: document.getElementById('c-expiry').value,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    await db.collection("coupons").add(data);
-    logAction("Admin", `Created Coupon: ${data.code}`, "Success");
-    closeCModal();
-}
-
-async function uploadBanner() {
-    const file = document.getElementById('b-file').files[0];
-    const link = document.getElementById('b-link').value;
-    if(!file) return alert("Select an image first!");
-
-    // Note: Since you use AIDE/Termux, ensure Firebase Storage is initialized in Part 1
-    const storageRef = firebase.storage().ref(`banners/${Date.now()}_${file.name}`);
-    const task = await storageRef.put(file);
-    const url = await task.ref.getDownloadURL();
-
-    await db.collection("banners").add({
-        imageUrl: url,
-        productLink: link,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    logAction("Admin", "Uploaded Homepage Banner", "Success");
-    alert("Banner Deployed!");
-}
-
-async function syncBanners() {
-    db.collection("banners").onSnapshot(snap => {
-        const list = document.getElementById('banner-list');
-        if(!list) return;
-        list.innerHTML = "";
-        snap.forEach(doc => {
-            const b = doc.data();
-            list.innerHTML += `
-                <div class="card animate-up" style="padding:10px;">
-                    <img src="${b.imageUrl}" style="width:100%; height:150px; object-fit:cover; border-radius:12px;">
-                    <div style="padding:10px; display:flex; justify-content:space-between; align-items:center;">
-                        <small style="color:#64748b;">Link ID: ${b.productLink || 'None'}</small>
-                        <button onclick="deleteBanner('${doc.id}')" style="background:none; border:none; color:#ef4444;"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `;
-        });
-    });
-}
-
-function openCouponModal() { document.getElementById('c-modal').style.display = 'block'; }
-function closeCModal() { document.getElementById('c-modal').style.display = 'none'; }
-/* =========================================
-   PART 9: FINANCIAL LEDGER & REFUNDS (8.17 & 8.18)
-   ========================================= */
-
-// 8.17 PAYMENT HISTORY MODULE
-function renderPaymentHistory() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top animate-up">
-            <div>
-                <h1 style="font-weight: 800;">Master Ledger (8.17)</h1>
-                <p>Track all platform transactions, user payments, and seller payouts.</p>
-            </div>
-            <div style="background:#fff; padding:10px 20px; border-radius:12px; border:1px solid #e2e8f0;">
-                <select id="txn-filter" onchange="syncPayments(this.value)" style="border:none; outline:none; font-weight:700; color:var(--srp-primary);">
-                    <option value="ALL">All Transactions</option>
-                    <option value="USER">User Payments</option>
-                    <option value="SELLER">Seller Payouts</option>
-                    <option value="REFUND">Refunds</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="log-table-container">
-            <table style="min-width: 900px;">
-                <thead>
-                    <tr>
-                        <th>Transaction ID / Date</th>
-                        <th>Type</th>
-                        <th>Details</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="payment-history-body">
-                    <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading ledger...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    `;
-    syncPayments('ALL');
-}
-
-// 8.18 REFUND SYSTEM MODULE
-function renderRefunds() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top">
-            <div>
-                <h1 style="font-weight: 800;">Refund Management (8.18)</h1>
-                <p>Process customer returns and refund money directly to User Wallet.</p>
-            </div>
-        </div>
-
-        <div id="refund-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
-            <p style="color:#64748b;">Scanning for pending refund requests...</p>
-        </div>
-    `;
-    syncRefunds();
-}
-
-// --- CORE LOGIC FOR PART 9 ---
-
-async function syncPayments(filter) {
-    // In a real app, this pulls from a unified 'transactions' collection
-    db.collection("transactions").orderBy("timestamp", "desc").onSnapshot(snap => {
-        const tbody = document.getElementById('payment-history-body');
-        if(!tbody) return;
-        tbody.innerHTML = "";
-
-        if(snap.empty) {
-            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No transactions found.</td></tr>";
-            return;
-        }
-
-        snap.forEach(doc => {
-            const t = doc.data();
-            // Basic filtering logic
-            if(filter !== 'ALL' && t.type !== filter) return;
-
-            const date = t.timestamp ? new Date(t.timestamp.seconds * 1000).toLocaleString() : 'Just now';
-            let typeColor = t.type === 'USER' ? '#3b82f6' : (t.type === 'SELLER' ? '#10b981' : '#ef4444');
-
-            tbody.innerHTML += `
-                <tr class="animate-up">
-                    <td><strong style="font-family:'JetBrains Mono'; color:#475569;">${doc.id.slice(-10).toUpperCase()}</strong><br><small>${date}</small></td>
-                    <td><span style="background:${typeColor}20; color:${typeColor}; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:800;">${t.type}</span></td>
-                    <td>${t.description}<br><small style="color:#64748b;">Ref: ${t.referenceId}</small></td>
-                    <td><strong style="font-size:15px;">₹${t.amount}</strong></td>
-                    <td><span class="badge-log" style="background:#dcfce7; color:#166534;">${t.status || 'Completed'}</span></td>
-                </tr>
-            `;
-        });
-    });
-}
-
-async function syncRefunds() {
-    // Listens for pending refunds
-    db.collection("refunds").where("status", "==", "Pending").onSnapshot(snap => {
-        const container = document.getElementById('refund-container');
-        if(!container) return;
-        container.innerHTML = "";
-
-        if(snap.empty) {
-            container.innerHTML = "<div class='card'>No pending refund requests.</div>";
-            return;
-        }
-
-        snap.forEach(doc => {
-            const r = doc.data();
-            container.innerHTML += `
-                <div class="card animate-up" style="border-top: 4px solid #f59e0b;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-size:12px; font-weight:800; color:#64748b;">Order: #${r.orderId}</span>
-                        <strong style="color:#ef4444; font-size:18px;">₹${r.amount}</strong>
-                    </div>
-                    <h4 style="margin-bottom:5px;">${r.userName}</h4>
-                    <p style="font-size:13px; color:#475569; margin-bottom:15px; background:#f1f5f9; padding:8px; border-radius:8px;">Reason: ${r.reason}</p>
-                    
                     <div style="display:flex; gap:10px;">
-                        <button onclick="processRefund('${doc.id}', '${r.userId}', ${r.amount}, 'Approved')" style="flex:1; padding:10px; background:#10b981; color:#fff; border:none; border-radius:10px; font-weight:700; cursor:pointer;">
-                            <i class="fas fa-wallet"></i> Refund to Wallet
-                        </button>
-                        <button onclick="processRefund('${doc.id}', null, 0, 'Rejected')" style="padding:10px 15px; background:#fee2e2; color:#991b1b; border:none; border-radius:10px; font-weight:700; cursor:pointer;">
-                            Reject
+                        <button onclick="toggleSellerStatus('${doc.id}', '${isVerified ? 'suspended' : 'approved'}')" 
+                                style="flex:1; padding:10px; border:none; border-radius:10px; font-weight:700; cursor:pointer;
+                                background:${isVerified ? '#fef2f2' : '#f0fdf4'}; color:${isVerified ? '#ef4444' : '#22c55e'};">
+                            ${isVerified ? 'Suspend Seller' : 'Approve Seller'}
                         </button>
                     </div>
                 </div>
@@ -990,449 +639,34 @@ async function syncRefunds() {
     });
 }
 
-// Action Handler for 8.18
-async function processRefund(refundId, userId, amount, status) {
-    if(confirm(`Are you sure you want to mark this refund as ${status}?`)) {
-        try {
-            // 1. Update the refund document status
-            await db.collection("refunds").doc(refundId).update({ status: status });
-            
-            // 2. If approved, add money to User's Wallet
-            if(status === 'Approved' && userId) {
-                const userRef = db.collection("users").doc(userId);
-                await userRef.update({
-                    walletBalance: firebase.firestore.FieldValue.increment(amount)
-                });
-                
-                // 3. Log it in the transactions ledger (8.17)
-                await db.collection("transactions").add({
-                    type: "REFUND",
-                    amount: amount,
-                    description: "Refund to Wallet",
-                    referenceId: refundId,
-                    status: "Completed",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-            
-            logAction("Admin", `${status} Refund ID: ${refundId}`, "Success");
-            alert(`Refund ${status} successfully!`);
-        } catch (e) {
-            logAction("Admin", `Refund Error: ${e.message}`, "Failed");
-            alert("Error processing refund.");
-        }
-    }
-}
-    // 1. --- FIREBASE INITIALIZATION ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-        authDomain: "srp-shopping-54bbb.firebaseapp.com",
-        databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-        projectId: "srp-shopping-54bbb",
-        storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-        messagingSenderId: "491906168702",
-        appId: "1:491906168702:web:2873565fcd2d561077252f",
-        measurementId: "G-3S7X8V8EFQ"
-    };
-    
-    // Initialize only if not already initialized
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    const rdb = firebase.database();
+/* --- UTILITIES --- */
 
-    // 2. --- MISSING UTILITY: DASHBOARD COUNTER UPDATER ---
-    function updateDashboardCounters(data) {
-        if (document.getElementById('total-orders')) {
-            document.getElementById('total-orders').innerText = data.totalOrders || 0;
-        }
-        // Add other counter updates here if needed
-    }
-
-    // 3. --- MODULE ROUTER (Critical for navigation) ---
-    function loadModule(module) {
-        if(window.innerWidth < 900) {
-            document.querySelector('.sidebar').style.display = 'none';
-        }
-
-        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-        
-        // Dynamic loading
-        if(module === 'dashboard') location.reload();
-        if(module === 'products') renderProducts();
-        if(module === 'categories') renderCategories();
-        if(module === 'orders') renderOrders();
-        if(module === 'sellers') renderSellers();
-        if(module === 'payouts') renderWithdrawals();
-        if(module === 'promotions') renderPromotions();
-        if(module === 'coupons') renderCoupons();
-        if(module === 'banners') renderBanners();
-        if(module === 'users') renderUsers();
-        if(module === 'payments') renderPaymentHistory();
-        if(module === 'refunds') renderRefunds();
-        if(module === 'settings') renderSettings();
-    }
-
-    // 4. --- LOGGING ENGINE ---
-    function logAction(actor, event, status) {
-        const timestamp = new Date().toLocaleString();
-        rdb.ref('system_logs').push({ timestamp, actor, event, status });
-    }
-
-    function syncLogs() {
-        rdb.ref('system_logs').limitToLast(10).on('value', (snapshot) => {
-            const tbody = document.getElementById('logs-body');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            snapshot.forEach((child) => {
-                const log = child.val();
-                const statusColor = log.status === 'Success' ? '#dcfce7' : '#fee2e2';
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-family: 'JetBrains Mono'; font-size: 12px;">${log.timestamp}</td>
-                        <td style="font-weight: 700;">${log.actor}</td>
-                        <td>${log.event}</td>
-                        <td><span class="badge-log" style="background: ${statusColor}">${log.status}</span></td>
-                    </tr>`;
-            });
-        });
-    }
-
-    // 5. --- DATA INTELLIGENCE ---// --- 8.6 ENHANCED GLOBAL INTELLIGENCE ---
-let sessionChart;
-
- * 8.1 INITIALIZATION & REAL-TIME CONNECTORS
- * Merged logic for traffic, sales, vendors, and session tracking.
- */
-async function initializeIntelligence() {
-    console.log("%c SRP MASTER: Booting Intelligence Engine... ", "background: #4f46e5; color: #fff; font-weight: 800;");
-    
-    // 1. Session & Access Tracking
-    const sessionRef = rdb.ref('admin_sessions');
-    sessionRef.transaction(current => (current || 0) + 1);
-    sessionRef.on('value', snap => {
-        const count = snap.val() || 0;
-        const sEl = document.getElementById('session-count');
-        if(sEl) sEl.innerText = count;
-    });
-
-    // 2. Global Counters (Users & Sellers)
-    db.collection("users").onSnapshot(snap => {
-        const uEl = document.getElementById('stat-total-users');
-        if(uEl) uEl.innerText = snap.size;
-    });
-
-    db.collection("sellers").onSnapshot(snap => {
-        const sEl = document.getElementById('total-sellers');
-        const statSEl = document.getElementById('stat-total-sellers');
-        if(sEl) sEl.innerText = snap.size;
-        if(statSEl) statSEl.innerText = snap.size;
-    });
-
-    // 3. Website Analytics (Traffic Simulation/Real-time)
-    db.collection("analytics").doc("traffic").onSnapshot(doc => {
-        if(doc.exists) {
-            const data = doc.data();
-            if(typeof updateDashboardCounters === 'function') updateDashboardCounters(data);
-        }
-    });
-
-    // 4. Order Velocity & Master Revenue Sync
-    db.collection("orders").onSnapshot(snap => {
-        const ordEl = document.getElementById('total-orders');
-        if(ordEl) ordEl.innerText = snap.size;
-        
-        let revenue = 0;
-        snap.forEach(doc => {
-            if(doc.data().status === "Delivered") {
-                revenue += Number(doc.data().totalAmount || 0);
-            }
-        });
-
-        // 8.10 Admin Commission Sync (10%)
-        const revEl = document.getElementById('total-comm');
-        if(revEl) revEl.innerText = "₹" + (revenue * 0.10).toFixed(2);
-    });
+async function updateOrderStatus(orderId, newStatus) {
+    if(!newStatus) return;
+    await db.collection("orders").doc(orderId).update({ status: newStatus });
+    logAction("System", `Order ${orderId} marked as ${newStatus}`, "Info");
 }
 
-/**
- * 8.7 ADMINISTRATIVE SECURITY & AUTH SHIELD
- */
-function validateAdminSession() {
-    firebase.auth().onAuthStateChanged(user => {
-        if (!user) {
-            console.warn("Security Alert: Unauthorized Access Attempt Detected (8.7)");
-            // Logic to handle unauthorized state
-        } else {
-            logAction("Security", "Admin Session Validated", "Success");
-        }
-    });
+async function updateTracking(orderId, trackingId) {
+    await db.collection("orders").doc(orderId).update({ trackingId: trackingId });
+    // Potential integration: Send SMS to user via external API here
+    logAction("Logistics", `India Post ID updated for ${orderId}`, "Success");
 }
 
-/**
- * 8.20 GLOBAL SETTINGS MODULE (System Architect)
- */
-function renderSettings() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top animate-up">
-            <div>
-                <h1 style="font-weight: 800;">System Architect (8.20)</h1>
-                <p>Configure global variables and app status.</p>
-            </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px;">
-            <div class="card">
-                <h3 style="margin-bottom:20px;"><i class="fas fa-server"></i> App Status</h3>
-                <label class="lbl">MAINTENANCE MODE</label>
-                <select id="s-maint" class="form-input">
-                    <option value="false">Live (Operational)</option>
-                    <option value="true">Under Maintenance</option>
-                </select>
-                
-                <label class="lbl">APP VERSION</label>
-                <input type="text" id="s-version" value="2.0.4" class="form-input">
-                
-                <button onclick="saveGlobalSettings()" style="width:100%; padding:12px; background:var(--srp-primary); color:#fff; border:none; border-radius:10px; font-weight:800; margin-top:10px; cursor:pointer;">UPDATE CORE</button>
-            </div>
-
-            <div class="card">
-                <h3 style="margin-bottom:20px;"><i class="fas fa-wallet"></i> Payment Gateway</h3>
-                <label class="lbl">MASTER UPI ID (For Seller Promos)</label>
-                <input type="text" id="s-upi" placeholder="example@ybl" class="form-input">
-                
-                <label class="lbl">ADMIN COMMISSION (%)</label>
-                <input type="number" id="s-comm" value="10" class="form-input">
-                
-                <p style="font-size:11px; color:#64748b; margin-top:10px;">*Commission is automatically deducted from seller payouts.</p>
-            </div>
-        </div>
-    `;
-    loadCurrentSettings();
+async function toggleSellerStatus(sellerId, status) {
+    await db.collection("sellers").doc(sellerId).update({ status: status });
+    logAction("Admin", `Seller ${sellerId} status changed to ${status}`, "Warning");
 }
 
-async function saveGlobalSettings() {
-    const data = {
-        maintenanceMode: document.getElementById('s-maint').value === 'true',
-        version: document.getElementById('s-version').value,
-        masterUPI: document.getElementById('s-upi').value,
-        commission: Number(document.getElementById('s-comm').value),
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await db.collection("settings").doc("global").set(data, { merge: true });
-        logAction("Admin", "Updated Global System Settings", "Success");
-        alert("System Config Synchronized!");
-    } catch (e) {
-        logAction("Admin", "Settings Error: " + e.message, "Failed");
+function getStatusColor(status) {
+    switch(status) {
+        case 'Pending': return '#f59e0b';
+        case 'Shipped': return '#3b82f6';
+        case 'Delivered': return '#10b981';
+        case 'Cancelled': return '#ef4444';
+        default: return '#64748b';
     }
 }
 
-async function loadCurrentSettings() {
-    const doc = await db.collection("settings").doc("global").get();
-    if(doc.exists) {
-        const s = doc.data();
-        document.getElementById('s-maint').value = s.maintenanceMode.toString();
-        document.getElementById('s-version').value = s.version;
-        document.getElementById('s-upi').value = s.masterUPI || "";
-        document.getElementById('s-comm').value = s.commission || 10;
-    }
-}
-
-/**
- * 8.9 SALES ANALYTICS MODULE
- */
-function renderSalesAnalytics() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top animate-up">
-            <h1 style="font-weight: 800;">Sales Intelligence (8.9)</h1>
-        </div>
-        <div class="analytics-grid">
-            <div class="card">
-                <span class="lbl">Today's Sales</span>
-                <span class="val" id="sales-today">₹0</span>
-            </div>
-            <div class="card">
-                <span class="lbl">Lifetime Sales</span>
-                <span class="val" id="sales-overall">₹0</span>
-            </div>
-            <div class="card">
-                <span class="lbl">Active Sellers</span>
-                <span class="val" id="total-sellers">0</span>
-            </div>
-        </div>
-        <div class="card">
-            <div class="table-header"><h3>Recent Shipments</h3></div>
-            <table>
-                <thead>
-                    <tr><th>Order #</th><th>Product Name</th><th>Buyer</th><th>Amount</th></tr>
-                </thead>
-                <tbody id="sales-ledger-body"></tbody>
-            </table>
-        </div>
-    `;
-    
-    const today = new Date().setHours(0,0,0,0);
-    
-    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
-        let daily = 0; let total = 0;
-        const tbody = document.getElementById('sales-ledger-body');
-        if(!tbody) return;
-        tbody.innerHTML = "";
-
-        snap.forEach(doc => {
-            const o = doc.data();
-            const amt = Number(o.totalAmount || 0);
-            total += amt;
-            if(o.timestamp && o.timestamp.toDate() >= today) daily += amt;
-
-            tbody.innerHTML += `
-                <tr>
-                    <td>#${doc.id.slice(-6).toUpperCase()}</td>
-                    <td><strong>${o.productName || 'Marketplace Item'}</strong></td>
-                    <td>${o.userName}<br><small>${o.userPhone}</small></td>
-                    <td>₹${amt}</td>
-                </tr>`;
-        });
-        document.getElementById('sales-today').innerText = `₹${daily}`;
-        document.getElementById('sales-overall').innerText = `₹${total}`;
-    });
-}
-
-/**
- * 8.10 ADMIN INCOME MODULE
- */
-let runningPromo = 0; let runningComm = 0;
-async function renderAdminIncome() {
-    const view = document.getElementById('app-view');
-    view.innerHTML = `
-        <div class="header-top">
-            <h1 style="font-weight: 800;">Income Streams (8.10)</h1>
-        </div>
-        <div class="analytics-grid">
-            <div class="card" style="background:#4f46e5; color:#fff;">
-                <span class="lbl" style="color:rgba(255,255,255,0.7)">Total Revenue Stream</span>
-                <span class="val" id="admin-income-today">₹0</span>
-            </div>
-            <div class="card">
-                <span class="lbl">Promo Income</span>
-                <span class="val" id="income-promo">₹0</span>
-            </div>
-            <div class="card">
-                <span class="lbl">Sales Commission (10%)</span>
-                <span class="val" id="income-commission">₹0</span>
-            </div>
-        </div>
-    `;
-
-    // Calculate Promo Income
-    db.collection("promotions").onSnapshot(snap => {
-        let promoTotal = 0;
-        snap.forEach(doc => promoTotal += Number(doc.data().paymentAmount || 0));
-        document.getElementById('income-promo').innerText = `₹${promoTotal}`;
-        calculateFinalProfit(promoTotal, null);
-    });
-
-    // Calculate Commissions
-    db.collection("orders").onSnapshot(snap => {
-        let commTotal = 0;
-        snap.forEach(doc => {
-            if(doc.data().status === "Delivered") {
-                commTotal += (Number(doc.data().totalAmount) * 0.10);
-            }
-        });
-        document.getElementById('income-commission').innerText = `₹${commTotal.toFixed(2)}`;
-        calculateFinalProfit(null, commTotal);
-    });
-}
-
-function calculateFinalProfit(p, c) {
-    if(p !== null) runningPromo = p;
-    if(c !== null) runningComm = c;
-    const total = runningPromo + runningComm;
-    const el = document.getElementById('admin-income-today');
-    if(el) el.innerText = `₹${total.toFixed(2)}`;
-}
-
-/**
- * PRODUCTION UTILITY: DATA FACTORY (SRP_UTILITIES)
- */
-const SRP_UTILITIES = {
-    formatCurrency: (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt),
-    generateUUID: () => 'srp-xxxx-4xxx-yxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    }),
-    exportToCSV: (data, filename) => {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += data.map(e => e.join(",")).join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `${filename}.csv`);
-        document.body.appendChild(link);
-        link.click();
-    },
-    debounce: (func, delay) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-    }
-};
-
-/**
- * 8.19 LOGGING & TABLE FLUSH
- */
-async function clearLogs() {
-    if(confirm("CRITICAL: Purge all system logs from Realtime Database?")) {
-        try {
-            await rdb.ref('system_logs').remove();
-            logAction("System", "Log Database Purged", "Success");
-            alert("Logs Cleared.");
-        } catch (e) {
-            alert("Error purging logs: " + e.message);
-        }
-    }
-}
-
-function logAction(module, message, status) {
-    const logRef = rdb.ref('system_logs').push();
-    logRef.set({
-        module,
-        message,
-        status,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    });
-}
-
-/**
- * ---------------------------------------------------------
- * FINAL BOOTSTRAP (The Master Initialization)
- * ---------------------------------------------------------
- */
-window.onload = () => {
-    // 1. Core Security
-    validateAdminSession();
-    
-    // 2. Intelligence Engine
-    initializeIntelligence();
-    
-    // 3. Load Default View
-    renderSalesAnalytics();
-    
-    // 4. Console Signature
-    logAction("System", "Enterprise Management Console Online", "Success");
-    console.log("%c SRP MASTER V2.0 DEPLOYED ", "background: #4f46e5; color: #fff; font-weight: 800; padding: 10px; border-radius: 5px;");
-};
-
-</script>
 </body>
 </html>
-
-                
