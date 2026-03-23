@@ -1068,6 +1068,99 @@ service cloud.firestore {
     }
   }
 }
+/* =========================================
+   SELLER CORE: VENDOR-SPECIFIC REVENUE & UPLOADS
+   ========================================= */
 
+/**
+ * SELLER REVENUE ENGINE
+ * Calculates total sales and pending payouts for the logged-in vendor.
+ */
+function renderSellerDashboard() {
+    const sellerId = firebase.auth().currentUser.uid;
+    const view = document.getElementById('app-view');
+    
+    view.innerHTML = `
+        <div class="header-top animate-up">
+            <h1 style="font-weight: 800;">Seller Hub: ${firebase.auth().currentUser.displayName || 'Vendor'}</h1>
+            <div id="seller-status-badge"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:30px;">
+            <div class="card" style="border-left: 5px solid #10b981;">
+                <p style="font-size:12px; color:#64748b; margin-bottom:5px;">Total Earnings</p>
+                <h2 id="s-total-earn" style="font-weight:800;">₹0</h2>
+            </div>
+            <div class="card" style="border-left: 5px solid #3b82f6;">
+                <p style="font-size:12px; color:#64748b; margin-bottom:5px;">Active Products</p>
+                <h2 id="s-total-prod" style="font-weight:800;">0</h2>
+            </div>
+        </div>
+
+        <div class="card animate-up">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="font-weight:800;">My Inventory</h3>
+                <button onclick="openProductModal()" class="btn-primary" style="padding:10px 20px; border-radius:10px; border:none; background:var(--srp-primary); color:#fff; font-weight:700; cursor:pointer;">
+                    + New Product
+                </button>
+            </div>
+            <div id="seller-product-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:15px;">
+                </div>
+        </div>
+    `;
+    syncSellerStats(sellerId);
+}
+
+/**
+ * DATA ISOLATION LOGIC
+ * Ensures the vendor only sees data where 'vendorId' matches their UID.
+ */
+async function syncSellerStats(uid) {
+    // 1. Fetch Product Count
+    db.collection("products").where("vendorId", "==", uid).onSnapshot(snap => {
+        document.getElementById('s-total-prod').innerText = snap.size;
+        const list = document.getElementById('seller-product-list');
+        list.innerHTML = "";
+        snap.forEach(doc => {
+            const p = doc.data();
+            list.innerHTML += `
+                <div style="background:#f8fafc; border-radius:12px; padding:10px; text-align:center; border:1px solid #e2e8f0;">
+                    <img src="${p.imageUrl}" style="width:100%; height:100px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+                    <div style="font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+                    <div style="font-size:11px; color:var(--srp-primary); font-weight:800;">₹${p.salePrice}</div>
+                </div>
+            `;
+        });
+    });
+
+    // 2. Fetch Earnings (Sum of delivered orders minus commission)
+    db.collection("orders")
+      .where("vendorId", "==", uid)
+      .where("status", "==", "Delivered")
+      .onSnapshot(snap => {
+          let total = 0;
+          snap.forEach(doc => total += (doc.data().totalAmount || 0));
+          document.getElementById('s-total-earn').innerText = `₹${total.toLocaleString('en-IN')}`;
+      });
+}
+
+/**
+ * VENDOR WALLET WITHDRAWAL
+ * Allows the seller to request their funds from the Admin.
+ */
+async function requestPayout() {
+    const amount = prompt("Enter amount to withdraw:");
+    if(!amount || isNaN(amount)) return;
+
+    await db.collection("payout_requests").add({
+        vendorId: firebase.auth().currentUser.uid,
+        vendorEmail: firebase.auth().currentUser.email,
+        amount: Number(amount),
+        status: 'pending',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert("Withdrawal request sent to SRP Admin.");
+}
+    </script>
 </body>
 </html>
