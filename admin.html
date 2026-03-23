@@ -288,6 +288,39 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
+
+// --- DETECTING PAGE LEAVE (Logouts) ---
+// This code goes on your MAIN SHOPPING SITE (the one users use)
+window.addEventListener('beforeunload', function (e) {
+    // This triggers when a user closes the tab or leaves the site
+    const currentUser = firebase.auth().currentUser;
+    if (currentUser) {
+        trackUserActivity(currentUser.uid, 'user', 'Left Page/Closed Tab');
+    }
+});
+
+// --- UPDATED BOOTSTRAP ---
+window.onload = () => {
+    initAnalytics();
+    loadProducts();
+    
+    // Load Activity Logs (User/Seller Logins) into 8.19 instead of Admin Logs
+    db.ref('activity_logs').limitToLast(30).on('value', snap => {
+        const container = document.getElementById('logs-container');
+        container.innerHTML = "<h3 style='color:#0f0'>LIVE USER/SELLER ACTIVITY</h3>";
+        
+        snap.forEach(child => {
+            const log = child.val();
+            container.innerHTML += `
+                <div style="margin-bottom:8px">
+                    [${log.timestamp}] <b style="color:#fff">${log.name}</b> (${log.userType}) 
+                    - <span style="color:#f9ca24">${log.action}</span> 
+                    <br><small style="color:#888">Mail: ${log.email} | Addr: ${log.address}</small>
+                </div>`;
+        });
+    });
+};
+
 // --- 8.8 & 8.15 USER/SELLER ACTIVITY TRACKING ---
 
 // Function to log Activity (Login, Logout, Page Leave)
@@ -368,7 +401,6 @@ window.onload = () => {
         });
     });
 };
-
 
 // --- 8.1 UPDATED PRODUCT MANAGEMENT (FIXED DELETE) ---
 function addProduct() {
