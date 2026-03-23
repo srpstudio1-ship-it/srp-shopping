@@ -350,7 +350,317 @@ loadCategories();
 loadFeatured();
 loadBanners();
 loadStats();
+// =========================
+// 8.2 ORDERS MANAGEMENT
+// =========================
 
+function loadOrders(){
+db.ref('orders').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let o = d.val();
+
+html += `
+<div class="bg-white p-3 mb-2 border">
+<b>Order ID:</b> ${d.key}<br>
+<b>User:</b> ${o.name}<br>
+<b>Phone:</b> ${o.phone}<br>
+<b>Email:</b> ${o.email}<br>
+<b>Address:</b> ${o.address} - ${o.pincode}<br>
+<b>Status:</b> ${o.status}<br>
+
+<input placeholder="Tracking ID" id="track_${d.key}" class="border p-1">
+<button onclick="updateTracking('${d.key}')">Update</button>
+
+</div>
+`;
+
+});
+
+orders.innerHTML = html;
+
+});
+}
+
+function updateTracking(id){
+
+let tracking = document.getElementById('track_'+id).value;
+
+db.ref('orders/'+id).update({
+trackingId:tracking,
+status:"Shipped"
+});
+
+alert("Tracking Updated");
+
+}
+
+// =========================
+// 8.3 WITHDRAWALS
+// =========================
+
+function loadWithdrawals(){
+
+db.ref('withdrawals').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let w = d.val();
+
+html += `
+<div class="bg-white p-3 mb-2">
+Seller: ${w.seller}<br>
+Amount: ₹${w.amount}<br>
+
+<button onclick="approveW('${d.key}')">Approve</button>
+<button onclick="rejectW('${d.key}')">Reject</button>
+<button onclick="paidW('${d.key}')">Mark Paid</button>
+</div>
+`;
+
+});
+
+withdrawals.innerHTML = html;
+
+});
+}
+
+function approveW(id){
+db.ref('withdrawals/'+id).update({status:'Approved'});
+}
+
+function rejectW(id){
+db.ref('withdrawals/'+id).update({status:'Rejected'});
+}
+
+function paidW(id){
+db.ref('withdrawals/'+id).update({status:'Paid'});
+}
+
+// =========================
+// 8.12 COUPON SYSTEM
+// =========================
+
+function createCoupon(){
+
+let code = prompt("Enter Code");
+let discount = prompt("Discount %");
+let expiry = prompt("Expiry Date");
+let limit = prompt("Usage limit per user");
+
+db.ref('coupons/'+code).set({
+discount, expiry, limit
+});
+
+alert("Coupon Created");
+
+}
+
+function loadCoupons(){
+
+db.ref('coupons').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+let c = d.val();
+
+html += `<div>${d.key} - ${c.discount}% 
+<button onclick="delCoupon('${d.key}')">Delete</button></div>`;
+});
+
+coupon.innerHTML = html;
+
+});
+}
+
+function delCoupon(id){
+db.ref('coupons/'+id).remove();
+}
+
+// =========================
+// 8.15 USERS
+// =========================
+
+function loadUsers(){
+
+db.ref('users').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let u = d.val();
+
+html += `
+<div class="border p-2">
+${u.name} - ${u.email}
+<button onclick="blockUser('${d.key}')">Block</button>
+<button onclick="deleteUser('${d.key}')">Delete</button>
+</div>
+`;
+
+});
+
+users.innerHTML = html;
+
+});
+}
+
+function blockUser(id){
+db.ref('users/'+id).update({blocked:true});
+}
+
+function deleteUser(id){
+db.ref('users/'+id).remove();
+}
+
+// =========================
+// 8.16 SELLERS
+// =========================
+
+function loadSellers(){
+
+db.ref('sellers').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let s = d.val();
+
+html += `
+<div class="border p-2">
+${s.name}
+<button onclick="approveSeller('${d.key}')">Approve</button>
+<button onclick="rejectSeller('${d.key}')">Reject</button>
+<button onclick="suspendSeller('${d.key}')">Suspend</button>
+</div>
+`;
+
+});
+
+sellers.innerHTML = html;
+
+});
+}
+
+function approveSeller(id){
+db.ref('sellers/'+id).update({status:'Approved'});
+}
+
+function rejectSeller(id){
+db.ref('sellers/'+id).update({status:'Rejected'});
+}
+
+function suspendSeller(id){
+db.ref('sellers/'+id).update({status:'Suspended'});
+}
+
+// =========================
+// 8.14 REVIEWS
+// =========================
+
+function loadReviews(){
+
+db.ref('reviews').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let r = d.val();
+
+html += `
+<div class="border p-2">
+${r.text}
+<button onclick="approveReview('${d.key}')">Approve</button>
+<button onclick="deleteReview('${d.key}')">Delete</button>
+</div>
+`;
+
+});
+
+reviews.innerHTML = html;
+
+});
+}
+
+function approveReview(id){
+db.ref('reviews/'+id).update({approved:true});
+}
+
+function deleteReview(id){
+db.ref('reviews/'+id).remove();
+}
+
+// =========================
+// 8.17 PAYMENTS
+// =========================
+
+function loadPayments(){
+
+db.ref('payments').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let p = d.val();
+
+html += `
+<div class="border p-2">
+User: ${p.user}<br>
+Amount: ₹${p.amount}<br>
+Type: ${p.type}
+</div>
+`;
+
+});
+
+payments.innerHTML = html;
+
+});
+}
+
+// =========================
+// 8.8 WEBSITE ANALYTICS
+// =========================
+
+function loadAnalytics(){
+
+db.ref('analytics').once('value').then(s=>{
+
+let a = s.val() || {};
+
+analytics.innerHTML = `
+<div class="bg-white p-3">Total Users: ${a.users||0}</div>
+<div class="bg-white p-3">Total Sellers: ${a.sellers||0}</div>
+<div class="bg-white p-3">Today Users: ${a.todayUsers||0}</div>
+<div class="bg-white p-3">Visits: ${a.visits||0}</div>
+`;
+
+});
+
+}
+
+// =========================
+// INIT CALLS
+// =========================
+
+loadOrders();
+loadWithdrawals();
+loadCoupons();
+loadUsers();
+loadSellers();
+loadReviews();
+loadPayments();
+loadAnalytics();
 </script>
 
 </body>
