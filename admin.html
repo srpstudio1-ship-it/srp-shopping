@@ -273,24 +273,23 @@
         </section>
     </div> </div> ```
 
-<script>
-
+<script>            
 // --- FIREBASE INITIALIZATION ---
 const firebaseConfig = {
-  apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-  authDomain: "srp-shopping-54bbb.firebaseapp.com",
-  databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-  projectId: "srp-shopping-54bbb",
-  storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-  messagingSenderId: "491906168702",
-  appId: "1:491906168702:web:2873565fcd2d561077252f"
+    apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+    authDomain: "srp-shopping-54bbb.firebaseapp.com",
+    databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+    projectId: "srp-shopping-54bbb",
+    storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+    messagingSenderId: "491906168702",
+    appId: "1:491906168702:web:2873565fcd2d561077252f"
 };
 
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
 
-// --- 1. CORE NAVIGATION ---
+// --- 1. CORE NAVIGATION & UI ---
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('collapsed');
     document.getElementById('main-content').classList.toggle('expanded');
@@ -302,35 +301,51 @@ function showSection(sectionId) {
     document.getElementById(sectionId).classList.add('active');
     
     // Highlight the clicked nav item
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
+    document.querySelectorAll('.nav-item').forEach(item => {
         if(item.getAttribute('onclick').includes(sectionId)) item.classList.add('active');
     });
+    logAction("Navigated to: " + sectionId);
 }
 
-// --- 2. ACTIVITY & LOGGING (8.19) ---
+// --- 2. UNIVERSAL LOGGING SYSTEM (8.19) ---
 function logAction(action) {
     db.ref('system_logs').push({
+        type: "ADMIN_ACTION",
         action: action,
         time: new Date().toLocaleString(),
         admin: "SuperAdmin"
     });
 }
 
-// Global Activity Tracker for Users/Sellers
 function trackUserActivity(userId, userType, action) {
-    const activityRef = db.ref('activity_logs').push();
     db.ref(`${userType}s/${userId}`).once('value', snap => {
         const userData = snap.val() || {};
-        activityRef.set({
+        db.ref('system_logs').push({
+            type: "USER_ACTIVITY",
             name: userData.name || userData.shopName || "Unknown",
             email: userData.email || "N/A",
-            phone: userData.phone || "N/A",
-            address: userData.address || "N/A",
-            userType: userType,
             action: action,
-            timestamp: new Date().toLocaleString()
+            time: new Date().toLocaleString(),
+            details: `Phone: ${userData.phone || 'N/A'} | Addr: ${userData.address || 'N/A'}`
         });
+    });
+}
+
+function loadUnifiedLogs() {
+    db.ref('system_logs').limitToLast(50).on('value', snap => {
+        const container = document.getElementById('logs-container');
+        container.innerHTML = "<h3 style='color:#0f0'>SYSTEM & LIVE ACTIVITY LOGS</h3>";
+        snap.forEach(child => {
+            const log = child.val();
+            const is_admin = log.type === "ADMIN_ACTION";
+            const color = is_admin ? "#3498db" : "#27ae60";
+            container.innerHTML += `
+                <div style="color: ${color}; margin-bottom: 8px; border-bottom: 1px solid #222; padding: 4px;">
+                    [${log.time}] <b>${is_admin ? 'ADMIN' : log.name}:</b> ${log.action}
+                    ${log.details ? `<br><small style="color:#888; margin-left: 20px;">${log.details}</small>` : ''}
+                </div>`;
+        });
+        container.scrollTop = container.scrollHeight;
     });
 }
 
@@ -338,99 +353,25 @@ function trackUserActivity(userId, userType, action) {
 function initAnalytics() {
     db.ref('users').on('value', s => document.getElementById('stat-total-users').innerText = s.numChildren());
     db.ref('sellers').on('value', s => document.getElementById('stat-total-sellers').innerText = s.numChildren());
-    db.ref('activity_logs').on('value', s => document.getElementById('stat-today-visits').innerText = s.numChildren());
-
-    // Click listeners to show details in the Log box
-    document.getElementById('stat-total-users').parentElement.onclick = () => showDetailedData('users', 'User Directory');
-    document.getElementById('stat-total-sellers').parentElement.onclick = () => showDetailedData('sellers', 'Seller Directory');
+    
+    // Quick Report functionality for Analytics Cards
+    document.getElementById('stat-total-users').parentElement.onclick = () => showDetailedData('users', 'Users');
+    document.getElementById('stat-total-sellers').parentElement.onclick = () => showDetailedData('sellers', 'Sellers');
 }
 
 function showDetailedData(path, title) {
     db.ref(path).once('value', snap => {
         const container = document.getElementById('logs-container');
-        container.innerHTML = `<h3 style="color:#0f0">--- ${title} ---</h3>`;
+        container.innerHTML = `<h3 style="color:#f1c40f">--- ${title} Detailed Report ---</h3>`;
         snap.forEach(child => {
             const d = child.val();
             container.innerHTML += `
-                <div style="border-bottom:1px solid #222; padding:5px; margin-bottom:5px">
-                    <b>${d.name || d.shopName}</b> | ${d.email} | ${d.phone || 'No Phone'}<br>
-                    <small>Addr: ${d.address || 'No Address'}</small>
+                <div style="border-bottom:1px solid #333; padding:8px;">
+                    <b>${d.name || d.shopName}</b> | ${d.email}<br>
+                    <small>Contact: ${d.phone || 'N/A'} | Status: ${d.status || 'Active'}</small>
                 </div>`;
         });
         showSection('sec-logs');
-        document.getElementById('sec-logs').scrollIntoView();
-    });
-}
-// --- 8.15 USER MANAGEMENT ACTION ---
-function toggleUserStatus(userId, newStatus) {
-    db.ref('users/' + userId).update({ status: newStatus })
-    .then(() => {
-        alert("User is now " + newStatus);
-        logAction("Changed User " + userId + " status to " + newStatus);
-    });
-}
-
-// --- 8.16 SELLER MANAGEMENT ACTION ---
-function updateSellerStatus(sellerId, newStatus) {
-    db.ref('sellers/' + sellerId).update({ status: newStatus })
-    .then(() => {
-        alert("Seller is now " + newStatus);
-        logAction("Seller " + sellerId + " marked as " + newStatus);
-    });
-}
-// --- UNIVERSAL LOGGING (Old Admin Work + New User Work) ---
-
-// 1. Function for Admin Actions (Old Work)
-function logAction(action) {
-    const logRef = db.ref('system_logs').push();
-    logRef.set({
-        type: "ADMIN_ACTION",
-        action: action,
-        time: new Date().toLocaleString(),
-        admin: "SuperAdmin" // Tracks what YOU do
-    });
-}
-
-// 2. Function for User/Seller Activity (New Work)
-// Call this from your main website during Login/Logout
-function trackUserActivity(userId, userType, action) {
-    const logRef = db.ref('system_logs').push(); // Sending to same branch
-    db.ref(`${userType}s/${userId}`).once('value', snap => {
-        const userData = snap.val() || {};
-        logRef.set({
-            type: "USER_ACTIVITY",
-            name: userData.name || userData.shopName || "Unknown",
-            email: userData.email || "N/A",
-            action: action, // e.g., "Logged In", "Left Page"
-            time: new Date().toLocaleString(),
-            details: `Phone: ${userData.phone} | Addr: ${userData.address}`
-        });
-    });
-}
-
-// 3. Unified Display for 8.19
-function loadUnifiedLogs() {
-    db.ref('system_logs').limitToLast(40).on('value', snap => {
-        const container = document.getElementById('logs-container');
-        container.innerHTML = "<h3 style='color:#0f0'>SYSTEM & ACTIVITY LOGS</h3>";
-        
-        snap.forEach(child => {
-            const log = child.val();
-            if (log.type === "ADMIN_ACTION") {
-                // Style for your old work (Admin actions)
-                container.innerHTML += `
-                    <div style="color: #3498db; margin-bottom: 5px;">
-                        [${log.time}] <b>ADMIN:</b> ${log.action}
-                    </div>`;
-            } else {
-                // Style for new work (User/Seller activity)
-                container.innerHTML += `
-                    <div style="color: #27ae60; margin-bottom: 5px;">
-                        [${log.time}] <b>${log.name}:</b> ${log.action} 
-                        <br><small style="color: #888; margin-left: 20px;">${log.details}</small>
-                    </div>`;
-            }
-        });
     });
 }
 
@@ -438,395 +379,194 @@ function loadUnifiedLogs() {
 function addProduct() {
     const name = document.getElementById('prod-name').value;
     const mrp = document.getElementById('prod-mrp').value;
-    if(!name || !mrp) return alert("Fill required fields");
+    const file = document.getElementById('prod-img').files[0];
+    
+    if(!name || !mrp) return alert("Fill Name and MRP");
 
-    const newProdRef = db.ref('products').push();
+    const newRef = db.ref('products').push();
     const uniqueID = "SRP-" + Math.random().toString(36).substr(2, 6).toUpperCase();
 
-    newProdRef.set({
+    const data = {
         id: uniqueID,
-        dbKey: newProdRef.key,
-        name: name,
-        mrp: mrp,
+        dbKey: newRef.key,
+        name: name, mrp: mrp,
         discount: document.getElementById('prod-discount').value,
         category: document.getElementById('prod-cat').value,
         stock: document.getElementById('prod-stock').value,
         description: document.getElementById('prod-desc').value,
         timestamp: Date.now()
-    }).then(() => {
-        alert("Product Added: " + uniqueID);
-        logAction("Added Product " + uniqueID);
-    });
+    };
+
+    if (file) {
+        const sRef = storage.ref('products/' + uniqueID);
+        sRef.put(file).then(snap => snap.ref.getDownloadURL().then(url => {
+            data.imageUrl = url;
+            newRef.set(data).then(() => alert("Product Added with Image!"));
+        }));
+    } else {
+        newRef.set(data).then(() => alert("Product Added!"));
+    }
+    logAction("Added Product: " + uniqueID);
 }
 
-function deleteProduct(dbKey) {
-    if(confirm("Are you sure you want to delete this?")) {
-        db.ref('products').child(dbKey).remove().then(() => {
-            alert("Deleted");
-            logAction("Deleted Product: " + dbKey);
-        });
+function deleteProduct(key) {
+    if(confirm("Confirm deletion?")) {
+        db.ref('products').child(key).remove();
+        logAction("Deleted product with key: " + key);
     }
 }
 
-// --- 5. DATA SYNC & LOADING ---
+// --- 5. DATA SYNC (Orders, Users, Sellers, etc.) ---
 function startDataSync() {
-    // Products
+    // Sync Products
     db.ref('products').on('value', snap => {
         const list = document.getElementById('product-list');
         list.innerHTML = "";
         snap.forEach(child => {
             const p = child.val();
             list.innerHTML += `<tr>
-                <td>${p.id}</td>
-                <td><img src="${p.imageUrl || 'https://via.placeholder.com/40'}" width="40"></td>
-                <td>${p.name}</td>
-                <td>₹${p.discount}</td>
-                <td>${p.stock}</td>
+                <td>${p.id}</td><td><img src="${p.imageUrl || 'https://via.placeholder.com/40'}" width="40"></td>
+                <td>${p.name}</td><td>₹${p.discount}</td><td>${p.stock}</td>
                 <td><button class="btn-delete" onclick="deleteProduct('${child.key}')">Delete</button></td>
             </tr>`;
         });
     });
 
-    // Orders
-    db.ref('orders').on('value', snap => {
-        const list = document.getElementById('order-list');
-        list.innerHTML = "";
-        snap.forEach(child => {
-            const o = child.val();
-            list.innerHTML += `<tr>
-                <td>${o.id}</td><td>${o.userName}</td><td>${o.phone}</td>
-                <td>${o.status}</td>
-                <td><input type="text" value="${o.trackingId || ''}" onchange="db.ref('orders/${child.key}').update({trackingId:this.value})"></td>
-                <td><button>View</button></td>
-            </tr>`;
-        });
-    });
-
-    // Activity Logs (8.19)
-    db.ref('activity_logs').limitToLast(20).on('value', snap => {
-        const container = document.getElementById('logs-container');
-        container.innerHTML = "<h3 style='color:#0f0'>LIVE ACTIVITY</h3>";
-        snap.forEach(child => {
-            const log = child.val();
-            container.innerHTML += `<div>[${log.timestamp}] <b>${log.name}</b>: ${log.action}</div>`;
-        });
-    });
-}
-
-// --- 6. SINGLE INITIALIZATION ---
-window.onload = () => {
-    initAnalytics();
-    startDataSync();
-    console.log("SRP Admin Panel Connected.");
-};
-
-
-
-// --- 8.11 CATEGORY ---
-function addCategory() {
-    const name = document.getElementById('cat-name').value;
-    const icon = document.getElementById('cat-icon').value;
-    db.ref('categories').push({ name, icon });
-}
-
-// --- 8.20 PLATFORM SETTINGS ---
-function saveSettings() {
-    const settings = {
-        name: document.getElementById('site-name').value,
-        email: document.getElementById('support-email').value,
-        maintenance: document.getElementById('maintenance-mode').value
-    };
-    db.ref('settings').set(settings).then(() => alert("Settings Updated"));
-}
-// --- 8.2 ORDER MANAGEMENT & 8.6 GLOBAL DASHBOARD ---
-function loadOrders() {
+    // Sync Orders (8.2 & 8.6)
     db.ref('orders').on('value', snap => {
         const orderList = document.getElementById('order-list');
         const globalList = document.getElementById('global-order-list');
         orderList.innerHTML = ""; globalList.innerHTML = "";
-        
         snap.forEach(child => {
             const o = child.val();
-            const row = `<tr>
-                <td>${o.id}</td>
-                <td>${o.userName}</td>
-                <td>${o.phone}</td>
+            orderList.innerHTML += `<tr>
+                <td>${o.id}</td><td>${o.userName}</td><td>${o.phone}</td>
                 <td><span class="status-badge" style="background:#ffeaa7">${o.status}</span></td>
-                <td><input type="text" value="${o.trackingId || ''}" onchange="updateTracking('${o.id}', this.value)"></td>
-                <td><button onclick="viewOrderDetails('${o.id}')">View</button></td>
+                <td><input type="text" value="${o.trackingId || ''}" onchange="db.ref('orders/${child.key}').update({trackingId:this.value, status:'Shipped'})"></td>
+                <td><button>View</button></td>
             </tr>`;
-            orderList.innerHTML += row;
-            
-            // Populate Global Dashboard (8.6)
-            globalList.innerHTML += `<tr>
-                <td>${o.id}</td>
-                <td>${o.sellerName}</td>
-                <td>₹${o.amount}</td>
-                <td>₹${(o.amount * 0.1).toFixed(2)}</td>
-            </tr>`;
+            globalList.innerHTML += `<tr><td>${o.id}</td><td>${o.sellerName || 'Direct'}</td><td>₹${o.amount}</td><td>₹${(o.amount * 0.1).toFixed(2)}</td></tr>`;
         });
     });
-}
 
-function updateTracking(orderId, val) {
-    db.ref('orders/' + orderId).update({ trackingId: val, status: 'Shipped' });
-    logAction("Updated Tracking for Order: " + orderId);
-}
+    // Sync Users (8.15)
+    db.ref('users').on('value', snap => {
+        const list = document.getElementById('user-list-body');
+        list.innerHTML = "";
+        snap.forEach(child => {
+            const u = child.val();
+            list.innerHTML += `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.status || 'Active'}</td>
+                <td><button onclick="toggleUserStatus('${child.key}', 'Blocked')">Block</button></td></tr>`;
+        });
+    });
 
-// --- 8.3 & 8.16 SELLER MANAGEMENT ---
-function loadSellers() {
+    // Sync Sellers (8.16)
     db.ref('sellers').on('value', snap => {
-        const withdrawalList = document.getElementById('withdrawal-list');
-        const sellerApproval = document.getElementById('seller-approval-list');
-        withdrawalList.innerHTML = ""; sellerApproval.innerHTML = "";
-
+        const list = document.getElementById('seller-approval-list');
+        list.innerHTML = "";
         snap.forEach(child => {
             const s = child.val();
-            // 8.16 Approval UI
-            sellerApproval.innerHTML += `<div class="card">
-                ${s.shopName} (${s.email}) 
-                <button onclick="updateSellerStatus('${s.id}', 'Approved')">Approve</button>
-                <button class="btn-delete" onclick="updateSellerStatus('${s.id}', 'Suspended')">Suspend</button>
+            list.innerHTML += `<div class="card" style="padding:10px; border:1px solid #ddd; margin-bottom:10px;">
+                <b>${s.shopName}</b> (${s.email}) - Status: ${s.status || 'Pending'}
+                <br><button onclick="updateSellerStatus('${child.key}', 'Approved')">Approve</button>
+                <button class="btn-delete" onclick="updateSellerStatus('${child.key}', 'Suspended')">Suspend</button>
             </div>`;
         });
     });
-}
 
-// --- 8.5 FEATURED PRODUCTS ---
-function pinProduct() {
-    const id = document.getElementById('feat-prod-id').value;
-    const priority = document.getElementById('feat-priority').value;
-    if(!id) return;
-    db.ref('featured_products/' + id).set({
-        productId: id,
-        priority: priority,
-        timestamp: Date.now()
-    }).then(() => alert("Product Pinned to Homepage"));
-}
-
-// --- 8.12 COUPON MANAGEMENT ---
-function createCoupon() {
-    const code = document.getElementById('cp-code').value;
-    const perc = document.getElementById('cp-perc').value;
-    const expiry = document.getElementById('cp-expiry').value;
-    if(!code || !perc) return;
-    db.ref('coupons/' + code).set({
-        code: code,
-        discount: perc,
-        expiry: expiry,
-        usageLimit: 1
-    }).then(() => alert("Coupon Created: " + code));
-}
-
-// --- 8.14 REVIEW MODERATION ---
-function loadReviews() {
-    db.ref('reviews').on('value', snap => {
-        const container = document.getElementById('review-moderation-list');
-        container.innerHTML = "";
-        snap.forEach(child => {
-            const r = child.val();
-            container.innerHTML += `<div class="card">
-                <b>Prod ID: ${r.productId}</b>: "${r.comment}" 
-                <button class="btn-delete" onclick="deleteReview('${child.key}')">Delete Fake Review</button>
-            </div>`;
-        });
-    });
-}
-
-function deleteReview(key) {
-    if(confirm("Delete this review?")) db.ref('reviews/' + key).remove();
-}
-
-
-// --- 8.18 REFUND SYSTEM ---
-function loadRefunds() {
-    db.ref('refunds').on('value', snap => {
-        const container = document.getElementById('refund-requests-container');
-        container.innerHTML = "";
-        snap.forEach(child => {
-            const ref = child.val();
-            container.innerHTML += `<div class="card">
-                Order: ${ref.orderId} - Amount: ₹${ref.amount}
-                <button onclick="processRefund('${child.key}', 'Approved')">Approve to Wallet</button>
-                <button class="btn-delete" onclick="processRefund('${child.key}', 'Rejected')">Reject</button>
-            </div>`;
-        });
-    });
-}
-
-// --- 8.13 BANNER MANAGEMENT ---
-function uploadBanner() {
-    const file = document.getElementById('banner-upload').files[0];
-    const link = document.getElementById('banner-link').value;
-    if(!file) return alert("Select an image");
-
-    const storageRef = storage.ref('banners/' + file.name);
-    storageRef.put(file).then(snapshot => {
-        snapshot.ref.getDownloadURL().then(url => {
-            db.ref('banners').push({ url, link });
-            alert("Banner Uploaded!");
-        });
-    });
-}
-    // --- 8.3 SELLER WITHDRAWAL APPROVAL ---
-function loadWithdrawals() {
+    // Sync Withdrawals (8.3)
     db.ref('withdrawals').on('value', snap => {
         const list = document.getElementById('withdrawal-list');
         list.innerHTML = "";
         snap.forEach(child => {
             const w = child.val();
-            list.innerHTML += `<tr>
-                <td>${w.sellerName}</td>
-                <td>₹${w.balance}</td>
-                <td>₹${w.amount}</td>
-                <td><span class="status-badge" style="background:${w.status==='Paid'?'#dff9fb':'#f9ca24'}">${w.status}</span></td>
-                <td>
-                    <button onclick="updateWithdrawal('${child.key}', 'Paid')">Mark as Paid</button>
-                    <button class="btn-delete" onclick="updateWithdrawal('${child.key}', 'Rejected')">Reject</button>
-                </td>
-            </tr>`;
+            list.innerHTML += `<tr><td>${w.sellerName}</td><td>₹${w.balance}</td><td>₹${w.amount}</td><td>${w.status}</td>
+                <td><button onclick="db.ref('withdrawals/${child.key}').update({status:'Paid'})">Mark Paid</button></td></tr>`;
         });
     });
 }
 
-function updateWithdrawal(id, status) {
-    db.ref('withdrawals/' + id).update({ status: status });
-    logAction(`Withdrawal ${id} marked as ${status}`);
+// --- 6. MANAGEMENT ACTIONS ---
+function toggleUserStatus(id, status) {
+    db.ref('users/' + id).update({ status: status });
+    logAction(`User ${id} set to ${status}`);
 }
 
-// --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
-function loadPromotions() {
-    db.ref('promotions').on('value', snap => {
-        const list = document.getElementById('promotion-list');
-        list.innerHTML = "";
-        snap.forEach(child => {
-            const p = child.val();
-            list.innerHTML += `<tr>
-                <td>${p.sellerName}</td>
-                <td>PAN: ${p.pan} <br> GST: ${p.gst}</td>
-                <td>₹${p.amount}</td>
-                <td>ID: ${p.productId}</td>
-            </tr>`;
-        });
+function updateSellerStatus(id, status) {
+    db.ref('sellers/' + id).update({ status: status });
+    logAction(`Seller ${id} set to ${status}`);
+}
+
+function addCategory() {
+    const name = document.getElementById('cat-name').value;
+    const icon = document.getElementById('cat-icon').value;
+    if(name) db.ref('categories').push({ name, icon }).then(() => {
+        alert("Category Added");
+        logAction("Added Category: " + name);
     });
 }
 
-// --- 8.7 ADMIN SECURITY ---
+function createCoupon() {
+    const code = document.getElementById('cp-code').value;
+    db.ref('coupons/' + code).set({
+        code: code,
+        discount: document.getElementById('cp-perc').value,
+        expiry: document.getElementById('cp-expiry').value
+    }).then(() => alert("Coupon Created"));
+}
+
+function uploadBanner() {
+    const file = document.getElementById('banner-upload').files[0];
+    if(!file) return alert("Select File");
+    const sRef = storage.ref('banners/' + file.name);
+    sRef.put(file).then(snap => snap.ref.getDownloadURL().then(url => {
+        db.ref('banners').push({ url: url, link: document.getElementById('banner-link').value });
+        alert("Banner Live!");
+    }));
+}
+
 function updateAdminPass() {
-    const newPass = document.getElementById('new-admin-pass').value;
-    if(newPass.length < 6) return alert("Password too short!");
-    db.ref('admin_settings/security').update({ password: newPass })
-        .then(() => { alert("Password Updated!"); logAction("Admin password changed"); });
+    const newP = document.getElementById('new-admin-pass').value;
+    db.ref('admin_settings/security').update({ password: newP }).then(() => alert("Security Updated"));
 }
 
-// --- 8.9 & 8.10 SALES & INCOME ANALYTICS ---
+function saveSettings() {
+    db.ref('settings').update({
+        siteName: document.getElementById('site-name').value,
+        supportEmail: document.getElementById('support-email').value,
+        maintenance: document.getElementById('maintenance-mode').value
+    }).then(() => alert("Global Settings Applied"));
+}
+
+// --- 7. SALES ANALYTICS (8.9 & 8.10) ---
 function loadSalesAnalytics() {
     db.ref('orders').on('value', snap => {
-        let totalSales = 0;
-        let totalOrders = 0;
-        let totalComm = 0;
-        
-        snap.forEach(child => {
-            const o = child.val();
-            totalSales += parseFloat(o.amount || 0);
-            totalOrders++;
-            totalComm += (parseFloat(o.amount || 0) * 0.10); // 10% Platform Fee
+        let sales = 0, count = 0, comm = 0;
+        snap.forEach(c => {
+            const o = c.val();
+            sales += parseFloat(o.amount || 0);
+            count++;
+            comm += (o.amount * 0.10);
         });
-
-        document.getElementById('sales-total-amt').innerText = "₹" + totalSales.toLocaleString();
-        document.getElementById('sales-total-orders').innerText = totalOrders;
-        document.getElementById('inc-comm').innerText = "₹" + totalComm.toLocaleString();
-        
-        // Promotion Income (8.10)
-        db.ref('promotions').on('value', pSnap => {
-            let promoIncome = 0;
-            pSnap.forEach(p => promoIncome += parseFloat(p.amount || 0));
-            document.getElementById('inc-ads').innerText = "₹" + promoIncome.toLocaleString();
-            document.getElementById('inc-total').innerText = "₹" + (totalComm + promoIncome).toLocaleString();
-        });
+        document.getElementById('sales-total-amt').innerText = "₹" + sales.toLocaleString();
+        document.getElementById('sales-total-orders').innerText = count;
+        document.getElementById('inc-comm').innerText = "₹" + comm.toLocaleString();
+        document.getElementById('inc-total').innerText = "₹" + comm.toLocaleString();
     });
 }
 
-// --- 8.17 PAYMENT HISTORY ---
-function loadPaymentHistory() {
-    db.ref('transactions').on('value', snap => {
-        const list = document.getElementById('payment-list-body');
-        list.innerHTML = "";
-        snap.forEach(child => {
-            const t = child.val();
-            list.innerHTML += `<tr>
-                <td>${t.date}</td>
-                <td>${t.type}</td>
-                <td>₹${t.amount}</td>
-                <td>${t.status}</td>
-            </tr>`;
-        });
-    });
-}
-
-// --- 8.15 & 8.16 USER & SELLER MANAGEMENT ---
-function toggleUserStatus(userId, status) {
-    db.ref('users/' + userId).update({ status: status });
-    logAction(`User ${userId} status set to ${status}`);
-}
-
-function updateSellerStatus(sellerId, status) {
-    db.ref('sellers/' + sellerId).update({ status: status });
-    logAction(`Seller ${sellerId} ${status}`);
-}
-
-// --- PRODUCT DELETE (8.1) ---
-function deleteProduct(id) {
-    if(confirm("Are you sure?")) {
-        db.ref('products/' + id).remove();
-        logAction("Deleted product: " + id);
-    }
-}
-
-// --- SYNC ALL DATA ON LOAD ---
-function syncAllData() {
-    loadWithdrawals();
-    loadPromotions();
-    loadSalesAnalytics();
-    loadPaymentHistory();
-    
-    // Load existing products (8.1)
-    db.ref('products').on('value', snap => {
-        const list = document.getElementById('product-list');
-        list.innerHTML = "";
-        snap.forEach(child => {
-            const p = child.val();
-            list.innerHTML += `<tr>
-                <td>${p.id}</td>
-                <td><img src="${p.imageUrl || 'https://via.placeholder.com/40'}" width="40"></td>
-                <td>${p.name}</td>
-                <td>₹${p.discount}</td>
-                <td>${p.stock}</td>
-                <td><button class="btn-delete" onclick="deleteProduct('${p.id}')">Delete</button></td>
-            </tr>`;
-        });
-    });
-}
-
-
-// --- UPDATE THE INITIALIZE FUNCTION ---
-const originalInit = window.onload;
-window.onload = () => {
-    if (originalInit) originalInit();
-    loadOrders();
-    loadSellers();
-    loadUsers();
-    loadReviews();
-    loadRefunds();
-};
-
-// Initialize on Load
-window.onload = () => {
+// --- 8. SYSTEM INITIALIZATION (BOOTSTRAP) ---
+window.onload = function() {
     initAnalytics();
-    loadLogs();
-    syncAllData(); // Added this to start all new functions
+    loadUnifiedLogs();
+    startDataSync();
+    loadSalesAnalytics();
+    console.log("SRP Global Admin Panel Connected Successfully.");
 };
 
 </script>
+
+
+
 </body>
 </html>
