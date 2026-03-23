@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SRP ADMIN PANEL</title>
+<title>SRP ADMIN PANEL FINAL</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -28,11 +28,15 @@ body { font-family: Arial; }
 
 <ul class="space-y-2">
 <li onclick="openTab('dashboard')" class="cursor-pointer">Dashboard</li>
+<li onclick="openTab('users')" class="cursor-pointer">Users</li>
+<li onclick="openTab('sellers')" class="cursor-pointer">Sellers</li>
 <li onclick="openTab('products')" class="cursor-pointer">Products</li>
 <li onclick="openTab('orders')" class="cursor-pointer">Orders</li>
 <li onclick="openTab('withdraw')" class="cursor-pointer">Withdrawals</li>
-<li onclick="openTab('category')" class="cursor-pointer">Category</li>
-<li onclick="openTab('banner')" class="cursor-pointer">Banner</li>
+<li onclick="openTab('coupons')" class="cursor-pointer">Coupons</li>
+<li onclick="openTab('reviews')" class="cursor-pointer">Reviews</li>
+<li onclick="openTab('analytics')" class="cursor-pointer">Analytics</li>
+<li onclick="openTab('settings')" class="cursor-pointer">Settings</li>
 </ul>
 </div>
 
@@ -43,44 +47,31 @@ body { font-family: Arial; }
 <h2 class="text-xl font-bold">Dashboard</h2>
 </div>
 
+<div id="users" class="tab hidden"></div>
+<div id="sellers" class="tab hidden"></div>
+
 <!-- PRODUCTS -->
 <div id="products" class="tab hidden">
-
 <input id="pName" placeholder="Name" class="border p-2 w-full mb-2">
 <input id="pPrice" placeholder="Price" class="border p-2 w-full mb-2">
 <input type="file" id="pImage" class="mb-2">
 <button onclick="addProduct()" class="bg-blue-600 text-white px-3 py-1">Save</button>
-
 <div id="productList" class="mt-4 grid grid-cols-2 gap-2"></div>
-
 </div>
 
-<!-- ORDERS -->
 <div id="orders" class="tab hidden"></div>
-
-<!-- WITHDRAW -->
 <div id="withdraw" class="tab hidden"></div>
-
-<!-- CATEGORY -->
-<div id="category" class="tab hidden">
-<input id="catName" placeholder="Category" class="border p-2 mb-2">
-<button onclick="addCategory()" class="bg-green-600 text-white px-3 py-1">Add</button>
-<div id="catList"></div>
-</div>
-
-<!-- BANNER -->
-<div id="banner" class="tab hidden">
-<input type="file" id="bannerImage" class="mb-2">
-<button onclick="uploadBanner()" class="bg-purple-600 text-white px-3 py-1">Upload</button>
-<div id="bannerList"></div>
-</div>
+<div id="coupons" class="tab hidden"></div>
+<div id="reviews" class="tab hidden"></div>
+<div id="analytics" class="tab hidden"></div>
+<div id="settings" class="tab hidden"></div>
 
 </div>
 </div>
 
 <script>
 
-// FIREBASE (YOUR CONFIG)
+// FIREBASE
 firebase.initializeApp({
   apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
   authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -97,15 +88,48 @@ function openTab(tab){
 document.querySelectorAll('.tab').forEach(t=>t.classList.add('hidden'));
 document.getElementById(tab).classList.remove('hidden');
 
+if(tab==="users") loadUsers();
+if(tab==="sellers") loadSellers();
 if(tab==="orders") loadOrders();
 if(tab==="withdraw") loadWithdraw();
+if(tab==="coupons") loadCoupons();
+if(tab==="reviews") loadReviews();
+if(tab==="analytics") loadAnalytics();
+if(tab==="settings") loadSettings();
 }
 
-// PRODUCT
+// USERS
+function loadUsers(){
+db.ref("users").on("value",snap=>{
+let h="<h2 class='text-xl'>Users</h2>";
+snap.forEach(d=>{
+let u=d.val();
+h+=`<div class="bg-white p-2 mb-2">${u.name||''} ${u.email||''}</div>`;
+});
+users.innerHTML=h;
+});
+}
+
+// SELLERS
+function loadSellers(){
+db.ref("sellers").on("value",snap=>{
+let h="<h2 class='text-xl'>Sellers</h2>";
+snap.forEach(d=>{
+let s=d.val();
+h+=`<div class="bg-white p-2 mb-2">
+${s.shopName||''} (${s.status||'Pending'})
+<button onclick="updateSeller('${d.key}','Approved')" class="bg-green-500 text-white px-2">Approve</button>
+<button onclick="updateSeller('${d.key}','Blocked')" class="bg-red-500 text-white px-2">Block</button>
+</div>`;
+});
+sellers.innerHTML=h;
+});
+}
+function updateSeller(id,s){db.ref("sellers/"+id).update({status:s});}
+
+// PRODUCTS
 function addProduct(){
 let file=pImage.files[0];
-if(!file) return alert("Select image");
-
 let id=Date.now();
 let ref=storage.ref("products/"+id);
 
@@ -120,7 +144,6 @@ loadProducts();
 });
 });
 }
-
 function loadProducts(){
 db.ref("products").on("value",snap=>{
 let h="";
@@ -129,7 +152,6 @@ let p=d.val();
 h+=`<div class="bg-white p-2">
 <img src="${p.image}" class="h-24 w-full">
 <p>${p.name}</p>
-<p>₹${p.price}</p>
 </div>`;
 });
 productList.innerHTML=h;
@@ -139,98 +161,93 @@ productList.innerHTML=h;
 // ORDERS
 function loadOrders(){
 db.ref("orders").on("value",snap=>{
-let h="<h2 class='text-xl mb-2'>Orders</h2>";
+let h="<h2 class='text-xl'>Orders</h2>";
 snap.forEach(d=>{
 let o=d.val();
 h+=`<div class="bg-white p-2 mb-2">
-<p>ID: ${d.key}</p>
-<p>${o.name||''} ${o.phone||''}</p>
-<p>Status: ${o.status||'Pending'}</p>
-
-<input id="t_${d.key}" placeholder="Tracking ID" class="border p-1">
-
-<button onclick="saveTracking('${d.key}')" class="bg-black text-white px-2">Save</button>
-<button onclick="updateStatus('${d.key}','Shipped')" class="bg-blue-500 text-white px-2">Ship</button>
+${o.name||''} ${o.phone||''}
 <button onclick="updateStatus('${d.key}','Delivered')" class="bg-green-500 text-white px-2">Done</button>
 </div>`;
 });
 orders.innerHTML=h;
 });
 }
-
-function saveTracking(id){
-let val=document.getElementById("t_"+id).value;
-db.ref("orders/"+id).update({tracking:val});
-}
-
-function updateStatus(id,s){
-db.ref("orders/"+id).update({status:s});
-}
+function updateStatus(id,s){db.ref("orders/"+id).update({status:s});}
 
 // WITHDRAW
 function loadWithdraw(){
 db.ref("withdrawals").on("value",snap=>{
-let h="<h2 class='text-xl mb-2'>Withdrawals</h2>";
+let h="<h2>Withdrawals</h2>";
 snap.forEach(d=>{
 let w=d.val();
 h+=`<div class="bg-white p-2 mb-2">
-${w.name} ₹${w.amount} (${w.status||'Pending'})
+${w.name} ₹${w.amount}
 <button onclick="updateWithdraw('${d.key}','Approved')" class="bg-green-500 text-white px-2">Approve</button>
-<button onclick="updateWithdraw('${d.key}','Rejected')" class="bg-red-500 text-white px-2">Reject</button>
 </div>`;
 });
 withdraw.innerHTML=h;
 });
 }
+function updateWithdraw(id,s){db.ref("withdrawals/"+id).update({status:s});}
 
-function updateWithdraw(id,s){
-db.ref("withdrawals/"+id).update({status:s});
-}
-
-// CATEGORY
-function addCategory(){
-let id=Date.now();
-db.ref("categories/"+id).set({name:catName.value});
-loadCategories();
-}
-function loadCategories(){
-db.ref("categories").on("value",snap=>{
-let h="";
-snap.forEach(d=>h+=`<div>${d.val().name}</div>`);
-catList.innerHTML=h;
+// COUPONS
+function loadCoupons(){
+db.ref("coupons").on("value",snap=>{
+let h="<h2>Coupons</h2>";
+snap.forEach(d=>{
+let c=d.val();
+h+=`<div class="bg-white p-2">${c.code} - ${c.discount}%</div>`;
+});
+coupons.innerHTML=h;
 });
 }
 
-// BANNER
-function uploadBanner(){
-let file=bannerImage.files[0];
-let id=Date.now();
-let ref=storage.ref("banners/"+id);
-
-ref.put(file).then(()=>{
-ref.getDownloadURL().then(url=>{
-db.ref("banners/"+id).set({image:url});
-loadBanners();
+// REVIEWS
+function loadReviews(){
+db.ref("reviews").on("value",snap=>{
+let h="<h2>Reviews</h2>";
+snap.forEach(d=>{
+let r=d.val();
+h+=`<div class="bg-white p-2">
+${r.user} ⭐${r.rating}
+<button onclick="deleteReview('${d.key}')" class="bg-red-500 text-white px-2">Delete</button>
+</div>`;
 });
+reviews.innerHTML=h;
 });
 }
-function loadBanners(){
-db.ref("banners").on("value",snap=>{
-let h="";
-snap.forEach(d=>h+=`<img src="${d.val().image}" class="h-20">`);
-bannerList.innerHTML=h;
+function deleteReview(id){db.ref("reviews/"+id).remove();}
+
+// ANALYTICS
+function loadAnalytics(){
+db.ref("orders").once("value",snap=>{
+let total=0;
+snap.forEach(d=> total+=Number(d.val().amount||0));
+analytics.innerHTML=`<h2>Total Revenue ₹${total}</h2>`;
 });
+}
+
+// SETTINGS
+function loadSettings(){
+settings.innerHTML=`
+<h2>Settings</h2>
+<input id="commission" placeholder="Commission %" class="border p-2">
+<button onclick="saveSettings()" class="bg-blue-600 text-white px-2">Save</button>
+`;
+}
+function saveSettings(){
+let v=document.getElementById("commission").value;
+db.ref("settings").set({commission:v});
+alert("Saved");
 }
 
 // INIT
 window.onload=()=>{
 openTab("dashboard");
 loadProducts();
-loadCategories();
-loadBanners();
 };
 
 </script>
 
 </body>
-</html>
+  </html>
