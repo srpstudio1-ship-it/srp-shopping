@@ -346,6 +346,349 @@ loadCategories();
 loadBanners();
 loadDashboard();
 
+// ==========================
+// 🔥 ORDERS MANAGEMENT
+// ==========================
+
+function loadOrders(){
+
+db.ref('orders').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let o = d.val();
+
+html+=`
+<div class="bg-white p-4 rounded shadow mb-3">
+
+<h3 class="font-bold">Order ID: ${d.key}</h3>
+
+<p><b>User:</b> ${o.userName}</p>
+<p><b>Phone:</b> ${o.phone}</p>
+<p><b>Email:</b> ${o.email}</p>
+<p><b>Address:</b> ${o.address}</p>
+<p><b>Pincode:</b> ${o.pincode}</p>
+
+<p><b>Status:</b> ${o.status || 'Pending'}</p>
+<p><b>Tracking ID:</b> ${o.tracking || 'Not Assigned'}</p>
+
+<input placeholder="Enter Tracking ID" id="track_${d.key}" class="border p-2 mt-2">
+
+<button onclick="updateTracking('${d.key}')" 
+class="bg-blue-600 text-white px-3 py-1 mt-2">
+Update Tracking
+</button>
+
+</div>
+`;
+
+});
+
+document.getElementById("orders").innerHTML = `
+<h2 class="text-2xl font-bold mb-4">Orders Management</h2>
+${html}
+`;
+
+});
+
+}
+
+function updateTracking(id){
+
+let val = document.getElementById("track_"+id).value;
+
+db.ref('orders/'+id).update({
+tracking: val,
+status: "Shipped"
+});
+
+alert("Tracking Updated");
+
+}
+
+// ==========================
+// 🌍 GLOBAL ORDERS DASHBOARD
+// ==========================
+
+function loadGlobalOrders(){
+
+db.ref('orders').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let o = d.val();
+
+let commission = (o.amount * 0.1) || 0;
+
+html+=`
+<tr class="border">
+
+<td class="p-2">${d.key}</td>
+<td>${o.userName}</td>
+<td>${o.sellerName || '-'}</td>
+<td>₹${o.amount}</td>
+<td>${o.paymentStatus || 'Pending'}</td>
+<td>₹${commission}</td>
+
+</tr>
+`;
+
+});
+
+document.getElementById("globalOrders").innerHTML = `
+<h2 class="text-xl font-bold mb-3">Global Orders</h2>
+
+<table class="w-full bg-white shadow">
+<tr class="bg-gray-200">
+<th>ID</th>
+<th>User</th>
+<th>Seller</th>
+<th>Amount</th>
+<th>Payment</th>
+<th>Commission</th>
+</tr>
+
+${html}
+
+</table>
+`;
+
+});
+
+}
+
+// ==========================
+// 💸 SELLER WITHDRAWAL SYSTEM
+// ==========================
+
+function loadWithdrawals(){
+
+db.ref('withdrawals').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let w = d.val();
+
+html+=`
+<div class="bg-white p-4 shadow mb-2">
+
+<p><b>Seller:</b> ${w.sellerName}</p>
+<p><b>Balance:</b> ₹${w.balance}</p>
+<p><b>Request:</b> ₹${w.amount}</p>
+<p><b>Status:</b> ${w.status || 'Pending'}</p>
+
+<button onclick="approveWithdraw('${d.key}')" class="bg-green-600 text-white px-3 py-1">
+Approve
+</button>
+
+<button onclick="rejectWithdraw('${d.key}')" class="bg-red-600 text-white px-3 py-1">
+Reject
+</button>
+
+<button onclick="markPaid('${d.key}')" class="bg-blue-600 text-white px-3 py-1">
+Mark Paid
+</button>
+
+</div>
+`;
+
+});
+
+document.getElementById("withdrawals").innerHTML = `
+<h2 class="text-xl font-bold mb-4">Withdrawals</h2>
+${html}
+`;
+
+});
+
+}
+
+function approveWithdraw(id){
+
+db.ref('withdrawals/'+id).update({
+status:"Approved"
+});
+
+alert("Approved");
+
+}
+
+function rejectWithdraw(id){
+
+db.ref('withdrawals/'+id).update({
+status:"Rejected"
+});
+
+alert("Rejected");
+
+}
+
+function markPaid(id){
+
+db.ref('withdrawals/'+id).update({
+status:"Paid"
+});
+
+alert("Marked Paid");
+
+}
+
+// ==========================
+// 📢 PROMOTION PAYMENT SYSTEM
+// ==========================
+
+function loadPromotionPayments(){
+
+db.ref('promotionPayments').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let p = d.val();
+
+html+=`
+<div class="bg-white p-4 shadow mb-2">
+
+<p><b>Seller:</b> ${p.sellerName}</p>
+<p><b>Aadhar:</b> ${p.aadhar}</p>
+<p><b>PAN:</b> ${p.pan}</p>
+<p><b>GST:</b> ${p.gst}</p>
+<p><b>Product ID:</b> ${p.productId}</p>
+<p><b>Mobile:</b> ${p.mobile}</p>
+<p><b>Payment:</b> ₹${p.amount}</p>
+
+</div>
+`;
+
+});
+
+document.getElementById("promotion").innerHTML = `
+<h2 class="text-xl font-bold mb-4">Promotion Payments</h2>
+${html}
+`;
+
+});
+
+}
+
+// ==========================
+// ⭐ FEATURED PRODUCTS
+// ==========================
+
+function loadFeatured(){
+
+db.ref('featured').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let f = d.val();
+
+html+=`
+<div class="bg-white p-2 mb-2 flex justify-between">
+<span>${f.productId}</span>
+<span>Priority: ${f.priority}</span>
+<button onclick="removeFeatured('${d.key}')" class="bg-red-500 text-white px-2">Remove</button>
+</div>
+`;
+
+});
+
+document.getElementById("featured").innerHTML = `
+<h2 class="text-xl font-bold mb-4">Featured Products</h2>
+
+<input id="fId" placeholder="Product ID" class="border p-2 mb-2">
+<input id="fPriority" placeholder="Priority" class="border p-2 mb-2">
+
+<button onclick="addFeatured()" class="bg-yellow-500 text-white px-4 py-2">Add Featured</button>
+
+${html}
+`;
+
+});
+
+}
+
+function addFeatured(){
+
+let id = Date.now();
+
+db.ref('featured/'+id).set({
+productId: fId.value,
+priority: fPriority.value
+});
+
+alert("Added Featured");
+
+}
+
+function removeFeatured(id){
+db.ref('featured/'+id).remove();
+}
+
+// ==========================
+// 💰 COMMISSION CALCULATION
+// ==========================
+
+function calculateAdminIncome(){
+
+db.ref('orders').once('value',snap=>{
+
+let totalCommission = 0;
+
+snap.forEach(d=>{
+let o = d.val();
+totalCommission += (o.amount * 0.1) || 0;
+});
+
+document.getElementById("income").innerHTML = `
+<h2 class="text-xl font-bold">Admin Income</h2>
+<p>Total Commission: ₹${totalCommission}</p>
+`;
+
+});
+
+}
+
+// ==========================
+// 🔄 AUTO LOAD ON TAB SWITCH
+// ==========================
+
+const oldOpenTab = openTab;
+
+openTab = function(tab){
+
+oldOpenTab(tab);
+
+if(tab==="orders") loadOrders();
+if(tab==="withdrawals") loadWithdrawals();
+if(tab==="promotion") loadPromotionPayments();
+if(tab==="featured") loadFeatured();
+if(tab==="globalOrders") loadGlobalOrders();
+if(tab==="income") calculateAdminIncome();
+
+}
+
+// ==========================
+// INIT LOAD
+// ==========================
+
+loadOrders();
+loadWithdrawals();
+loadPromotionPayments();
+loadFeatured();
+loadGlobalOrders();
+calculateAdminIncome();
+
+
 </script>
 
 </body>
