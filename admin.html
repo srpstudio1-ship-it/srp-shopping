@@ -273,12 +273,9 @@
         </section>
     </div> </div> ```
 
----
 
-### Part 4: Firebase Integration & Logic (JavaScript)
-This part contains the initialization and the logic to make every feature work.
 
-```html
+
 <script>
 // --- FIREBASE INITIALIZATION ---
 const firebaseConfig = {
@@ -534,6 +531,146 @@ function uploadBanner() {
         });
     });
 }
+    // --- 8.3 SELLER WITHDRAWAL APPROVAL ---
+function loadWithdrawals() {
+    db.ref('withdrawals').on('value', snap => {
+        const list = document.getElementById('withdrawal-list');
+        list.innerHTML = "";
+        snap.forEach(child => {
+            const w = child.val();
+            list.innerHTML += `<tr>
+                <td>${w.sellerName}</td>
+                <td>₹${w.balance}</td>
+                <td>₹${w.amount}</td>
+                <td><span class="status-badge" style="background:${w.status==='Paid'?'#dff9fb':'#f9ca24'}">${w.status}</span></td>
+                <td>
+                    <button onclick="updateWithdrawal('${child.key}', 'Paid')">Mark as Paid</button>
+                    <button class="btn-delete" onclick="updateWithdrawal('${child.key}', 'Rejected')">Reject</button>
+                </td>
+            </tr>`;
+        });
+    });
+}
+
+function updateWithdrawal(id, status) {
+    db.ref('withdrawals/' + id).update({ status: status });
+    logAction(`Withdrawal ${id} marked as ${status}`);
+}
+
+// --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
+function loadPromotions() {
+    db.ref('promotions').on('value', snap => {
+        const list = document.getElementById('promotion-list');
+        list.innerHTML = "";
+        snap.forEach(child => {
+            const p = child.val();
+            list.innerHTML += `<tr>
+                <td>${p.sellerName}</td>
+                <td>PAN: ${p.pan} <br> GST: ${p.gst}</td>
+                <td>₹${p.amount}</td>
+                <td>ID: ${p.productId}</td>
+            </tr>`;
+        });
+    });
+}
+
+// --- 8.7 ADMIN SECURITY ---
+function updateAdminPass() {
+    const newPass = document.getElementById('new-admin-pass').value;
+    if(newPass.length < 6) return alert("Password too short!");
+    db.ref('admin_settings/security').update({ password: newPass })
+        .then(() => { alert("Password Updated!"); logAction("Admin password changed"); });
+}
+
+// --- 8.9 & 8.10 SALES & INCOME ANALYTICS ---
+function loadSalesAnalytics() {
+    db.ref('orders').on('value', snap => {
+        let totalSales = 0;
+        let totalOrders = 0;
+        let totalComm = 0;
+        
+        snap.forEach(child => {
+            const o = child.val();
+            totalSales += parseFloat(o.amount || 0);
+            totalOrders++;
+            totalComm += (parseFloat(o.amount || 0) * 0.10); // 10% Platform Fee
+        });
+
+        document.getElementById('sales-total-amt').innerText = "₹" + totalSales.toLocaleString();
+        document.getElementById('sales-total-orders').innerText = totalOrders;
+        document.getElementById('inc-comm').innerText = "₹" + totalComm.toLocaleString();
+        
+        // Promotion Income (8.10)
+        db.ref('promotions').on('value', pSnap => {
+            let promoIncome = 0;
+            pSnap.forEach(p => promoIncome += parseFloat(p.amount || 0));
+            document.getElementById('inc-ads').innerText = "₹" + promoIncome.toLocaleString();
+            document.getElementById('inc-total').innerText = "₹" + (totalComm + promoIncome).toLocaleString();
+        });
+    });
+}
+
+// --- 8.17 PAYMENT HISTORY ---
+function loadPaymentHistory() {
+    db.ref('transactions').on('value', snap => {
+        const list = document.getElementById('payment-list-body');
+        list.innerHTML = "";
+        snap.forEach(child => {
+            const t = child.val();
+            list.innerHTML += `<tr>
+                <td>${t.date}</td>
+                <td>${t.type}</td>
+                <td>₹${t.amount}</td>
+                <td>${t.status}</td>
+            </tr>`;
+        });
+    });
+}
+
+// --- 8.15 & 8.16 USER & SELLER MANAGEMENT ---
+function toggleUserStatus(userId, status) {
+    db.ref('users/' + userId).update({ status: status });
+    logAction(`User ${userId} status set to ${status}`);
+}
+
+function updateSellerStatus(sellerId, status) {
+    db.ref('sellers/' + sellerId).update({ status: status });
+    logAction(`Seller ${sellerId} ${status}`);
+}
+
+// --- PRODUCT DELETE (8.1) ---
+function deleteProduct(id) {
+    if(confirm("Are you sure?")) {
+        db.ref('products/' + id).remove();
+        logAction("Deleted product: " + id);
+    }
+}
+
+// --- SYNC ALL DATA ON LOAD ---
+function syncAllData() {
+    loadWithdrawals();
+    loadPromotions();
+    loadSalesAnalytics();
+    loadPaymentHistory();
+    
+    // Load existing products (8.1)
+    db.ref('products').on('value', snap => {
+        const list = document.getElementById('product-list');
+        list.innerHTML = "";
+        snap.forEach(child => {
+            const p = child.val();
+            list.innerHTML += `<tr>
+                <td>${p.id}</td>
+                <td><img src="${p.imageUrl || 'https://via.placeholder.com/40'}" width="40"></td>
+                <td>${p.name}</td>
+                <td>₹${p.discount}</td>
+                <td>${p.stock}</td>
+                <td><button class="btn-delete" onclick="deleteProduct('${p.id}')">Delete</button></td>
+            </tr>`;
+        });
+    });
+}
+
 
 // --- UPDATE THE INITIALIZE FUNCTION ---
 const originalInit = window.onload;
@@ -550,6 +687,7 @@ window.onload = () => {
 window.onload = () => {
     initAnalytics();
     loadLogs();
+    syncAllData(); // Added this to start all new functions
 };
 
 </script>
