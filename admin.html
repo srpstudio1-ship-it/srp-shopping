@@ -361,6 +361,78 @@ function showDetailedData(path, title) {
         document.getElementById('sec-logs').scrollIntoView();
     });
 }
+// --- 8.15 USER MANAGEMENT ACTION ---
+function toggleUserStatus(userId, newStatus) {
+    db.ref('users/' + userId).update({ status: newStatus })
+    .then(() => {
+        alert("User is now " + newStatus);
+        logAction("Changed User " + userId + " status to " + newStatus);
+    });
+}
+
+// --- 8.16 SELLER MANAGEMENT ACTION ---
+function updateSellerStatus(sellerId, newStatus) {
+    db.ref('sellers/' + sellerId).update({ status: newStatus })
+    .then(() => {
+        alert("Seller is now " + newStatus);
+        logAction("Seller " + sellerId + " marked as " + newStatus);
+    });
+}
+// --- UNIVERSAL LOGGING (Old Admin Work + New User Work) ---
+
+// 1. Function for Admin Actions (Old Work)
+function logAction(action) {
+    const logRef = db.ref('system_logs').push();
+    logRef.set({
+        type: "ADMIN_ACTION",
+        action: action,
+        time: new Date().toLocaleString(),
+        admin: "SuperAdmin" // Tracks what YOU do
+    });
+}
+
+// 2. Function for User/Seller Activity (New Work)
+// Call this from your main website during Login/Logout
+function trackUserActivity(userId, userType, action) {
+    const logRef = db.ref('system_logs').push(); // Sending to same branch
+    db.ref(`${userType}s/${userId}`).once('value', snap => {
+        const userData = snap.val() || {};
+        logRef.set({
+            type: "USER_ACTIVITY",
+            name: userData.name || userData.shopName || "Unknown",
+            email: userData.email || "N/A",
+            action: action, // e.g., "Logged In", "Left Page"
+            time: new Date().toLocaleString(),
+            details: `Phone: ${userData.phone} | Addr: ${userData.address}`
+        });
+    });
+}
+
+// 3. Unified Display for 8.19
+function loadUnifiedLogs() {
+    db.ref('system_logs').limitToLast(40).on('value', snap => {
+        const container = document.getElementById('logs-container');
+        container.innerHTML = "<h3 style='color:#0f0'>SYSTEM & ACTIVITY LOGS</h3>";
+        
+        snap.forEach(child => {
+            const log = child.val();
+            if (log.type === "ADMIN_ACTION") {
+                // Style for your old work (Admin actions)
+                container.innerHTML += `
+                    <div style="color: #3498db; margin-bottom: 5px;">
+                        [${log.time}] <b>ADMIN:</b> ${log.action}
+                    </div>`;
+            } else {
+                // Style for new work (User/Seller activity)
+                container.innerHTML += `
+                    <div style="color: #27ae60; margin-bottom: 5px;">
+                        [${log.time}] <b>${log.name}:</b> ${log.action} 
+                        <br><small style="color: #888; margin-left: 20px;">${log.details}</small>
+                    </div>`;
+            }
+        });
+    });
+}
 
 // --- 4. PRODUCT MANAGEMENT (8.1) ---
 function addProduct() {
