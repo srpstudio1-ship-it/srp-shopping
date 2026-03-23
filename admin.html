@@ -142,7 +142,22 @@ body { font-family: 'Segoe UI', sans-serif; }
 
 </div>
 </div>
+<div id="orders" class="tab hidden"></div>
 
+<!-- WITHDRAWALS -->
+<div id="withdrawals" class="tab hidden"></div>
+
+<!-- PROMOTION -->
+<div id="promotion" class="tab hidden"></div>
+
+<!-- FEATURED -->
+<div id="featured" class="tab hidden"></div>
+
+<!-- GLOBAL ORDERS -->
+<div id="globalOrders" class="tab hidden"></div>
+
+<!-- ADMIN INCOME -->
+<div id="income" class="tab hidden"></div>
 <script>
 
 // FIREBASE CONFIG
@@ -161,7 +176,8 @@ const storage = firebase.storage();
 function openTab(tab){
 document.querySelectorAll('.tab').forEach(t=>t.classList.add('hidden'));
 document.getElementById(tab).classList.remove('hidden');
-  
+  if(tab==="featured") sortFeatured();
+if(tab==="withdrawals") filterWithdrawals('all');
 }
 
 // ================= PRODUCT =================
@@ -197,7 +213,7 @@ loadProducts();
 }
 
 // LOAD PRODUCTS
-function loadProducts(){
+function (){
 db.ref('products').on('value',snap=>{
 
 let html='';
@@ -319,22 +335,7 @@ bannerList.innerHTML = html;
 });
 }
 <!-- ORDERS -->
-<div id="orders" class="tab hidden"></div>
 
-<!-- WITHDRAWALS -->
-<div id="withdrawals" class="tab hidden"></div>
-
-<!-- PROMOTION -->
-<div id="promotion" class="tab hidden"></div>
-
-<!-- FEATURED -->
-<div id="featured" class="tab hidden"></div>
-
-<!-- GLOBAL ORDERS -->
-<div id="globalOrders" class="tab hidden"></div>
-
-<!-- ADMIN INCOME -->
-<div id="income" class="tab hidden"></div>
 // ================= DASHBOARD =================
 
 function loadDashboard(){
@@ -359,10 +360,16 @@ totalOrders.innerText = snap.numChildren();
 
 // INIT
 window.onload = () => {
+
 loadProducts();
 loadCategories();
 loadBanners();
 loadDashboard();
+
+// Part 2 systems
+loadOrders();
+filterWithdrawals('all');
+
 };
 // =========================
 // 🔥 GLOBAL UI HELPERS
@@ -544,19 +551,19 @@ showToast("Order Updated");
 }
 
 // PATCH loadOrders UI
-loadOrders = function(){
+function loadOrders(){
+
+db.ref('orders').on('value',snap=>{
+
 if(!snap.exists()){
 document.getElementById("orders").innerHTML = `
 <h2 class="text-2xl font-bold">Orders</h2>
 <p>No orders found</p>
 `;
 return;
-  }
-db.ref('orders').on('value',snap=>{
+}
 
-let html = `
-<h2 class="text-2xl font-bold mb-4">Orders Management</h2>
-`;
+let html = `<h2 class="text-2xl font-bold mb-4">Orders Management</h2>`;
 
 snap.forEach(d=>{
 
@@ -567,8 +574,8 @@ html+=`
 
 <h3 class="font-bold">Order ID: ${d.key}</h3>
 
-<p>${o.userName} | ${o.phone}</p>
-<p>${o.address}</p>
+<p>${o.userName || ''} | ${o.phone || ''}</p>
+<p>${o.address || ''}</p>
 
 <p>Status: <b>${o.status || 'Pending'}</b></p>
 
@@ -600,9 +607,24 @@ Save Tracking
 document.getElementById("orders").innerHTML = html;
 
 });
-
 }
 
+document.getElementById("orders").innerHTML = html;
+
+});
+
+}
+function updateTracking(id){
+
+let val = document.getElementById("track_"+id).value;
+
+db.ref('orders/'+id).update({
+trackingId: val
+});
+
+showToast("Tracking Updated");
+
+}
 // =========================
 // 🔥 WITHDRAWAL FILTER
 // =========================
@@ -716,10 +738,6 @@ logAction("Deleted Product "+id);
 // 🔥 AUTO INIT PATCH
 // =========================
 
-setTimeout(()=>{
-loadProducts();
-loadOrders();
-},1000);
 
 </script>
 
