@@ -155,7 +155,204 @@
                 </div>
             </section>
 
-            ```
+            ```<section id="sec-8.5" class="admin-section section-hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="glass-panel p-6 rounded-2xl shadow-sm">
+            <h3 class="text-lg font-bold mb-6 text-orange-600"><i class="fas fa-thumbtack mr-2"></i>Pin Product to Home Top</h3>
+            <div class="space-y-4">
+                <input type="text" id="feat_pid" placeholder="Master Product ID" class="form-input">
+                <input type="text" id="feat_sid" placeholder="Seller Product ID" class="form-input">
+                <input type="number" id="feat_priority" placeholder="Display Priority (1-100)" class="form-input">
+                <button onclick="pinToHome()" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-lg">Update Home Layout</button>
+            </div>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl shadow-sm overflow-hidden">
+            <h3 class="font-bold mb-4">Currently Featured</h3>
+            <div id="featured-list" class="space-y-3"></div>
+        </div>
+    </div>
+</section>
+
+<section id="sec-8.6" class="admin-section section-hidden">
+    <div class="glass-panel rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-6 bg-blue-50 border-b flex justify-between items-center">
+            <h3 class="font-bold text-blue-900 uppercase">Master Transaction Log</h3>
+            <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs" id="live-order-count">0 Orders</span>
+        </div>
+        <table class="w-full text-left">
+            <thead class="bg-slate-50 text-[10px] font-extrabold text-slate-500 border-b uppercase">
+                <tr>
+                    <th class="p-4">Order ID</th>
+                    <th class="p-4">User Details</th>
+                    <th class="p-4">Seller Details</th>
+                    <th class="p-4">Payment</th>
+                    <th class="p-4">Amount</th>
+                    <th class="p-4">Commission</th>
+                </tr>
+            </thead>
+            <tbody id="global-dashboard-body" class="divide-y text-sm"></tbody>
+        </table>
+    </div>
+</section>
+
+<section id="sec-8.7" class="admin-section section-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="glass-panel p-8 rounded-2xl border-l-4 border-red-500">
+            <h3 class="font-bold mb-6 italic text-slate-700 underline">8.7 Security Protocol</h3>
+            <input type="password" placeholder="Old Password" class="form-input">
+            <input type="password" placeholder="New Password" class="form-input">
+            <button class="btn-primary w-full">Change Password</button>
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+                <p class="text-xs font-bold mb-2">Manage Admin Accounts</p>
+                <div id="admin-accounts-list"></div>
+            </div>
+        </div>
+        <div class="glass-panel p-8 rounded-2xl border-l-4 border-blue-500">
+            <h3 class="font-bold mb-4">Two-Factor Authentication (2FA)</h3>
+            <button class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm">Enable 2FA Protection</button>
+        </div>
+    </div>
+</section>
+
+<section id="sec-8.8" class="admin-section section-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-panel p-6 rounded-2xl">
+            <h4 class="font-bold text-slate-400 text-xs uppercase mb-4">8.8 Website Analytics</h4>
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="p-4 border rounded-xl"> <p class="text-xs">Total Users</p> <h2 id="total-users" class="text-xl font-bold">0</h2> </div>
+                <div class="p-4 border rounded-xl"> <p class="text-xs">Total Sellers</p> <h2 id="total-sellers" class="text-xl font-bold">0</h2> </div>
+                <div class="p-4 border rounded-xl"> <p class="text-xs">Today Visits</p> <h2 id="today-visits" class="text-xl font-bold">0</h2> </div>
+                <div class="p-4 border rounded-xl"> <p class="text-xs">New Today</p> <h2 id="new-today" class="text-xl font-bold">0</h2> </div>
+            </div>
+        </div>
+        <div id="sec-8.9" class="glass-panel p-6 rounded-2xl bg-slate-900 text-white">
+            <h4 class="font-bold text-blue-400 text-xs uppercase mb-4">8.9 Sales Analytics</h4>
+            <div class="space-y-4">
+                <div class="flex justify-between"><span>Total Sales</span><span class="font-mono">₹0.00</span></div>
+                <div class="flex justify-between"><span>Total Orders</span><span class="font-mono">0</span></div>
+                <div class="flex justify-between border-t pt-2 text-green-400 font-bold"><span>Commission</span><span class="font-mono">₹0.00</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="sec-8.10" class="admin-section section-hidden">
+    <div class="glass-panel p-10 rounded-3xl text-center max-w-xl mx-auto border-2 border-green-500">
+        <p class="text-xs font-bold text-slate-500 uppercase mb-2">Total Combined Platform Income</p>
+        <h1 class="text-6xl font-black text-slate-800 mb-6">₹<span id="total-admin-income">0.00</span></h1>
+        <div class="grid grid-cols-2 gap-4 text-left">
+            <div class="bg-slate-50 p-4 rounded-xl">
+                <p class="text-[10px] uppercase font-bold text-slate-400">Commissions</p>
+                <p class="font-bold text-green-600">₹0.00</p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl">
+                <p class="text-[10px] uppercase font-bold text-slate-400">Promotions</p>
+                <p class="font-bold text-blue-600">₹0.00</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="sec-8.11" class="admin-section section-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="glass-panel p-6 rounded-2xl h-fit">
+            <h3 class="font-bold mb-4">Add Category</h3>
+            <input type="text" id="new_cat_name" placeholder="Name" class="form-input">
+            <input type="file" id="new_cat_icon" class="mb-4 text-xs">
+            <button onclick="addCategory()" class="w-full btn-primary">Save Category</button>
+        </div>
+        <div class="md:col-span-2 glass-panel p-6 rounded-2xl" id="cat-display-grid">
+            </div>
+    </div>
+</section>
+
+<section id="sec-8.12" class="admin-section section-hidden">
+    <div class="glass-panel p-6 rounded-2xl">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+            <input type="text" placeholder="Coupon Code" class="form-input">
+            <input type="number" placeholder="Discount %" class="form-input">
+            <input type="date" class="form-input">
+            <button class="btn-primary">Create Coupon</button>
+        </div>
+        <table class="w-full text-left border-t">
+            <thead class="text-xs text-slate-400 uppercase">
+                <tr><th class="p-4">Code</th><th class="p-4">Expiry</th><th class="p-4">Usage</th><th class="p-4">Status</th></tr>
+            </thead>
+            <tbody id="coupon-list"></tbody>
+        </table>
+    </div>
+</section>
+
+<section id="sec-8.13" class="admin-section section-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-panel p-6 rounded-xl">
+            <h3 class="font-bold mb-4">Upload Banners (Home/Festival)</h3>
+            <input type="file" class="form-input">
+            <input type="text" placeholder="Link to Product ID" class="form-input">
+            <button class="btn-primary w-full">Publish Banner</button>
+        </div>
+        <div id="banner-preview" class="grid grid-cols-1 gap-4"></div>
+    </div>
+</section>
+
+<section id="sec-8.14" class="admin-section section-hidden">
+    <div class="glass-panel rounded-xl overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 uppercase text-xs">
+                <tr><th class="p-4">Product</th><th class="p-4">User</th><th class="p-4">Rating</th><th class="p-4">Review</th><th class="p-4">Action</th></tr>
+            </thead>
+            <tbody id="reviews-table"></tbody>
+        </table>
+    </div>
+</section>
+
+<section id="sec-8.15" class="admin-section section-hidden">
+    <div class="glass-panel rounded-xl shadow-sm">
+        <div class="p-4 border-b"> <input type="text" placeholder="Search User Email/Phone..." class="form-input mb-0"> </div>
+        <div id="users-list-container" class="divide-y"></div>
+    </div>
+</section>
+
+<section id="sec-8.16" class="admin-section section-hidden">
+    <div class="grid grid-cols-1 gap-4" id="seller-requests-container">
+        </div>
+</section>
+
+<section id="sec-8.17" class="admin-section section-hidden">
+    <div class="glass-panel rounded-xl overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-800 text-white text-xs uppercase">
+                <tr><th class="p-4">Txn ID</th><th class="p-4">From</th><th class="p-4">To</th><th class="p-4">Type</th><th class="p-4">Amount</th></tr>
+            </thead>
+            <tbody id="payment-history-body"></tbody>
+        </table>
+    </div>
+</section>
+
+<section id="sec-8.18" class="admin-section section-hidden">
+    <div class="max-w-4xl mx-auto space-y-4" id="refund-requests">
+        </div>
+</section>
+
+<section id="sec-8.19" class="admin-section section-hidden">
+    <div class="bg-black text-green-500 font-mono p-6 rounded-xl h-[500px] overflow-y-auto text-xs" id="system-logs">
+        [SYSTEM] Kernel initialized... <br>
+        [AUTH] Admin logged in at 2026-03-23... <br>
+    </div>
+</section>
+
+<section id="sec-8.20" class="admin-section section-hidden">
+    <div class="glass-panel p-8 rounded-2xl max-w-2xl">
+        <h3 class="font-bold mb-6 uppercase tracking-widest text-blue-600">Global Settings</h3>
+        <div class="space-y-6">
+            <div class="flex justify-between"> <span>Maintenance Mode</span> <input type="checkbox"> </div>
+            <div class="flex justify-between"> <span>App Version</span> <input type="text" value="1.0.4" class="border rounded px-2"> </div>
+            <div class="flex justify-between"> <span>India Post API Key</span> <input type="password" value="********" class="border rounded px-2"> </div>
+            <button class="btn-primary w-full">Save System Configuration</button>
+        </div>
+    </div>
+</section>
+
 
 ---
 
