@@ -661,6 +661,230 @@ loadSellers();
 loadReviews();
 loadPayments();
 loadAnalytics();
+  // =========================
+// GLOBAL LOGGER (8.19)
+// =========================
+
+function logAction(action){
+
+let id = Date.now();
+
+db.ref('logs/'+id).set({
+action,
+time:new Date().toLocaleString()
+});
+
+}
+
+// =========================
+// 8.9 SALES ANALYTICS
+// =========================
+
+function loadSales(){
+
+db.ref('orders').once('value').then(snap=>{
+
+let totalSales = 0;
+let totalOrders = 0;
+let commission = 0;
+
+snap.forEach(d=>{
+
+let o = d.val();
+
+totalOrders++;
+
+let amount = Number(o.amount || 0);
+
+totalSales += amount;
+
+// 10% commission
+commission += amount * 0.10;
+
+});
+
+sales.innerHTML = `
+<div class="bg-white p-3">Total Orders: ${totalOrders}</div>
+<div class="bg-white p-3">Total Sales: ₹${totalSales}</div>
+<div class="bg-white p-3">Commission: ₹${commission}</div>
+`;
+
+});
+
+}
+
+// =========================
+// 8.10 ADMIN INCOME
+// =========================
+
+function loadIncome(){
+
+Promise.all([
+db.ref('orders').once('value'),
+db.ref('promotionPayments').once('value')
+]).then(res=>{
+
+let orderSnap = res[0];
+let promoSnap = res[1];
+
+let commission = 0;
+let promoIncome = 0;
+
+orderSnap.forEach(d=>{
+let o = d.val();
+commission += (o.amount || 0) * 0.10;
+});
+
+promoSnap.forEach(d=>{
+promoIncome += Number(d.val().amount || 0);
+});
+
+let total = commission + promoIncome;
+
+income.innerHTML = `
+<div class="bg-white p-3">Commission: ₹${commission}</div>
+<div class="bg-white p-3">Promotion Income: ₹${promoIncome}</div>
+<div class="bg-white p-3 font-bold">Total Income: ₹${total}</div>
+`;
+
+});
+
+}
+
+// =========================
+// 8.18 REFUND SYSTEM
+// =========================
+
+function loadRefunds(){
+
+db.ref('refunds').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let r = d.val();
+
+html += `
+<div class="border p-2">
+Order: ${r.orderId} - ₹${r.amount}
+<button onclick="approveRefund('${d.key}','${r.userId}',${r.amount})">Approve</button>
+<button onclick="rejectRefund('${d.key}')">Reject</button>
+</div>
+`;
+
+});
+
+refunds.innerHTML = html;
+
+});
+}
+
+function approveRefund(id,userId,amount){
+
+// add to wallet
+db.ref('users/'+userId+'/wallet').once('value').then(s=>{
+
+let current = s.val() || 0;
+
+db.ref('users/'+userId).update({
+wallet: current + amount
+});
+
+db.ref('refunds/'+id).update({status:'Approved'});
+
+logAction("Refund Approved: "+id);
+
+});
+
+}
+
+function rejectRefund(id){
+db.ref('refunds/'+id).update({status:'Rejected'});
+logAction("Refund Rejected: "+id);
+}
+
+// =========================
+// 8.19 VIEW LOGS
+// =========================
+
+function loadLogs(){
+
+db.ref('logs').on('value',snap=>{
+
+let html='';
+
+snap.forEach(d=>{
+
+let l = d.val();
+
+html += `<div>${l.time} - ${l.action}</div>`;
+
+});
+
+logs.innerHTML = html;
+
+});
+}
+
+// =========================
+// 8.7 ADMIN SECURITY
+// =========================
+
+function changePassword(){
+
+let pass = prompt("Enter New Password");
+
+db.ref('admin/security').set({
+password:pass
+});
+
+alert("Password Changed");
+
+logAction("Admin Password Changed");
+
+}
+
+function enable2FA(){
+
+db.ref('admin/security').update({
+twoFA:true
+});
+
+alert("2FA Enabled");
+
+logAction("2FA Enabled");
+
+}
+
+// =========================
+// 8.20 PLATFORM SETTINGS
+// =========================
+
+function saveSettings(){
+
+let commission = prompt("Set Commission %");
+let delivery = prompt("Delivery Days");
+
+db.ref('settings').set({
+commission,
+delivery
+});
+
+alert("Settings Saved");
+
+logAction("Settings Updated");
+
+}
+
+// =========================
+// AUTO INIT
+// =========================
+
+loadSales();
+loadIncome();
+loadRefunds();
+loadLogs();
 </script>
 
 </body>
