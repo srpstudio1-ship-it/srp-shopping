@@ -117,22 +117,91 @@
 </div>
 
 <!-- OTHER SECTIONS PLACEHOLDER -->
-<div id="orders" class="section hidden">Orders Section</div>
-<div id="withdrawals" class="section hidden">Withdrawals Section</div>
-<div id="promotion" class="section hidden">Promotion Section</div>
-<div id="globalOrders" class="section hidden">Global Orders</div>
-<div id="security" class="section hidden">Security</div>
-<div id="analytics" class="section hidden">Analytics</div>
-<div id="sales" class="section hidden">Sales</div>
-<div id="income" class="section hidden">Income</div>
-<div id="coupon" class="section hidden">Coupon</div>
-<div id="reviews" class="section hidden">Reviews</div>
-<div id="users" class="section hidden">Users</div>
-<div id="sellers" class="section hidden">Sellers</div>
-<div id="payments" class="section hidden">Payments</div>
-<div id="refunds" class="section hidden">Refunds</div>
-<div id="logs" class="section hidden">Logs</div>
-<div id="settings" class="section hidden">Settings</div>
+<!-- ORDERS -->
+<div id="orders" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Orders</h2>
+<div id="orders"></div>
+</div>
+
+<!-- WITHDRAWALS -->
+<div id="withdrawals" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Withdrawals</h2>
+<div id="withdrawals"></div>
+</div>
+
+<!-- COUPON -->
+<div id="coupon" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Coupons</h2>
+<button onclick="createCoupon()" class="bg-black text-white px-3 py-1 mb-2">Create Coupon</button>
+<div id="coupon"></div>
+</div>
+
+<!-- USERS -->
+<div id="users" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Users</h2>
+<div id="users"></div>
+</div>
+
+<!-- SELLERS -->
+<div id="sellers" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Sellers</h2>
+<div id="sellers"></div>
+</div>
+
+<!-- REVIEWS -->
+<div id="reviews" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Reviews</h2>
+<div id="reviews"></div>
+</div>
+
+<!-- PAYMENTS -->
+<div id="payments" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Payments</h2>
+<div id="payments"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="analytics" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Website Analytics</h2>
+<div id="analytics"></div>
+</div>
+
+<!-- SALES -->
+<div id="sales" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Sales Analytics</h2>
+<div id="sales"></div>
+</div>
+
+<!-- INCOME -->
+<div id="income" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Admin Income</h2>
+<div id="income"></div>
+</div>
+
+<!-- REFUNDS -->
+<div id="refunds" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Refunds</h2>
+<div id="refunds"></div>
+</div>
+
+<!-- LOGS -->
+<div id="logs" class="section hidden">
+<h2 class="text-xl font-bold mb-4">System Logs</h2>
+<div id="logs"></div>
+</div>
+
+<!-- SECURITY -->
+<div id="security" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Security</h2>
+<button onclick="changePassword()" class="bg-black text-white px-3 py-1 mr-2">Change Password</button>
+<button onclick="enable2FA()" class="bg-green-600 text-white px-3 py-1">Enable 2FA</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="section hidden">
+<h2 class="text-xl font-bold mb-4">Platform Settings</h2>
+<button onclick="saveSettings()" class="bg-black text-white px-4 py-2">Save Settings</button>
+</div>
 
 </div>
 </div>
@@ -380,7 +449,7 @@ html += `
 
 });
 
-orders.innerHTML = html;
+ordersList.innerHTML = html;
 
 });
 }
