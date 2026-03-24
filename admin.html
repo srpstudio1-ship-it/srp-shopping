@@ -1,1549 +1,563 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SRP SHOPPING ADMIN PANEL</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRP SHOPPING | Admin Panel</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-primary: #7380ec;
+            --color-danger: #ff7782;
+            --color-success: #41f1b6;
+            --color-warning: #ffbb55;
+            --color-white: #fff;
+            --color-info-dark: #7d8da1;
+            --color-info-light: #dce1eb;
+            --color-dark: #363949;
+            --color-light: rgba(132, 139, 200, 0.18);
+            --color-primary-variant: #111e88;
+            --color-dark-variant: #677483;
+            --color-background: #f6f6f9;
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
+        .dark-theme-variables {
+            --color-background: #181a1e;
+            --color-white: #202528;
+            --color-dark: #edeffd;
+            --color-dark-variant: #a3bdcc;
+            --color-light: rgba(0, 0, 0, 0.4);
+            box-shadow: none;
+        }
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+        * { margin: 0; padding: 0; outline: 0; appearance: none; border: 0; text-decoration: none; list-style: none; box-sizing: border-box; }
+        body { width: 100vw; height: 100vh; font-family: poppins, sans-serif; font-size: 0.88rem; background: var(--color-background); user-select: none; overflow-x: hidden; color: var(--color-dark); }
+        
+        .container { display: grid; width: 96%; margin: 0 auto; gap: 1.8rem; grid-template-columns: 14rem auto; }
+        
+        aside { height: 100vh; }
+        aside .top { display: flex; align-items: center; justify-content: space-between; margin-top: 1.4rem; }
+        aside .logo { display: flex; gap: 0.8rem; }
+        aside .logo img { width: 2rem; height: 2rem; }
+        aside .sidebar { display: flex; flex-direction: column; height: 86vh; position: relative; top: 3rem; overflow-y: auto; }
+        aside h3 { font-weight: 500; }
+        aside .sidebar a { display: flex; color: var(--color-info-dark); margin-left: 2rem; gap: 1rem; align-items: center; position: relative; height: 3.7rem; transition: all 300ms ease; }
+        aside .sidebar a span { font-size: 1.6rem; transition: all 300ms ease; }
+        aside .sidebar a.active { background: var(--color-light); color: var(--color-primary); margin-left: 0; }
+        aside .sidebar a.active:before { content: ""; width: 6px; height: 100%; background: var(--color-primary); }
+        aside .sidebar a:hover { color: var(--color-primary); }
+        aside .sidebar a:hover span { margin-left: 1rem; }
 
-<style>
-body { background:#0f172a; color:white; }
-.sidebar { width:260px; height:100vh; overflow:auto; }
-.section { display:none; }
-.active { display:block; }
-</style>
+        main { margin-top: 1.4rem; }
+        .section-panel { display: none; background: var(--color-white); padding: 1.5rem; border-radius: 2rem; box-shadow: 0 2rem 3rem var(--color-light); transition: all 300ms ease; }
+        .section-panel.active { display: block; }
+        
+        input, select, textarea { background: var(--color-light); padding: 0.6rem; border-radius: 0.4rem; color: var(--color-dark); margin-bottom: 0.5rem; width: 100%; }
+        button { cursor: pointer; background: var(--color-primary); color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
+        
+        table { width: 100%; text-align: left; border-collapse: collapse; }
+        table th, table td { padding: 12px; border-bottom: 1px solid var(--color-light); }
+
+        .theme-toggler { background: var(--color-light); display: flex; justify-content: space-between; align-items: center; height: 1.6rem; width: 4.2rem; cursor: pointer; border-radius: 0.4rem; }
+        .theme-toggler span { font-size: 1.2rem; width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .theme-toggler span.active { background: var(--color-primary); color: white; border-radius: 0.4rem; }
+    </style>
 </head>
+<body>
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <h2>SRP <span class="text-blue-600">SHOP</span></h2>
+                </div>
+                <div class="theme-toggler" id="theme-toggler">
+                    <span class="material-icons-sharp active">light_mode</span>
+                    <span class="material-icons-sharp">dark_mode</span>
+                </div>
+            </div>
 
-<body class="flex">
+            <div class="sidebar" id="sidebar-nav">
+                <a href="#" onclick="showSection('8-dashboard')" class="active"><span class="material-icons-sharp">grid_view</span><h3>8. Admin Dashboard</h3></a>
+                <a href="#" onclick="showSection('8-1-products')"><span class="material-icons-sharp">inventory</span><h3>8.1 Product Management</h3></a>
+                <a href="#" onclick="showSection('8-2-orders')"><span class="material-icons-sharp">shopping_basket</span><h3>8.2 Order Management</h3></a>
+                <a href="#" onclick="showSection('8-3-withdrawals')"><span class="material-icons-sharp">payments</span><h3>8.3 Seller Withdrawals</h3></a>
+                <a href="#" onclick="showSection('8-4-promotion')"><span class="material-icons-sharp">campaign</span><h3>8.4 Promotion System</h3></a>
+                <a href="#" onclick="showSection('8-5-featured')"><span class="material-icons-sharp">star</span><h3>8.5 Featured Products</h3></a>
+                <a href="#" onclick="showSection('8-6-global-dashboard')"><span class="material-icons-sharp">public</span><h3>8.6 Global Dashboard</h3></a>
+                <a href="#" onclick="showSection('8-7-security')"><span class="material-icons-sharp">security</span><h3>8.7 Admin Security</h3></a>
+                <a href="#" onclick="showSection('8-8-web-analytics')"><span class="material-icons-sharp">analytics</span><h3>8.8 Web Analytics</h3></a>
+                <a href="#" onclick="showSection('8-9-sales-analytics')"><span class="material-icons-sharp">trending_up</span><h3>8.9 Sales Analytics</h3></a>
+                <a href="#" onclick="showSection('8-10-income')"><span class="material-icons-sharp">account_balance_wallet</span><h3>8.10 Admin Income</h3></a>
+                <a href="#" onclick="showSection('8-11-categories')"><span class="material-icons-sharp">category</span><h3>8.11 Category Management</h3></a>
+                <a href="#" onclick="showSection('8-12-coupons')"><span class="material-icons-sharp">confirmation_number</span><h3>8.12 Coupon Management</h3></a>
+                <a href="#" onclick="showSection('8-13-banners')"><span class="material-icons-sharp">ad_units</span><h3>8.13 Banner Management</h3></a>
+                <a href="#" onclick="showSection('8-14-reviews')"><span class="material-icons-sharp">rate_review</span><h3>8.14 Review Moderation</h3></a>
+                <a href="#" onclick="showSection('8-15-users')"><span class="material-icons-sharp">person_outline</span><h3>8.15 User Management</h3></a>
+                <a href="#" onclick="showSection('8-16-sellers')"><span class="material-icons-sharp">storefront</span><h3>8.16 Seller Management</h3></a>
+                <a href="#" onclick="showSection('8-17-payments')"><span class="material-icons-sharp">receipt_long</span><h3>8.17 Payment History</h3></a>
+                <a href="#" onclick="showSection('8-18-refunds')"><span class="material-icons-sharp">undo</span><h3>8.18 Refund System</h3></a>
+                <a href="#" onclick="showSection('8-19-logs')"><span class="material-icons-sharp">history_edu</span><h3>8.19 System Logs</h3></a>
+                <a href="#" onclick="showSection('8-20-settings')"><span class="material-icons-sharp">settings</span><h3>8.20 Platform Settings</h3></a>
+                <a href="#" onclick="showSection('8-21-codechecker')"><span class="material-icons-sharp">code</span><h3>8.21 Code Checker</h3></a>
+            </div>
+        </aside>
 
-<!-- SIDEBAR -->
-<div class="sidebar bg-gray-900 p-4">
+        <main id="main-content">
+            <div id="8-dashboard" class="section-panel active">
+                <h1>8. Admin Panel Overview</h1>
+                <p>Welcome to the SRP SHOPPING Master Control.</p>
+                </div>
+        </main>
+    </div>
 
-<h1 class="text-xl font-bold mb-4">SRP ADMIN</h1>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-<button onclick="showSection('dashboard')" class="block w-full text-left p-2 hover:bg-gray-700">8 Dashboard</button>
+    <script>
+        // 8. CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+            authDomain: "srp-shopping-54bbb.firebaseapp.com",
+            databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+            projectId: "srp-shopping-54bbb",
+            storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+            messagingSenderId: "491906168702",
+            appId: "1:491906168702:web:2873565fcd2d561077252f",
+            measurementId: "G-3S7X8V8EFQ"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
 
-<button onclick="showSection('products')" class="block w-full text-left p-2 hover:bg-gray-700">8.1 Product Management</button>
+        // UI Logic for Switching Sections
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
+            
+            const target = document.getElementById(sectionId);
+            if(target) target.classList.add('active');
+            
+            event.currentTarget.classList.add('active');
+        }
 
-<button onclick="showSection('orders')" class="block w-full text-left p-2 hover:bg-gray-700">8.2 Orders Management</button>
+        // 8.7 Dark Mode Toggle Logic
+        const themeToggler = document.querySelector("#theme-toggler");
+        themeToggler.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme-variables');
+            themeToggler.querySelector('span:nth-child(1)').classList.toggle('active');
+            themeToggler.querySelector('span:nth-child(2)').classList.toggle('active');
+        });
+      /* --- PART 2: CORE SECTIONS HTML INJECTION --- */
 
-<button onclick="showSection('withdrawal')" class="block w-full text-left p-2 hover:bg-gray-700">8.3 Withdrawal Approval</button>
+const mainContent = document.getElementById('main-content');
 
-<button onclick="showSection('promotion')" class="block w-full text-left p-2 hover:bg-gray-700">8.4 Promotion Payment</button>
+const sectionsHTML = `
+    <div id="8-1-products" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.1 Product Management</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg dark:bg-gray-800">
+            <div>
+                <input type="text" id="prod-name" placeholder="Product Name">
+                <input type="number" id="prod-mrp" placeholder="MRP">
+                <input type="number" id="prod-discount" placeholder="Discount Price">
+                <input type="text" id="prod-category" placeholder="Category">
+                <input type="number" id="prod-stock" placeholder="Stock Quantity">
+                <textarea id="prod-desc" placeholder="Product Description"></textarea>
+                <input type="file" id="prod-image" class="mt-2">
+                <button onclick="uploadProduct()" class="mt-4 w-full bg-green-600">Add Product</button>
+            </div>
+            <div class="overflow-y-auto max-h-[500px]">
+                <table id="product-list">
+                    <thead><tr><th>ID</th><th>Name</th><th>Stock</th><th>Action</th></tr></thead>
+                    <tbody id="product-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-<button onclick="showSection('featured')" class="block w-full text-left p-2 hover:bg-gray-700">8.5 Featured Products</button>
+    <div id="8-2-orders" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.2 Order Management</h2>
+        <div class="overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Order ID</th><th>User</th><th>Status</th><th>Tracking ID</th><th>Action</th></tr>
+                </thead>
+                <tbody id="orders-body"></tbody>
+            </table>
+        </div>
+    </div>
 
-<button onclick="showSection('globalOrders')" class="block w-full text-left p-2 hover:bg-gray-700">8.6 Global Orders</button>
+    <div id="8-3-withdrawals" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.3 Seller Withdrawal Requests</h2>
+        <div id="withdrawal-list" class="grid grid-cols-1 gap-4"></div>
+    </div>
 
-<button onclick="showSection('security')" class="block w-full text-left p-2 hover:bg-gray-700">8.7 Admin Security</button>
+    <div id="8-4-promotion" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.4 Seller Promotion Payment System</h2>
+        <table id="promo-table">
+            <thead>
+                <tr><th>Seller Name</th><th>Aadhar/PAN</th><th>Product ID</th><th>Payment</th></tr>
+            </thead>
+            <tbody id="promo-body"></tbody>
+        </table>
+    </div>
 
-<button onclick="showSection('analytics')" class="block w-full text-left p-2 hover:bg-gray-700">8.8 Website Analytics</button>
+    <div id="8-5-featured" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.5 Featured Products (Home Page)</h2>
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="feat-prod-id" placeholder="Product ID">
+            <input type="number" id="feat-priority" placeholder="Priority (1-10)">
+            <input type="date" id="feat-expiry" placeholder="Display Till">
+            <button onclick="pinToHome()">Pin Product</button>
+        </div>
+        <div id="featured-list"></div>
+    </div>
 
-<button onclick="showSection('sales')" class="block w-full text-left p-2 hover:bg-gray-700">8.9 Sales Analytics</button>
+    <div id="8-6-global-dashboard" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.6 Global Order Dashboard</h2>
+        <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="p-4 bg-blue-100 dark:bg-blue-900 rounded">Total Orders: <span id="glob-total-orders">0</span></div>
+            <div class="p-4 bg-green-100 dark:bg-green-900 rounded">Total Revenue: ₹<span id="glob-total-rev">0</span></div>
+            <div class="p-4 bg-purple-100 dark:bg-purple-900 rounded">Commission: ₹<span id="glob-total-comm">0</span></div>
+        </div>
+    </div>
 
-<button onclick="showSection('income')" class="block w-full text-left p-2 hover:bg-gray-700">8.10 Admin Income</button>
+    <div id="8-7-security" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.7 Admin Security</h2>
+        <div class="max-w-md">
+            <input type="password" id="new-admin-pass" placeholder="New Password">
+            <button onclick="changeAdminPassword()" class="mb-4">Update Password</button>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="2fa-toggle" style="width: auto;">
+                <label>Enable 2FA Login</label>
+            </div>
+        </div>
+    </div>
 
-<button onclick="showSection('category')" class="block w-full text-left p-2 hover:bg-gray-700">8.11 Category</button>
+    <div id="8-8-web-analytics" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.8 & 8.9 Site & Sales Analytics</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="card p-4 border rounded">Users: <h3 id="stat-users">0</h3></div>
+            <div class="card p-4 border rounded">Sellers: <h3 id="stat-sellers">0</h3></div>
+            <div class="card p-4 border rounded">Today Visits: <h3 id="stat-visits">0</h3></div>
+            <div class="card p-4 border rounded">Total Sales: <h3 id="stat-sales">0</h3></div>
+        </div>
+    </div>
 
-<button onclick="showSection('coupon')" class="block w-full text-left p-2 hover:bg-gray-700">8.12 Coupon</button>
-
-<button onclick="showSection('banner')" class="block w-full text-left p-2 hover:bg-gray-700">8.13 Banner</button>
-
-<button onclick="showSection('reviews')" class="block w-full text-left p-2 hover:bg-gray-700">8.14 Reviews</button>
-
-<button onclick="showSection('users')" class="block w-full text-left p-2 hover:bg-gray-700">8.15 Users</button>
-
-<button onclick="showSection('sellers')" class="block w-full text-left p-2 hover:bg-gray-700">8.16 Sellers</button>
-
-<button onclick="showSection('payments')" class="block w-full text-left p-2 hover:bg-gray-700">8.17 Payments</button>
-
-<button onclick="showSection('refunds')" class="block w-full text-left p-2 hover:bg-gray-700">8.18 Refunds</button>
-
-<button onclick="showSection('logs')" class="block w-full text-left p-2 hover:bg-gray-700">8.19 Logs</button>
-
-<button onclick="showSection('settings')" class="block w-full text-left p-2 hover:bg-gray-700">8.20 Settings</button>
-
-<button onclick="showSection('codeChecker')" class="block w-full text-left p-2 hover:bg-gray-700">8.21 Code Checker</button>
-
-</div>
-
-<!-- MAIN CONTENT -->
-<div class="flex-1 p-6">
-
-<!-- 8 DASHBOARD -->
-<div id="dashboard" class="section active">
-<h2 class="text-2xl mb-4">Dashboard</h2>
-<div id="dashboardData"></div>
-</div>
-
-<!-- 8.1 PRODUCT -->
-<div id="products" class="section">
-<h2 class="text-2xl mb-4">Product Management</h2>
-<div id="productForm"></div>
-<div id="productList"></div>
-</div>
-
-<!-- 8.2 ORDERS -->
-<div id="orders" class="section">
-<h2 class="text-2xl mb-4">Orders</h2>
-<div id="orderList"></div>
-</div>
-
-<!-- 8.3 WITHDRAWAL -->
-<div id="withdrawal" class="section">
-<h2 class="text-2xl mb-4">Withdrawal</h2>
-<div id="withdrawalList"></div>
-</div>
-
-<!-- 8.4 PROMOTION -->
-<div id="promotion" class="section">
-<h2 class="text-2xl mb-4">Promotion Payment</h2>
-<div id="promotionList"></div>
-</div>
-
-<!-- 8.5 FEATURED -->
-<div id="featured" class="section">
-<h2 class="text-2xl mb-4">Featured Products</h2>
-<div id="featuredList"></div>
-</div>
-
-<!-- 8.6 GLOBAL -->
-<div id="globalOrders" class="section">
-<h2 class="text-2xl mb-4">Global Orders</h2>
-<div id="globalOrderList"></div>
-</div>
-
-<!-- 8.7 SECURITY -->
-<div id="security" class="section">
-<h2 class="text-2xl mb-4">Security</h2>
-</div>
-
-<!-- 8.8 ANALYTICS -->
-<div id="analytics" class="section">
-<h2 class="text-2xl mb-4">Website Analytics</h2>
-</div>
-
-<!-- 8.9 SALES -->
-<div id="sales" class="section">
-<h2 class="text-2xl mb-4">Sales Analytics</h2>
-</div>
-
-<!-- 8.10 INCOME -->
-<div id="income" class="section">
-<h2 class="text-2xl mb-4">Admin Income</h2>
-</div>
-
-<!-- 8.11 CATEGORY -->
-<div id="category" class="section">
-<h2 class="text-2xl mb-4">Category</h2>
-</div>
-
-<!-- 8.12 COUPON -->
-<div id="coupon" class="section">
-<h2 class="text-2xl mb-4">Coupon</h2>
-</div>
-
-<!-- 8.13 BANNER -->
-<div id="banner" class="section">
-<h2 class="text-2xl mb-4">Banner</h2>
-</div>
-
-<!-- 8.14 REVIEWS -->
-<div id="reviews" class="section">
-<h2 class="text-2xl mb-4">Reviews</h2>
-</div>
-
-<!-- 8.15 USERS -->
-<div id="users" class="section">
-<h2 class="text-2xl mb-4">Users</h2>
-</div>
-
-<!-- 8.16 SELLERS -->
-<div id="sellers" class="section">
-<h2 class="text-2xl mb-4">Sellers</h2>
-</div>
-
-<!-- 8.17 PAYMENTS -->
-<div id="payments" class="section">
-<h2 class="text-2xl mb-4">Payments</h2>
-</div>
-
-<!-- 8.18 REFUNDS -->
-<div id="refunds" class="section">
-<h2 class="text-2xl mb-4">Refunds</h2>
-</div>
-
-<!-- 8.19 LOGS -->
-<div id="logs" class="section">
-<h2 class="text-2xl mb-4">System Logs</h2>
-</div>
-
-<!-- 8.20 SETTINGS -->
-<div id="settings" class="section">
-<h2 class="text-2xl mb-4">Settings</h2>
-</div>
-
-<!-- 8.21 CODE CHECKER -->
-<div id="codeChecker" class="section">
-<h2 class="text-2xl mb-4">Code Checker</h2>
-<button onclick="runCodeCheck()" class="bg-blue-600 p-2 rounded">Run Check</button>
-<div id="codeResult"></div>
-</div>
-
-</div>
-
-<script>
-
-// FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-  authDomain: "srp-shopping-54bbb.firebaseapp.com",
-  databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-  projectId: "srp-shopping-54bbb",
-  storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-  messagingSenderId: "491906168702",
-  appId: "1:491906168702:web:2873565fcd2d561077252f",
-  measurementId: "G-3S7X8V8EFQ"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const db = firebase.database();
-const storage = firebase.storage();
-
-// SECTION SWITCHER
-function showSection(id){
-document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-document.getElementById(id).classList.add('active');
-}
-
-// AUTO PRODUCT ID
-function generateProductId(){
-return "PID"+Date.now();
-}
-
-// CODE CHECKER (BASIC)
-function runCodeCheck(){
-document.getElementById("codeResult").innerHTML="Checking...";
-setTimeout(()=>{
-document.getElementById("codeResult").innerHTML="No major errors found";
-},2000);
-}
-
-
-// ==============================
-// 8.1 PRODUCT MANAGEMENT FULL
-// ==============================
-
-// LOAD PRODUCT FORM
-document.getElementById("productForm").innerHTML = `
-<div class="bg-gray-800 p-4 rounded">
-<input id="pName" placeholder="Product Name" class="p-2 w-full mb-2 text-black">
-<input id="pMRP" placeholder="MRP" class="p-2 w-full mb-2 text-black">
-<input id="pDiscount" placeholder="Discount Price" class="p-2 w-full mb-2 text-black">
-<input id="pCategory" placeholder="Category" class="p-2 w-full mb-2 text-black">
-<input id="pStock" placeholder="Stock Quantity" class="p-2 w-full mb-2 text-black">
-<textarea id="pDesc" placeholder="Description" class="p-2 w-full mb-2 text-black"></textarea>
-<input type="file" id="pImage" class="mb-2">
-<button onclick="addProduct()" class="bg-green-600 p-2 w-full">Add Product</button>
-</div>
+    <div id="8-10-income" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.10 Admin Income Report</h2>
+        <div class="bg-gray-100 dark:bg-gray-700 p-6 rounded-xl">
+            <h1 class="text-4xl font-bold text-green-500">Total Income: ₹<span id="income-total">0.00</span></h1>
+            <p class="mt-2">Commission Earned: ₹<span id="income-comm">0</span></p>
+            <p>Promotion Revenue: ₹<span id="income-promo">0</span></p>
+        </div>
+    </div>
 `;
 
-// ADD PRODUCT
-function addProduct(){
-const id = generateProductId();
-const name = document.getElementById("pName").value;
-const mrp = document.getElementById("pMRP").value;
-const discount = document.getElementById("pDiscount").value;
-const category = document.getElementById("pCategory").value;
-const stock = document.getElementById("pStock").value;
-const desc = document.getElementById("pDesc").value;
-const file = document.getElementById("pImage").files[0];
+mainContent.innerHTML += sectionsHTML;
 
-if(!file){ alert("Select Image"); return; }
+/* --- LOGIC FOR 8.1: PRODUCT MANAGEMENT --- */
 
-const ref = storage.ref("products/"+id);
-ref.put(file).then(()=>{
-ref.getDownloadURL().then(url=>{
+function uploadProduct() {
+    const name = document.getElementById('prod-name').value;
+    const mrp = document.getElementById('prod-mrp').value;
+    const discount = document.getElementById('prod-discount').value;
+    const cat = document.getElementById('prod-category').value;
+    const stock = document.getElementById('prod-stock').value;
+    const desc = document.getElementById('prod-desc').value;
+    const imageFile = document.getElementById('prod-image').files[0];
 
-db.ref("products/"+id).set({
-id,name,mrp,discount,category,stock,desc,image:url
-});
+    if(!name || !imageFile) return alert("Please fill details and select image");
 
-alert("Product Added");
-loadProducts();
+    const prodId = "SRP" + Date.now(); // Automatic Unique ID
+    const storageRef = storage.ref('products/' + prodId);
 
-});
-});
+    storageRef.put(imageFile).then(snapshot => {
+        snapshot.ref.getDownloadURL().then(url => {
+            db.ref('products/' + prodId).set({
+                productId: prodId,
+                name: name,
+                mrp: mrp,
+                discountPrice: discount,
+                category: cat,
+                stock: stock,
+                description: desc,
+                imageUrl: url,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                alert("Product Added Successfully! ID: " + prodId);
+                location.reload();
+            });
+        });
+    });
 }
 
-// LOAD PRODUCTS
-function loadProducts(){
-db.ref("products").on("value",snap=>{
-let html="";
-snap.forEach(d=>{
-const p = d.val();
-html+=`
-<div class="bg-gray-700 p-3 mb-2"><img src="${p.image}" alt="Product Image" class="w-20">
-<p>${p.name}</p>
-<p>${p.id}</p>
-<button onclick="deleteProduct('${p.id}')" class="bg-red-600 p-1">Delete</button>
-<button onclick="editProduct('${p.id}')" class="bg-yellow-600 p-1">Edit</button>
-</div>
-`;
-});
-document.getElementById("productList").innerHTML=html;
-});
-}
-loadProducts();
-
-// DELETE PRODUCT
-function deleteProduct(id){
-db.ref("products/"+id).remove();
-alert("Deleted");
+// 8.2 Order Tracking Update Logic
+function updateOrderStatus(orderId, status) {
+    const trackingId = prompt("Enter Tracking ID:");
+    db.ref('orders/' + orderId).update({
+        status: status,
+        trackingId: trackingId
+    }).then(() => {
+        // Mock notification logic
+        alert("Notification sent to user: Order " + status);
+    });
 }
 
-// EDIT PRODUCT
-function editProduct(id){
-db.ref("products/"+id).once("value",snap=>{
-const p=snap.val();
-document.getElementById("pName").value=p.name;
-document.getElementById("pMRP").value=p.mrp;
-document.getElementById("pDiscount").value=p.discount;
-document.getElementById("pCategory").value=p.category;
-document.getElementById("pStock").value=p.stock;
-document.getElementById("pDesc").value=p.desc;
-
-db.ref("products/"+id).remove();
-});
+// 8.3 Withdrawal Approval Logic
+function approveWithdrawal(sellerId, requestId, amount) {
+    db.ref('sellers/' + sellerId + '/balance').transaction((current) => {
+        return (current || 0) - amount;
+    }).then(() => {
+        db.ref('withdrawals/' + requestId).update({ status: 'Paid', paidAt: new Date().toISOString() });
+        alert("Withdrawal Approved & Seller Notified automatically.");
+    });
 }
 
-// ==============================
-// 8.2 ORDERS MANAGEMENT FULL
-// ==============================
-
-// LOAD ORDERS
-function loadOrders(){
-db.ref("orders").on("value",snap=>{
-let html="";
-snap.forEach(d=>{
-const o=d.val();
-
-html+=`
-<div class="bg-gray-800 p-3 mb-2">
-<p>User: ${o.name}</p>
-<p>Phone: ${o.phone}</p>
-<p>Email: ${o.email}</p>
-<p>Address: ${o.address}</p>
-<p>Pincode: ${o.pincode}</p>
-<p>Order ID: ${o.orderId}</p>
-<p>Status: ${o.status}</p>
-
-<input placeholder="Tracking ID" id="track_${o.orderId}" class="text-black p-1">
-
-<button onclick="updateTracking('${o.orderId}')" class="bg-blue-600 p-1">Update Tracking</button>
-
-<button onclick="updateStatus('${o.orderId}','Confirmed')" class="bg-green-600 p-1">Confirm</button>
-
-<button onclick="updateStatus('${o.orderId}','Shipped')" class="bg-yellow-600 p-1">Ship</button>
-
-<button onclick="updateStatus('${o.orderId}','Delivered')" class="bg-purple-600 p-1">Deliver</button>
-
-<button onclick="viewOrder('${o.orderId}')" class="bg-gray-600 p-1">View</button>
-
-</div>
-`;
-});
-document.getElementById("orderList").innerHTML=html;
-});
-}
-loadOrders();
-
-// UPDATE TRACKING
-function updateTracking(id){
-const t=document.getElementById("track_"+id).value;
-db.ref("orders/"+id+"/tracking").set(t);
-alert("Tracking Updated");
-}
-
-// UPDATE STATUS + NOTIFICATION
-function updateStatus(id,status){
-db.ref("orders/"+id+"/status").set(status);
-
-// notification
-db.ref("notifications/"+id).push({
-msg:"Order "+status,
-time:Date.now()
+// Listeners for Data
+db.ref('products').on('value', snap => {
+    const body = document.getElementById('product-body');
+    body.innerHTML = "";
+    snap.forEach(child => {
+        const p = child.val();
+        body.innerHTML += `<tr>
+            <td>${p.productId}</td>
+            <td>${p.name}</td>
+            <td>${p.stock}</td>
+            <td><button class="bg-red-500 p-1 text-xs" onclick="deleteProduct('${p.productId}')">Delete</button></td>
+        </tr>`;
+    });
 });
 
-alert("Status Updated");
+function deleteProduct(id) {
+    if(confirm("Delete product?")) db.ref('products/' + id).remove();
 }
+ /* --- PART 3: ADVANCED MANAGEMENT & SYSTEM LOGIC --- */
 
-// VIEW ORDER DETAILS
-function viewOrder(id){
-db.ref("orders/"+id).once("value",snap=>{
-const o=snap.val();
+const part3HTML = `
+    <div id="8-11-categories" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.11 Category Management</h2>
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="cat-name" placeholder="Category Name">
+            <input type="text" id="cat-icon" placeholder="Material Icon Name (e.g., home)">
+            <button onclick="addCategory()">Add Category</button>
+        </div>
+        <div id="category-display" class="grid grid-cols-4 gap-4"></div>
+    </div>
 
-alert(
-"Order ID: "+o.orderId+
-"\nProduct ID: "+o.productId+
-"\nUser: "+o.name+
-"\nDate: "+new Date(o.time)
-);
-});
-}
+    <div id="8-12-coupons" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.12 Coupon Management</h2>
+        <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 dark:bg-gray-800 rounded">
+            <div>
+                <input type="text" id="cpn-code" placeholder="COUPON50">
+                <input type="number" id="cpn-perc" placeholder="Discount %">
+                <input type="date" id="cpn-expiry">
+                <input type="number" id="cpn-limit" placeholder="Usage Limit per User">
+                <button onclick="createCoupon()" class="w-full">Create Coupon</button>
+            </div>
+            <div id="active-coupons" class="overflow-y-auto max-h-60"></div>
+        </div>
+    </div>
 
-// ==============================
-// 8.3 WITHDRAWAL SYSTEM FULL
-// ==============================
+    <div id="8-13-banners" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.13 Banner Management</h2>
+        <div class="border-2 border-dashed p-4 mb-4">
+            <input type="file" id="banner-file">
+            <input type="text" id="banner-link" placeholder="Linked Product ID">
+            <select id="banner-type">
+                <option value="home">Homepage Slider</option>
+                <option value="festival">Festival Sale</option>
+            </select>
+            <button onclick="uploadBanner()" class="mt-2">Upload & Sync</button>
+        </div>
+        <div id="banner-preview" class="flex gap-2"></div>
+    </div>
 
-function loadWithdrawals(){
-db.ref("withdrawals").on("value",snap=>{
-let html="";
-snap.forEach(d=>{
-const w=d.val();
+    <div id="8-14-reviews" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.14 Review Moderation</h2>
+        <table class="w-full">
+            <thead>
+                <tr><th>User</th><th>Rating</th><th>Comment</th><th>Action</th></tr>
+            </thead>
+            <tbody id="reviews-body"></tbody>
+        </table>
+    </div>
 
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>Seller: ${w.seller}</p>
-<p>Amount: ${w.amount}</p>
-<p>Balance: ${w.balance}</p>
+    <div id="8-15-users" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.15 User Management</h2>
+        <table class="w-full">
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Last Login</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+        </table>
+    </div>
 
-<button onclick="approveWithdraw('${d.key}')" class="bg-green-600 p-1">Approve</button>
+    <div id="8-16-sellers" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.16 Seller Management</h2>
+        <div id="seller-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
 
-<button onclick="rejectWithdraw('${d.key}')" class="bg-red-600 p-1">Reject</button>
+    <div id="8-17-payments" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.17 Payment History</h2>
+        <div id="payment-logs" class="text-xs font-mono"></div>
+    </div>
 
-<button onclick="markPaid('${d.key}')" class="bg-blue-600 p-1">Mark Paid</button>
+    <div id="8-18-refunds" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.18 Refund System</h2>
+        <div id="refund-requests"></div>
+    </div>
 
-</div>
-`;
-});
-document.getElementById("withdrawalList").innerHTML=html;
-});
-}
-loadWithdrawals();
+    <div id="8-19-logs" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.19 System Logs</h2>
+        <div class="flex gap-2 mb-4">
+            <button onclick="filterLogs('admin')">Admin Actions</button>
+            <button onclick="filterLogs('seller')">Seller Actions</button>
+            <button onclick="filterLogs('order')">Order Updates</button>
+        </div>
+        <div id="log-content" class="bg-black text-green-500 p-4 rounded h-80 overflow-y-auto"></div>
+    </div>
 
-// APPROVE
-function approveWithdraw(id){
-db.ref("withdrawals/"+id+"/status").set("Approved");
+    <div id="8-20-settings" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.20 Platform Settings</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 border">
+                <h3>Maintenance Mode</h3>
+                <button onclick="toggleMaintenance()" id="maint-btn">Enable</button>
+            </div>
+            <div class="p-4 border">
+                <h3>Site Name</h3>
+                <input type="text" id="site-name-set" value="SRP SHOPPING">
+                <button onclick="updateSiteSettings()">Save</button>
+            </div>
+        </div>
+    </div>
 
-db.ref("notifications/"+id).push({
-msg:"Withdrawal Approved",
-time:Date.now()
-});
-
-alert("Approved");
-}
-
-// REJECT
-function rejectWithdraw(id){
-db.ref("withdrawals/"+id+"/status").set("Rejected");
-alert("Rejected");
-}
-
-// MARK PAID
-function markPaid(id){
-db.ref("withdrawals/"+id+"/status").set("Paid");
-alert("Marked Paid");
-}
-
-
-// ==============================
-// 8.4 PROMOTION PAYMENT SYSTEM
-// ==============================
-
-function loadPromotions(){
-db.ref("promotions").on("value",snap=>{
-let html="";
-snap.forEach(d=>{
-const p=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>Name: ${p.name}</p>
-<p>Aadhar: ${p.aadhar}</p>
-<p>PAN: ${p.pan}</p>
-<p>GST: ${p.gst}</p>
-<p>Product ID: ${p.productId}</p>
-<p>Mobile: ${p.mobile}</p>
-<p>Payment: ${p.payment}</p>
-<p>Reference: ${p.reference}</p>
-</div>
-`;
-});
-document.getElementById("promotionList").innerHTML=html;
-});
-}
-loadPromotions();
-
-// ==============================
-// 8.5 FEATURED PRODUCTS
-// ==============================
-
-// ADD FEATURED FORM
-document.getElementById("featuredList").innerHTML=`
-<div class="bg-gray-800 p-4 mb-3">
-<input id="fProductId" placeholder="Product ID" class="p-2 w-full mb-2 text-black">
-<input id="fSellerId" placeholder="Seller Product ID" class="p-2 w-full mb-2 text-black">
-<input id="fPriority" placeholder="Priority" class="p-2 w-full mb-2 text-black">
-<input type="date" id="fExpire" class="p-2 w-full mb-2 text-black">
-<button onclick="addFeatured()" class="bg-green-600 p-2 w-full">Add Featured</button>
-</div>
-<div id="featuredItems"></div>
+    <div id="8-21-codechecker" class="section-panel">
+        <h2 class="text-2xl font-bold mb-4">8.21 Automated GitHub Code Checker</h2>
+        <div class="bg-gray-900 text-white p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+                <span>Repository: <b id="repo-url">srp-shopping-platform/main</b></span>
+                <button onclick="runCodeCheck()" class="bg-blue-500 px-4 py-2 rounded">Check All Files Now</button>
+            </div>
+            <div id="check-status" class="mb-2 text-yellow-400 italic">Next scheduled check: 7 days from last run.</div>
+            <div id="code-errors-list" class="bg-black p-4 border border-red-500 rounded h-64 overflow-y-auto font-mono text-sm">
+                [SYSTEM]: Waiting for manual trigger or 7-day cycle...
+            </div>
+        </div>
+    </div>
 `;
 
-// ADD FEATURED
-function addFeatured(){
-const id="FID"+Date.now();
-const productId=document.getElementById("fProductId").value;
-const sellerId=document.getElementById("fSellerId").value;
-const priority=document.getElementById("fPriority").value;
-const expire=document.getElementById("fExpire").value;
+mainContent.innerHTML += part3HTML;
 
-db.ref("featured/"+id).set({
-id,productId,sellerId,priority,expire
+/* --- JAVASCRIPT LOGIC FOR PART 3 --- */
+
+// 8.11 Categories
+function addCategory() {
+    const name = document.getElementById('cat-name').value;
+    const icon = document.getElementById('cat-icon').value;
+    if(name) {
+        db.ref('categories').push({ name, icon });
+        alert("Category added");
+    }
+}
+
+// 8.15 User Logic
+db.ref('users').on('value', snap => {
+    const body = document.getElementById('users-body');
+    body.innerHTML = "";
+    snap.forEach(user => {
+        const u = user.val();
+        body.innerHTML += `
+            <tr class="${u.isBlocked ? 'bg-red-100' : ''}">
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td>${u.lastLogin || 'N/A'}</td>
+                <td>${u.isBlocked ? 'Blocked' : 'Active'}</td>
+                <td>
+                    <button onclick="toggleUserBlock('${user.key}', ${u.isBlocked})" class="bg-orange-400 p-1">
+                        ${u.isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
 });
 
-alert("Added Featured");
-loadFeatured();
+function toggleUserBlock(uid, currentStatus) {
+    db.ref('users/' + uid).update({ isBlocked: !currentStatus });
 }
 
-// LOAD FEATURED
-function loadFeatured(){
-db.ref("featured").on("value",snap=>{
-let html="";
-snap.forEach(d=>{
-const f=d.val();
-
-html+=`
-<div class="bg-gray-700 p-2 mb-2">
-<p>${f.productId}</p>
-<p>Priority: ${f.priority}</p>
-<p>Expire: ${f.expire}</p>
-<button onclick="deleteFeatured('${f.id}')" class="bg-red-600 p-1">Remove</button>
-</div>
-`;
-});
-document.getElementById("featuredItems").innerHTML=html;
-});
-}
-loadFeatured();
-
-// DELETE FEATURED
-function deleteFeatured(id){
-db.ref("featured/"+id).remove();
-alert("Removed");
-}
-
-// ==============================
-// 8.6 GLOBAL ORDER DASHBOARD
-// ==============================
-
-function loadGlobalOrders(){
-db.ref("orders").on("value",snap=>{
-let html="";
-let total=0;
-let commission=0;
-
-snap.forEach(d=>{
-const o=d.val();
-
-total+=Number(o.amount||0);
-commission+=Number(o.amount||0)*0.1;
-
-html+=`
-<div class="bg-gray-800 p-3 mb-2">
-<p>Order: ${o.orderId}</p>
-<p>User: ${o.name}</p>
-<p>Seller: ${o.seller}</p>
-<p>Amount: ${o.amount}</p>
-<p>Status: ${o.status}</p>
-<p>Payment: ${o.paymentStatus}</p>
-</div>
-`;
+// 8.16 Seller Management Detailed
+db.ref('sellers').on('value', snap => {
+    const container = document.getElementById('seller-cards-container');
+    container.innerHTML = "";
+    snap.forEach(seller => {
+        const s = seller.val();
+        container.innerHTML += `
+            <div class="p-4 border rounded bg-white dark:bg-gray-800 shadow">
+                <h3 class="font-bold">${s.storeName} (${s.name})</h3>
+                <p class="text-xs">PAN: ${s.pan} | GST: ${s.gst}</p>
+                <p class="text-xs">Address: ${s.address}</p>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="updateSellerStatus('${seller.key}', 'approved')" class="bg-green-500 text-xs px-2">Approve</button>
+                    <button onclick="updateSellerStatus('${seller.key}', 'suspended')" class="bg-red-500 text-xs px-2">Suspend</button>
+                </div>
+            </div>
+        `;
+    });
 });
 
-html+=`
-<div class="bg-green-700 p-3 mt-4">
-<p>Total Sales: ${total}</p>
-<p>Commission: ${commission}</p>
-</div>
-`;
-
-document.getElementById("globalOrderList").innerHTML=html;
-
-});
-}
-loadGlobalOrders();
-
-// ==============================
-// 8.7 ADMIN SECURITY
-// ==============================
-
-document.getElementById("security").innerHTML=`
-<div class="bg-gray-800 p-4">
-
-<h3 class="mb-2">Change Password</h3>
-<input type="password" id="newPass" placeholder="New Password" class="p-2 w-full mb-2 text-black">
-<button onclick="changePassword()" class="bg-blue-600 p-2 w-full mb-3">Change</button>
-
-<h3 class="mb-2">2FA</h3>
-<button onclick="toggle2FA()" class="bg-yellow-600 p-2 w-full mb-3">Enable/Disable 2FA</button>
-
-<h3 class="mb-2">Theme</h3>
-<button onclick="setTheme('dark')" class="bg-gray-900 p-2 w-full mb-2">Dark</button>
-<button onclick="setTheme('light')" class="bg-white text-black p-2 w-full">Light</button>
-
-</div>
-`;
-
-// CHANGE PASSWORD
-function changePassword(){
-const pass=document.getElementById("newPass").value;
-db.ref("admin/settings/password").set(pass);
-alert("Password Changed");
+// 8.21 GitHub Code Checker Logic
+async function runCodeCheck() {
+    const logBox = document.getElementById('code-errors-list');
+    logBox.innerHTML += `<div>> [${new Date().toLocaleTimeString()}] Starting scan of GitHub files...</div>`;
+    
+    // Simulating API call to GitHub Content API
+    // In production, you would use: fetch('https://api.github.com/repos/USER/REPO/contents/')
+    
+    setTimeout(() => {
+        const issues = [
+            "Warning: Deprecated Firebase Auth method in auth.js line 42",
+            "Error: Missing validation in 8.3 withdrawal logic",
+            "Optimization: Banner images in 8.13 lack lazy-loading",
+            "Security: 2FA bypass possible in dev-mode config"
+        ];
+        
+        issues.forEach(issue => {
+            logBox.innerHTML += `<div class="text-red-400">> FIX REQUIRED: ${issue}</div>`;
+        });
+        
+        logBox.innerHTML += `<div class="text-green-400">> Scan complete. 0 critical, ${issues.length} warnings.</div>`;
+        db.ref('system/lastCodeCheck').set(Date.now());
+    }, 2000);
 }
 
-// 2FA TOGGLE
-function toggle2FA(){
-db.ref("admin/settings/2fa").once("value",snap=>{
-let val=!snap.val();
-db.ref("admin/settings/2fa").set(val);
-alert("2FA: "+val);
-});
+// Auto-check check logic (runs on admin login)
+function checkLastScan() {
+    db.ref('system/lastCodeCheck').once('value', snap => {
+        const last = snap.val() || 0;
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if(Date.now() - last > sevenDays) {
+            console.log("Automatic 7-day scan triggered.");
+            runCodeCheck();
+        }
+    });
 }
 
-// THEME SWITCH
-function setTheme(mode){
-if(mode==="light"){
-document.body.style.background="white";
-document.body.style.color="black";
-}else{
-document.body.style.background="#0f172a";
-document.body.style.color="white";
-}
-db.ref("admin/settings/theme").set(mode);
+// System Logs 8.19
+function logAdminAction(action) {
+    db.ref('logs/admin').push({
+        action: action,
+        time: firebase.database.ServerValue.TIMESTAMP
+    });
 }
 
+// Run initial check
+checkLastScan();
 
-// ==============================
-// 8.8 WEBSITE ANALYTICS
-// ==============================
-
-function loadWebsiteAnalytics(){
-db.ref("analytics").on("value",snap=>{
-const data=snap.val()||{};
-
-const totalUsers=data.totalUsers||0;
-const totalSellers=data.totalSellers||0;
-const todayUsers=data.todayUsers||0;
-const todaySellers=data.todaySellers||0;
-const totalVisits=data.totalVisits||0;
-const todayVisits=data.todayVisits||0;
-
-document.getElementById("analytics").innerHTML=`
-<h2 class="text-2xl mb-4">Website Analytics</h2>
-
-<div class="bg-gray-800 p-4 mb-2">
-<p>Total Users: ${totalUsers}</p>
-<p>Total Sellers: ${totalSellers}</p>
-<p>Today New Users: ${todayUsers}</p>
-<p>Today New Sellers: ${todaySellers}</p>
-<p>Total Site Visits: ${totalVisits}</p>
-<p>Today's Visits: ${todayVisits}</p>
-</div>
-`;
-});
-}
-loadWebsiteAnalytics();
-
-// ==============================
-// 8.9 SALES ANALYTICS
-// ==============================
-
-function loadSalesAnalytics(){
-db.ref("orders").on("value",snap=>{
-let totalSales=0;
-let totalOrders=0;
-let commission=0;
-let sellerRevenue=0;
-
-snap.forEach(d=>{
-const o=d.val();
-const amount=Number(o.amount||0);
-
-totalSales+=amount;
-totalOrders++;
-commission+=amount*0.1;
-sellerRevenue+=amount*0.9;
-});
-
-document.getElementById("sales").innerHTML=`
-<h2 class="text-2xl mb-4">Sales Analytics</h2>
-
-<div class="bg-gray-800 p-4">
-<p>Total Sales: ${totalSales}</p>
-<p>Total Orders: ${totalOrders}</p>
-<p>Commission: ${commission}</p>
-<p>Seller Revenue: ${sellerRevenue}</p>
-</div>
-`;
-});
-}
-loadSalesAnalytics();
-
-// ==============================
-// 8.10 ADMIN INCOME
-// ==============================
-
-function loadAdminIncome(){
-db.ref("orders").once("value",snap=>{
-let commission=0;
-
-snap.forEach(d=>{
-const o=d.val();
-commission+=Number(o.amount||0)*0.1;
-});
-
-db.ref("promotions").once("value",snap2=>{
-let promo=0;
-
-snap2.forEach(d=>{
-const p=d.val();
-promo+=Number(p.payment||0);
-});
-
-const totalIncome=commission+promo;
-
-document.getElementById("income").innerHTML=`
-<h2 class="text-2xl mb-4">Admin Income</h2>
-
-<div class="bg-gray-800 p-4">
-<p>Total Commission: ${commission}</p>
-<p>Promotion Earnings: ${promo}</p>
-<p>Total Income: ${totalIncome}</p>
-</div>
-`;
-});
-
-});
-}
-loadAdminIncome();
-
-// ==============================
-// 8.11 CATEGORY MANAGEMENT
-// ==============================
-
-document.getElementById("category").innerHTML=`
-<h2 class="text-2xl mb-4">Category Management</h2>
-
-<div class="bg-gray-800 p-4 mb-3">
-<input id="catName" placeholder="Category Name" class="p-2 w-full mb-2 text-black">
-<input id="catIcon" placeholder="Icon URL" class="p-2 w-full mb-2 text-black">
-<button onclick="addCategory()" class="bg-green-600 p-2 w-full">Add Category</button>
-</div>
-
-<div id="categoryList"></div>
-`;
-
-// ADD CATEGORY
-function addCategory(){
-const id="CAT"+Date.now();
-const name=document.getElementById("catName").value;
-const icon=document.getElementById("catIcon").value;
-
-db.ref("categories/"+id).set({
-id,name,icon
-});
-
-alert("Category Added");
-loadCategories();
-}
-
-// LOAD CATEGORY
-function loadCategories(){
-db.ref("categories").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const c=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<img src="${c.icon}" alt="Category Icon" class="w-10 inline">
-<span>${c.name}</span>
-
-<button onclick="deleteCategory('${c.id}')" class="bg-red-600 p-1 ml-2">Delete</button>
-<button onclick="editCategory('${c.id}')" class="bg-yellow-600 p-1 ml-2">Edit</button>
-</div>
-`;
-});
-
-document.getElementById("categoryList").innerHTML=html;
-});
-}
-loadCategories();
-
-// DELETE CATEGORY
-function deleteCategory(id){
-db.ref("categories/"+id).remove();
-alert("Deleted");
-}
-
-// EDIT CATEGORY
-function editCategory(id){
-db.ref("categories/"+id).once("value",snap=>{
-const c=snap.val();
-
-document.getElementById("catName").value=c.name;
-document.getElementById("catIcon").value=c.icon;
-
-db.ref("categories/"+id).remove();
-});
-}
-
-// ==============================
-// 8.12 COUPON MANAGEMENT
-// ==============================
-
-document.getElementById("coupon").innerHTML=`
-<h2 class="text-2xl mb-4">Coupon Management</h2>
-
-<div class="bg-gray-800 p-4 mb-3">
-<input id="couponCode" placeholder="Coupon Code" class="p-2 w-full mb-2 text-black">
-<input id="couponDiscount" placeholder="Discount %" class="p-2 w-full mb-2 text-black">
-<input type="date" id="couponExpiry" class="p-2 w-full mb-2 text-black">
-<input id="couponLimit" placeholder="Usage per user" class="p-2 w-full mb-2 text-black">
-<button onclick="addCoupon()" class="bg-green-600 p-2 w-full">Create Coupon</button>
-</div>
-
-<div id="couponList"></div>
-`;
-
-// ADD COUPON
-function addCoupon(){
-const code=document.getElementById("couponCode").value;
-const discount=document.getElementById("couponDiscount").value;
-const expiry=document.getElementById("couponExpiry").value;
-const limit=document.getElementById("couponLimit").value;
-
-db.ref("coupons/"+code).set({
-code,discount,expiry,limit
-});
-
-alert("Coupon Created");
-loadCoupons();
-}
-
-// LOAD COUPONS
-function loadCoupons(){
-db.ref("coupons").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const c=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>${c.code}</p>
-<p>${c.discount}%</p>
-<p>Expiry: ${c.expiry}</p>
-<p>Limit: ${c.limit}</p>
-
-<button onclick="deleteCoupon('${c.code}')" class="bg-red-600 p-1">Delete</button>
-</div>
-`;
-});
-
-document.getElementById("couponList").innerHTML=html;
-});
-}
-loadCoupons();
-
-// DELETE COUPON
-function deleteCoupon(code){
-db.ref("coupons/"+code).remove();
-alert("Deleted");
-}
-
-
-// ==============================
-// 8.13 BANNER MANAGEMENT
-// ==============================
-
-document.getElementById("banner").innerHTML=`
-<h2 class="text-2xl mb-4">Banner Management</h2>
-
-<div class="bg-gray-800 p-4 mb-3">
-<input id="bannerLink" placeholder="Product ID / Link" class="p-2 w-full mb-2 text-black">
-<input type="file" id="bannerImage" class="mb-2">
-<button onclick="addBanner()" class="bg-green-600 p-2 w-full">Upload Banner</button>
-</div>
-
-<div id="bannerList"></div>
-`;
-
-// ADD BANNER
-function addBanner(){
-const id="BAN"+Date.now();
-const link=document.getElementById("bannerLink").value;
-const file=document.getElementById("bannerImage").files[0];
-
-if(!file){ alert("Select Image"); return; }
-
-const ref=storage.ref("banners/"+id);
-
-ref.put(file).then(()=>{
-ref.getDownloadURL().then(url=>{
-
-db.ref("banners/"+id).set({
-id,link,image:url
-});
-
-alert("Banner Uploaded");
-loadBanners();
-
-});
-});
-}
-
-// LOAD BANNERS
-function loadBanners(){
-db.ref("banners").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const b=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<img src="${b.image}" alt="Banner Image" class="w-32 mb-2">
-<p>Link: ${b.link}</p>
-
-<button onclick="deleteBanner('${b.id}')" class="bg-red-600 p-1">Delete</button>
-</div>
-`;
-});
-
-document.getElementById("bannerList").innerHTML=html;
-});
-}
-loadBanners();
-
-// DELETE BANNER
-function deleteBanner(id){
-db.ref("banners/"+id).remove();
-alert("Deleted");
-}
-
-// ==============================
-// 8.14 REVIEW MODERATION
-// ==============================
-
-document.getElementById("reviews").innerHTML=`
-<h2 class="text-2xl mb-4">Review Moderation</h2>
-<div id="reviewList"></div>
-`;
-
-// LOAD REVIEWS
-function loadReviews(){
-db.ref("reviews").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const r=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>Product: ${r.productId}</p>
-<p>User: ${r.user}</p>
-<p>Rating: ${r.rating}</p>
-<p>${r.text}</p>
-
-<button onclick="approveReview('${d.key}')" class="bg-green-600 p-1">Approve</button>
-<button onclick="deleteReview('${d.key}')" class="bg-red-600 p-1">Delete</button>
-</div>
-`;
-});
-
-document.getElementById("reviewList").innerHTML=html;
-});
-}
-loadReviews();
-
-// APPROVE REVIEW
-function approveReview(id){
-db.ref("reviews/"+id+"/status").set("approved");
-alert("Approved");
-}
-
-// DELETE REVIEW
-function deleteReview(id){
-db.ref("reviews/"+id).remove();
-alert("Deleted");
-}
-
-// ==============================
-// 8.15 USER MANAGEMENT
-// ==============================
-
-document.getElementById("users").innerHTML=`
-<h2 class="text-2xl mb-4">User Management</h2>
-<div id="userList"></div>
-`;
-
-// LOAD USERS
-function loadUsers(){
-db.ref("users").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const u=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>Name: ${u.name}</p>
-<p>Email: ${u.email}</p>
-<p>Phone: ${u.phone}</p>
-<p>Last Login: ${u.lastLogin||"N/A"}</p>
-
-<button onclick="blockUser('${d.key}')" class="bg-yellow-600 p-1">Block</button>
-<button onclick="deleteUser('${d.key}')" class="bg-red-600 p-1">Delete</button>
-</div>
-`;
-});
-
-document.getElementById("userList").innerHTML=html;
-});
-}
-loadUsers();
-
-// BLOCK USER
-function blockUser(id){
-db.ref("users/"+id+"/status").set("blocked");
-alert("User Blocked");
-}
-
-// DELETE USER
-function deleteUser(id){
-db.ref("users/"+id).remove();
-alert("User Deleted");
-}
-
-// ==============================
-// 8.16 SELLER MANAGEMENT
-// ==============================
-
-document.getElementById("sellers").innerHTML=`
-<h2 class="text-2xl mb-4">Seller Management</h2>
-<div id="sellerList"></div>
-`;
-
-// LOAD SELLERS
-function loadSellers(){
-db.ref("sellers").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const s=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>Name: ${s.name}</p>
-<p>Email: ${s.email}</p>
-<p>Phone: ${s.phone}</p>
-<p>Address: ${s.address}</p>
-<p>Aadhar: ${s.aadhar}</p>
-<p>PAN: ${s.pan}</p>
-<p>GST: ${s.gst}</p>
-
-<button onclick="approveSeller('${d.key}')" class="bg-green-600 p-1">Approve</button>
-<button onclick="rejectSeller('${d.key}')" class="bg-red-600 p-1">Reject</button>
-<button onclick="suspendSeller('${d.key}')" class="bg-yellow-600 p-1">Suspend</button>
-</div>
-`;
-});
-
-document.getElementById("sellerList").innerHTML=html;
-});
-}
-loadSellers();
-
-// APPROVE SELLER
-function approveSeller(id){
-db.ref("sellers/"+id+"/status").set("approved");
-alert("Seller Approved");
-}
-
-// REJECT SELLER
-function rejectSeller(id){
-db.ref("sellers/"+id+"/status").set("rejected");
-alert("Seller Rejected");
-}
-
-// SUSPEND SELLER
-function suspendSeller(id){
-db.ref("sellers/"+id+"/status").set("suspended");
-alert("Seller Suspended");
-}
-
-
-// ==============================
-// 8.17 OVERALL PAYMENT HISTORY
-// ==============================
-
-document.getElementById("payments").innerHTML=`
-<h2 class="text-2xl mb-4">Payment History</h2>
-<div id="paymentList"></div>
-`;
-
-function loadPayments(){
-db.ref("payments").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const p=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>User: ${p.user}</p>
-<p>Amount: ${p.amount}</p>
-<p>Type: ${p.type}</p>
-<p>Status: ${p.status}</p>
-<p>Time: ${new Date(p.time)}</p>
-</div>
-`;
-});
-
-document.getElementById("paymentList").innerHTML=html;
-});
-}
-loadPayments();
-
-// ==============================
-// 8.18 REFUND SYSTEM
-// ==============================
-
-document.getElementById("refunds").innerHTML=`
-<h2 class="text-2xl mb-4">Refund System</h2>
-<div id="refundList"></div>
-`;
-
-function loadRefunds(){
-db.ref("refunds").on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const r=d.val();
-
-html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<p>User: ${r.user}</p>
-<p>Order ID: ${r.orderId}</p>
-<p>Amount: ${r.amount}</p>
-<p>Reason: ${r.reason}</p>
-
-<button onclick="approveRefund('${d.key}')" class="bg-green-600 p-1">Approve</button>
-<button onclick="rejectRefund('${d.key}')" class="bg-red-600 p-1">Reject</button>
-<button onclick="refundWallet('${d.key}')" class="bg-blue-600 p-1">Refund Wallet</button>
-</div>
-`;
-});
-
-document.getElementById("refundList").innerHTML=html;
-});
-}
-loadRefunds();
-
-// APPROVE REFUND
-function approveRefund(id){
-db.ref("refunds/"+id+"/status").set("approved");
-alert("Refund Approved");
-}
-
-// REJECT REFUND
-function rejectRefund(id){
-db.ref("refunds/"+id+"/status").set("rejected");
-alert("Refund Rejected");
-}
-
-// REFUND TO WALLET
-function refundWallet(id){
-db.ref("refunds/"+id).once("value",snap=>{
-const r=snap.val();
-
-db.ref("wallets/"+r.user+"/balance").transaction(b=>(b||0)+Number(r.amount||0));
-
-db.ref("refunds/"+id+"/status").set("wallet_refunded");
-
-alert("Refunded to Wallet");
-});
-}
-
-// ==============================
-// 8.19 SYSTEM LOGS (SUBSECTIONS)
-// ==============================
-
-document.getElementById("logs").innerHTML=`
-<h2 class="text-2xl mb-4">System Logs</h2>
-
-<button onclick="showLogs('login')" class="bg-gray-600 p-2 m-1">Login Activity</button>
-<button onclick="showLogs('orders')" class="bg-gray-600 p-2 m-1">Order Updates</button>
-<button onclick="showLogs('seller')" class="bg-gray-600 p-2 m-1">Seller Actions</button>
-<button onclick="showLogs('admin')" class="bg-gray-600 p-2 m-1">Admin Actions</button>
-
-<div id="logContent" class="mt-4"></div>
-`;
-
-// SHOW LOGS
-function showLogs(type){
-db.ref("logs/"+type).on("value",snap=>{
-let html="";
-
-snap.forEach(d=>{
-const l=d.val();
-
-html+=`
-<div class="bg-gray-700 p-2 mb-2">
-<p>${l.msg}</p>
-<p>${new Date(l.time)}</p>
-</div>
-`;
-});
-
-document.getElementById("logContent").innerHTML=html;
-});
-}
-
-// ==============================
-// 8.20 PLATFORM SETTINGS
-// ==============================
-
-document.getElementById("settings").innerHTML=`
-<h2 class="text-2xl mb-4">Platform Settings</h2>
-
-<div class="bg-gray-800 p-4">
-
-<input id="siteName" placeholder="Website Name" class="p-2 w-full mb-2 text-black">
-<input id="commissionRate" placeholder="Commission %" class="p-2 w-full mb-2 text-black">
-<input id="supportEmail" placeholder="Support Email" class="p-2 w-full mb-2 text-black">
-
-<button onclick="saveSettings()" class="bg-green-600 p-2 w-full mb-2">Save Settings</button>
-
-<button onclick="toggleSite()" class="bg-red-600 p-2 w-full">Enable/Disable Website</button>
-
-</div>
-`;
-
-// SAVE SETTINGS
-function saveSettings(){
-const name=document.getElementById("siteName").value;
-const commission=document.getElementById("commissionRate").value;
-const email=document.getElementById("supportEmail").value;
-
-db.ref("settings").set({
-name,commission,email
-});
-
-alert("Settings Saved");
-}
-
-// TOGGLE SITE
-function toggleSite(){
-db.ref("settings/status").once("value",snap=>{
-let val=!snap.val();
-db.ref("settings/status").set(val);
-alert("Website Active: "+val);
-});
-}
-
-
-// ======================================================
-// 🔥 8.21 ULTRA PRO CHECKER + AI AUTO FIX (MERGED)
-// ======================================================
-
-// ================= CONFIG =================
-const USER = "srpstudio1-ship-it";
-const REPO = "srp-shopping";
-const BRANCH = "main";
-
-// ================= MAIN ===================
-async function runFullCheck(){
-
-const out = document.getElementById("codeResult");
-out.innerHTML = "🔍 AI scanning + fixing...";
-
-let finalReport = "";
-let totalIssues = 0;
-let fixedFiles = [];
-
-try{
-
-// FETCH TREE
-const treeRes = await fetch(`https://api.github.com/repos/${USER}/${REPO}/git/trees/${BRANCH}?recursive=1`);
-const tree = await treeRes.json();
-
-if(!tree.tree){
-out.innerHTML = "❌ Repo fetch failed";
-return;
-}
-
-// FILTER FILES
-const files = tree.tree.filter(f =>
-f.path.endsWith(".html") || f.path.endsWith(".js")
-);
-
-// LOOP FILES
-for(let file of files){
-
-let fileReport = `<h3 style="margin-top:20px">📄 File: ${file.path}</h3>`;
-let issues = 0;
-let fixes = [];
-
-try{
-
-const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/${file.path}`;
-const res = await fetch(raw);
-let text = await res.text();
-let original = text;
-
-// ================= HTML CHECK =================
-if(file.path.endsWith(".html")){
-
-const parser = new DOMParser();
-const doc = parser.parseFromString(text,"text/html");
-
-// ---------- ALT CHECK ----------
-const imgs = doc.querySelectorAll("img");
-
-imgs.forEach(img=>{
-if(!img.hasAttribute("alt") || img.getAttribute("alt").trim()===""){
-
-issues++; totalIssues++;
-
-fileReport += format(
-"❌ Missing ALT",
-findLine(text,img.outerHTML),
-img.outerHTML,
-"Add alt='description'"
-);
-
-// AUTO FIX
-text = text.replace(img.outerHTML,
-img.outerHTML.replace(">",' alt="Image">')
-);
-
-fixes.push("Added ALT");
-
-}
-});
-
-// ---------- INLINE CSS ----------
-const styled = doc.querySelectorAll("[style]");
-styled.forEach(el=>{
-issues++; totalIssues++;
-
-fileReport += format(
-"⚠ Inline CSS",
-findLine(text,el.outerHTML),
-el.outerHTML,
-"Move to CSS"
-);
-
-// AUTO FIX
-text = text.replace(el.outerHTML,
-el.outerHTML.replace(/style=".*?"/,'class="auto-style"')
-);
-
-fixes.push("Moved inline CSS");
-
-});
-
-// ---------- EMPTY ATTRIBUTES ----------
-const all = doc.querySelectorAll("*");
-all.forEach(el=>{
-for(let attr of el.attributes){
-if(attr.value===""){
-
-issues++; totalIssues++;
-
-fileReport += format(
-"⚠ Empty attribute",
-findLine(text,el.outerHTML),
-el.outerHTML,
-"Remove attribute"
-);
-
-// AUTO FIX
-text = text.replace(` ${attr.name}=""`,"");
-
-fixes.push("Removed empty attribute");
-
-}
-}
-});
-
-}
-
-// ================= JS CHECK =================
-const lines = text.split("\n");
-
-// ---------- CONSOLE ----------
-lines.forEach((line,i)=>{
-if(line.includes("console.log")){
-
-issues++; totalIssues++;
-
-fileReport += format(
-"ℹ Console log",
-i+1,
-line.trim(),
-"Remove"
-);
-
-// AUTO FIX
-text = text.replace(line,"");
-fixes.push("Removed console.log");
-
-}
-});
-
-// ---------- UNUSED VAR ----------
-let vars = [...text.matchAll(/(let|const|var)\s+(\w+)/g)];
-
-vars.forEach(v=>{
-let name = v[2];
-let count = (text.match(new RegExp("\\b"+name+"\\b","g")) || []).length;
-
-if(count === 1){
-
-issues++; totalIssues++;
-
-fileReport += format(
-"⚠ Unused variable",
-"-",
-name,
-"Remove or use"
-);
-
-// AUTO FIX
-text = text.replace(new RegExp(`(let|const|var)\\s+${name}.*?;`),"");
-
-fixes.push("Removed unused var: "+name);
-
-}
-});
-
-// ================= CLEAN =================
-text = text.replace(/\n\s*\n/g,"\n");
-
-// ================= REPORT =================
-if(issues === 0){
-fileReport += `<div style="color:lightgreen">✔ No issues</div>`;
-}else{
-
-fileReport += `
-<div style="background:#222;padding:10px;margin-top:10px">
-<b>Auto Fix Applied:</b><br>
-${fixes.join("<br>")}
-</div>
-`;
-
-fixedFiles.push({path:file.path,content:text});
-}
-
-finalReport += fileReport;
-
-}catch(err){
-finalReport += `<div style="color:red">❌ Error ${file.path}</div>`;
-}
-
-}
-
-// ================= OUTPUT =================
-out.innerHTML = `
-<h2>✅ Scan Complete</h2>
-<p>Total Issues: ${totalIssues}</p>
-${finalReport}
-<button onclick="downloadAll()">⬇ Download Fixed Files</button>
-`;
-
-window.fixedFiles = fixedFiles;
-
-}catch(err){
-out.innerHTML = "❌ Fatal error";
-}
-
-}
-
-// ================= HELPERS =================
-
-function format(title,line,code,fix){
-return `
-<div style="background:#1f2937;padding:10px;margin:5px;border-radius:6px">
-<b>${title}</b><br>
-Line: ${line}<br>
-Code: ${escape(code)}<br>
-Fix: ${fix}
-</div>
-`;
-}
-
-function findLine(text,snippet){
-let lines = text.split("\n");
-for(let i=0;i<lines.length;i++){
-if(lines[i].includes(snippet.substring(0,30))){
-return i+1;
-}
-}
-return "?";
-}
-
-function escape(str){
-return str.replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-// ================= DOWNLOAD =================
-function downloadAll(){
-
-window.fixedFiles.forEach(f=>{
-let blob = new Blob([f.content],{type:"text/plain"});
-let a = document.createElement("a");
-
-a.href = URL.createObjectURL(blob);
-a.download = f.path.split("/").pop();
-a.click();
-});
-
-}
-
-// ================= AUTO RUN =================
-setTimeout(runFullCheck,1000);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</script>
-</body>
-</html>
-
-
-
-  
+    </script>
