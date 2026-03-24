@@ -3,269 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Elite Admin Command</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>SRP SHOPPING | Admin Central Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: #09090b; 
-            color: #fafafa;
-            overflow-x: hidden;
-        }
-        
-        /* Glassmorphism Styles */
-        .glass-panel {
-            background: rgba(24, 24, 27, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --sidebar: #0f172a;
         }
 
-        .sidebar {
-            width: 280px;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { background: var(--light); display: flex; min-height: 100vh; }
+
+        /* Sidebar Navigation */
+        #sidebar {
+            width: 260px;
+            background: var(--sidebar);
+            color: white;
+            padding: 20px;
             height: 100vh;
-            position: fixed;
-            left: 0;
+            position: sticky;
             top: 0;
-            background: #121214;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 50;
+            overflow-y: auto;
         }
 
-        .main-view {
-            margin-left: 280px;
-            padding: 2rem;
-            min-height: 100vh;
-        }
+        .logo-area { font-size: 1.5rem; font-weight: 800; margin-bottom: 30px; color: #60a5fa; border-bottom: 1px solid #334155; padding-bottom: 10px; }
 
         .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
             display: flex;
             align-items: center;
-            padding: 0.75rem 1rem;
-            margin: 0.25rem 1rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .nav-item i { margin-right: 12px; width: 20px; }
+
+        /* Main Content */
+        #main-content { flex: 1; padding: 30px; max-width: calc(100% - 260px); }
+
+        .section-card {
+            background: white;
+            padding: 25px;
             border-radius: 12px;
-            color: #a1a1aa;
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 30px;
+            display: none;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background: rgba(79, 70, 229, 0.1);
-            color: #818cf8;
-        }
+        .section-card.active { display: block; }
 
-        .nav-item i { width: 24px; font-size: 1.1rem; }
+        h2 { margin-bottom: 20px; color: var(--dark); border-left: 4px solid var(--primary); padding-left: 15px; }
 
-        .section-content { display: none; animation: fadeIn 0.4s ease-out; }
-        .section-content.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Custom Inputs */
+        /* Forms & Inputs */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
         input, select, textarea {
-            background: #18181b !important;
-            border: 1px solid #27272a !important;
-            color: white !important;
-            padding: 0.75rem !important;
-            border-radius: 10px !important;
-            outline: none !important;
             width: 100%;
-            margin-bottom: 1rem;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
         }
 
-        input:focus { border-color: #6366f1 !important; ring: 1px solid #6366f1; }
-
-        .btn-action {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
             font-weight: 600;
-            transition: transform 0.2s;
+            transition: 0.2s;
         }
 
-        .btn-action:hover { transform: scale(1.02); opacity: 0.9; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #09090b; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 0.85rem; }
+        th { background: #f1f5f9; color: var(--secondary); text-transform: uppercase; font-size: 0.75rem; }
+
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .status-confirmed { background: #dcfce7; color: #166534; }
+        .status-shipped { background: #dbeafe; color: #1e40af; }
+
+        /* 8.19 System Log Visuals */
+        .log-entry { font-family: monospace; font-size: 0.8rem; padding: 5px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div class="p-8">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-black">S</div>
-                <span class="text-xl font-bold tracking-tight">SRP SHOPPING</span>
-            </div>
-        </div>
-
-        <nav class="flex flex-col gap-1">
-            <p class="px-8 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Management</p>
-            <a href="#" onclick="switchTab('8.1')" class="nav-item active" id="btn-8.1">
-                <i class="fa-solid fa-layer-group"></i> 8.1 Products
-            </a>
-            <a href="#" onclick="switchTab('8.2')" class="nav-item" id="btn-8.2">
-                <i class="fa-solid fa-truck-fast"></i> 8.2 Orders
-            </a>
-            <a href="#" onclick="switchTab('8.3')" class="nav-item" id="btn-8.3">
-                <i class="fa-solid fa-wallet"></i> 8.3 Withdrawals
-            </a>
-            <a href="#" onclick="switchTab('8.4')" class="nav-item" id="btn-8.4">
-                <i class="fa-solid fa-rectangle-ad"></i> 8.4 Promotions
-            </a>
-
-            <p class="px-8 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-6 mb-2">Platform Control</p>
-            <a href="#" onclick="switchTab('8.5')" class="nav-item" id="btn-8.5">
-                <i class="fa-solid fa-star"></i> 8.5 Featured
-            </a>
-            <a href="#" onclick="switchTab('8.6')" class="nav-item" id="btn-8.6">
-                <i class="fa-solid fa-chart-line"></i> 8.6 Global Dashboard
-            </a>
-            <a href="#" onclick="switchTab('8.8')" class="nav-item" id="btn-8.8">
-                <i class="fa-solid fa-microchip"></i> 8.8 Analytics
-            </a>
-            <a href="#" onclick="switchTab('8.21')" class="nav-item text-red-400" id="btn-8.21">
-                <i class="fa-solid fa-code-commit"></i> 8.21 Code Checker
-            </a>
-        </nav>
+    <aside id="sidebar">
+        <div class="logo-area">SRP ADMIN</div>
+        <nav>
+            <div class="nav-item active" onclick="showSection('prod-mgmt')"><i class="fas fa-box"></i> 8.1 Products</div>
+            <div class="nav-item" onclick="showSection('order-mgmt')"><i class="fas fa-shopping-cart"></i> 8.2 Orders</div>
+            <div class="nav-item" onclick="showSection('withdrawal-mgmt')"><i class="fas fa-wallet"></i> 8.3 Withdrawals</div>
+            <div class="nav-item" onclick="showSection('promo-mgmt')"><i class="fas fa-ad"></i> 8.4 Promotions</div>
+            <div class="nav-item" onclick="showSection('featured-mgmt')"><i class="fas fa-star"></i> 8.5 Featured</div>
+            <div class="nav-item" onclick="showSection('dashboard-mgmt')"><i class="fas fa-chart-line"></i> 8.6 Global Dashboard</div>
+            </nav>
     </aside>
 
-    <main class="main-view">
-        <div class="flex justify-between items-center mb-10">
-            <div>
-                <h2 class="text-3xl font-extrabold" id="tab-title">Product Control</h2>
-                <p class="text-zinc-400 text-sm">Welcome back, Super Admin</p>
+    <main id="main-content">
+        
+        <section id="prod-mgmt" class="section-card active">
+            <h2>8.1 Product Management</h2>
+            <div class="form-grid">
+                <input type="text" id="p-name" placeholder="Product Name">
+                <select id="p-category">
+                    <option value="electronics">Electronics</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="home">Home</option>
+                </select>
+                <input type="number" id="p-mrp" placeholder="MRP">
+                <input type="number" id="p-discount" placeholder="Discount Price">
+                <input type="number" id="p-stock" placeholder="Stock Quantity">
+                <input type="file" id="p-image" accept="image/*">
             </div>
-            <div class="flex gap-4">
-                <div class="glass-panel px-4 py-2 flex items-center gap-3">
-                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span class="text-xs font-medium">Server Online</span>
-                </div>
-                <button onclick="toggleDayNight()" class="glass-panel p-2 w-10 h-10 flex items-center justify-center">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-            </div>
-        </div>
+            <textarea id="p-desc" placeholder="Product Description" rows="3"></textarea>
+            <button class="btn btn-primary" onclick="addProduct()">Add Product</button>
 
-        <section id="sec-8.1" class="section-content active">
-            <div class="grid grid-cols-12 gap-8">
-                <div class="col-span-12 lg:col-span-4">
-                    <div class="glass-panel p-6 sticky top-8">
-                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-indigo-500"></i> Manage Product
-                        </h3>
-                        <input type="hidden" id="p_db_key">
-                        
-                        <label class="text-[10px] uppercase font-bold text-zinc-500 ml-1">Product Media</label>
-                        <div class="relative group cursor-pointer border-2 border-dashed border-zinc-800 rounded-xl p-4 text-center hover:border-indigo-500 transition mb-4">
-                            <input type="file" id="p_file" class="absolute inset-0 opacity-0 cursor-pointer">
-                            <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2 text-zinc-600"></i>
-                            <p class="text-xs text-zinc-500">Upload from Gallery</p>
-                        </div>
-
-                        <input type="text" id="p_name" placeholder="Full Product Title">
-                        <div class="grid grid-cols-2 gap-3">
-                            <input type="number" id="p_mrp" placeholder="MRP (₹)">
-                            <input type="number" id="p_discount" placeholder="Discount Price (₹)">
-                        </div>
-                        <select id="p_cat">
-                            <option value="">Choose Category</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Fashion">Fashion</option>
-                            <option value="Home">Home & Kitchen</option>
-                        </select>
-                        <input type="number" id="p_stock" placeholder="Inventory Quantity">
-                        <textarea id="p_desc" rows="4" placeholder="Detailed Product Description..."></textarea>
-                        
-                        <button onclick="handleProductUpload()" class="btn-action w-full mt-2">
-                            Synchronize Product
-                        </button>
-                    </div>
-                </div>
-
-                <div class="col-span-12 lg:col-span-8">
-                    <div class="glass-panel overflow-hidden">
-                        <table class="w-full text-left">
-                            <thead class="bg-zinc-900/50 border-b border-zinc-800">
-                                <tr class="text-[10px] uppercase tracking-widest text-zinc-500">
-                                    <th class="px-6 py-4">Identity</th>
-                                    <th class="px-6 py-4">Product Details</th>
-                                    <th class="px-6 py-4 text-right">Pricing & Stock</th>
-                                    <th class="px-6 py-4 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="product-shelf" class="divide-y divide-zinc-800">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <table id="product-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>MRP</th>
+                        <th>Stock</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list-body"></tbody>
+            </table>
         </section>
 
-        <section id="sec-8.2" class="section-content">
-            <div class="glass-panel overflow-hidden">
-                <table class="w-full text-left">
-                    <thead class="bg-zinc-900/50 border-b border-zinc-800 text-[10px] uppercase text-zinc-500">
-                        <tr>
-                            <th class="px-6 py-4">Order ID</th>
-                            <th class="px-6 py-4">Customer Info</th>
-                            <th class="px-6 py-4">Shipping Address</th>
-                            <th class="px-6 py-4">Logistics (Tracking)</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Management</th>
-                        </tr>
-                    </thead>
-                    <tbody id="master-order-shelf" class="divide-y divide-zinc-800">
-                        </tbody>
-                </table>
+        <section id="order-mgmt" class="section-card">
+            <h2>8.2 Order Management</h2>
+            <div id="order-filters">
+                <input type="text" placeholder="Search by Order ID/Phone..." style="width: 300px; margin-bottom: 15px;">
             </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User Details</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Tracking ID</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="order-list-body"></tbody>
+            </table>
         </section>
 
-        <section id="sec-8.3" class="section-content">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="glass-panel p-6 bg-gradient-to-br from-zinc-900 to-indigo-950/30">
-                    <p class="text-zinc-500 text-xs uppercase font-bold">Pending Approvals</p>
-                    <h2 class="text-3xl font-black mt-1" id="withdraw-pending-badge">0</h2>
-                </div>
-            </div>
-            <div class="glass-panel">
-                <table class="w-full text-left">
-                    <thead class="border-b border-zinc-800 text-[10px] uppercase text-zinc-500">
-                        <tr>
-                            <th class="px-6 py-4">Seller Identity</th>
-                            <th class="px-6 py-4">Current Balance</th>
-                            <th class="px-6 py-4">Requested Amount</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Operations</th>
-                        </tr>
-                    </thead>
-                    <tbody id="withdrawal-shelf" class="divide-y divide-zinc-800 text-sm">
-                        </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="sec-8.4" class="section-content"></section>
-        <section id="sec-8.5" class="section-content"></section>
-        <section id="sec-8.6" class="section-content"></section>
-        <section id="sec-8.8" class="section-content"></section>
-        <section id="sec-8.21" class="section-content"></section>
+        <section id="withdrawal-mgmt" class="section-card"><h2>8.3 Seller Withdrawal</h2><div id="withdrawal-content"></div></section>
+        <section id="promo-mgmt" class="section-card"><h2>8.4 Promotion System</h2><div id="promo-content"></div></section>
 
     </main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
-        import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-        // Firebase Config (User's Credentials)
+    <script>
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -277,799 +196,81 @@
             measurementId: "G-3S7X8V8EFQ"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const storage = getStorage(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const storage = firebase.storage();
 
-        // --- GLOBAL NAVIGATION ENGINE ---
-        window.switchTab = (tabId) => {
-            document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+        // Navigation Function
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-card').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            document.getElementById('sec-' + tabId).classList.add('active');
-            document.getElementById('btn-' + tabId).classList.add('active');
-            document.getElementById('tab-title').innerText = "Section " + tabId;
-        };
-
-        window.toggleDayNight = () => {
-            document.body.classList.toggle('light-mode');
-            // Custom toggle logic for Day/Night requirement 8.7
-        };
-
-        // --- 8.1 PRODUCT MANAGEMENT LOGIC ---
-        window.handleProductUpload = async () => {
-            const file = document.getElementById('p_file').files[0];
-            const name = document.getElementById('p_name').value;
-            const mrp = document.getElementById('p_mrp').value;
-            const disc = document.getElementById('p_discount').value;
-            const cat = document.getElementById('p_cat').value;
-            const stk = document.getElementById('p_stock').value;
-            const desc = document.getElementById('p_desc').value;
-            const key = document.getElementById('p_db_key').value;
-
-            if(!name || !mrp) return alert("Required fields missing");
-
-            let url = "";
-            if(file) {
-                const imgRef = sRef(storage, `products/${Date.now()}_${file.name}`);
-                const snap = await uploadBytes(imgRef, file);
-                url = await getDownloadURL(snap.ref);
-            }
-
-            const uniqueID = "SRP-PRD-" + Math.floor(100000 + Math.random() * 900000);
-
-            const data = {
-                productId: uniqueID,
-                name, mrp, discountPrice: disc,
-                category: cat, stock: stk, description: desc,
-                updatedAt: Date.now()
-            };
-            if(url) data.image = url;
-
-            if(key) {
-                update(ref(db, 'products/' + key), data);
-            } else {
-                push(ref(db, 'products'), data);
-            }
-            alert("Platform Inventory Updated");
-            resetForm();
-        };
-
-        function resetForm() {
-            document.getElementById('p_db_key').value = "";
-            document.getElementById('p_name').value = "";
-            document.getElementById('p_file').value = "";
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
         }
 
-        onValue(ref(db, 'products'), (snap) => {
-            const shelf = document.getElementById('product-shelf');
-            shelf.innerHTML = "";
-            snap.forEach(child => {
-                const p = child.val();
-                shelf.innerHTML += `
-                    <tr class="hover:bg-white/[0.02] transition group">
-                        <td class="px-6 py-4">
-                            <span class="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-2 py-1 rounded">${p.productId}</span>
-                        </td>
-                        <td class="px-6 py-4 flex items-center gap-4">
-                            <img src="${p.image || ''}" class="w-12 h-12 rounded-lg object-cover ring-1 ring-zinc-800">
-                            <div>
-                                <p class="font-bold text-sm">${p.name}</p>
-                                <p class="text-[10px] text-zinc-500">${p.category}</p>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="text-xs text-red-500 line-through">₹${p.mrp}</div>
-                            <div class="font-bold text-indigo-400">₹${p.discountPrice}</div>
-                            <div class="text-[10px] text-zinc-500 mt-1">Stock: ${p.stock} units</div>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="editP('${child.key}')" class="text-zinc-500 hover:text-white mx-2"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="deleteP('${child.key}')" class="text-zinc-500 hover:text-red-500 mx-2"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-        });
+        // 8.1 Product Management Functions
+        function addProduct() {
+            const id = "PROD" + Date.now();
+            const productData = {
+                id: id,
+                name: document.getElementById('p-name').value,
+                category: document.getElementById('p-category').value,
+                mrp: document.getElementById('p-mrp').value,
+                discount: document.getElementById('p-discount').value,
+                stock: document.getElementById('p-stock').value,
+                desc: document.getElementById('p-desc').value,
+                timestamp: Date.now()
+            };
 
-        // --- 8.2 ORDER MANAGEMENT LOGIC ---
-        onValue(ref(db, 'orders'), (snap) => {
-            const shelf = document.getElementById('master-order-shelf');
-            shelf.innerHTML = "";
-            snap.forEach(child => {
-                const o = child.val();
-                shelf.innerHTML += `
-                    <tr class="text-sm">
-                        <td class="px-6 py-4 font-mono font-bold text-indigo-400">${o.orderId || child.key}</td>
-                        <td class="px-6 py-4">
-                            <p class="font-bold">${o.userName}</p>
-                            <p class="text-[10px] text-zinc-500">${o.email}<br>${o.phone}</p>
-                        </td>
-                        <td class="px-6 py-4 text-xs text-zinc-400">
-                            ${o.address}, ${o.pincode}
-                        </td>
-                        <td class="px-6 py-4">
-                            <input type="text" value="${o.trackingId || ''}" 
-                                onchange="setLogistics('${child.key}', this.value)"
-                                class="text-[10px] !m-0 !py-1 !px-2 bg-zinc-900 border-zinc-800" placeholder="Tracking ID">
-                        </td>
-                        <td class="px-6 py-4">
-                            <select onchange="updateStep('${child.key}', this.value)" class="text-[10px] !m-0 !py-1 !px-2 bg-zinc-900 border-zinc-800">
-                                <option ${o.status=='Confirmed'?'selected':''}>Confirmed</option>
-                                <option ${o.status=='Shipped'?'selected':''}>Shipped</option>
-                                <option ${o.status=='Delivered'?'selected':''}>Delivered</option>
-                            </select>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="inspectOrder('${child.key}')" class="text-indigo-400 font-bold text-xs uppercase hover:underline">View Invoice</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        });
+            db.ref('products/' + id).set(productData)
+                .then(() => {
+                    alert("Product Added Successfully! ID: " + id);
+                    logAction("Added Product: " + id);
+                });
+        }
 
-        window.setLogistics = (key, val) => {
-            update(ref(db, 'orders/' + key), { trackingId: val });
-            alert("Logistics Updated: " + val);
+        // 8.2 Order Management Functions
+        function loadOrders() {
+            db.ref('orders').on('value', (snapshot) => {
+                const orders = snapshot.val();
+                const tbody = document.getElementById('order-list-body');
+                tbody.innerHTML = '';
+                for (let key in orders) {
+                    const o = orders[key];
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${o.orderId}</td>
+                            <td>${o.userName}<br>${o.phone}</td>
+                            <td>${o.address}, ${o.pincode}</td>
+                            <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+                            <td><input type="text" value="${o.trackingId || ''}" onchange="updateTracking('${key}', this.value)"></td>
+                            <td>
+                                <button onclick="viewInvoice('${key}')" class="btn btn-primary btn-sm">View</button>
+                                <button onclick="updateStatus('${key}', 'shipped')" class="btn btn-success btn-sm">Ship</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        function updateTracking(orderId, val) {
+            db.ref('orders/' + orderId).update({ trackingId: val });
+            alert("Tracking ID Updated");
+        }
+
+        // Shared Utility: Log Action (8.19 Preview)
+        function logAction(msg) {
+            const logId = db.ref('logs/admin').push().key;
+            db.ref('logs/admin/' + logId).set({
+                action: msg,
+                time: new Date().toLocaleString()
+            });
+        }
+
+        // Initialize Loaders
+        window.onload = () => {
+            loadOrders();
+            // product loader function...
         };
-
-        window.updateStep = (key, val) => {
-            update(ref(db, 'orders/' + key), { status: val });
-            // 8.2 Notify User logic
-            push(ref(db, `user_notifications/${key}`), {
-                msg: `Order ${val} successfully.`,
-                time: Date.now()
-            });
-            alert(`Real notification sent: Order ${val}`);
-        };
-
-        // --- 8.3 WITHDRAWAL APPROVAL LOGIC ---
-        onValue(ref(db, 'withdrawals'), (snap) => {
-            const shelf = document.getElementById('withdrawal-shelf');
-            shelf.innerHTML = "";
-            let pCount = 0;
-            snap.forEach(child => {
-                const w = child.val();
-                if(w.status === 'Pending') pCount++;
-                shelf.innerHTML += `
-                    <tr>
-                        <td class="px-6 py-4 font-bold text-zinc-200">${w.sellerName}</td>
-                        <td class="px-6 py-4 text-zinc-500">₹${w.totalBalance}</td>
-                        <td class="px-6 py-4 font-bold text-indigo-400">₹${w.requestAmount}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-0.5 rounded text-[10px] ${w.status=='Pending'?'bg-amber-500/10 text-amber-500':'bg-emerald-500/10 text-emerald-500'}">
-                                ${w.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">
-                            ${w.status === 'Pending' ? `
-                                <button onclick="approveW('${child.key}', '${w.sellerId}', '${w.requestAmount}', '${w.totalBalance}')" class="text-emerald-500 font-bold mr-4">Approve</button>
-                                <button onclick="rejectW('${child.key}')" class="text-zinc-600 hover:text-red-500">Reject</button>
-                            ` : `<i class="fa-solid fa-check-double text-zinc-700 ml-4"></i>`}
-                        </td>
-                    </tr>
-                `;
-            });
-            document.getElementById('withdraw-pending-badge').innerText = pCount;
-        });
-
-        window.approveW = (key, sId, amt, bal) => {
-            const pending = parseFloat(bal) - parseFloat(amt);
-            update(ref(db, 'withdrawals/' + key), { status: 'Paid' });
-            
-            // 8.4 Auto-notify requirement
-            push(ref(db, `seller_notifications/${sId}`), {
-                title: "Withdrawal Approved",
-                details: `Amount: ₹${amt} | Pending Balance: ₹${pending}`,
-                time: Date.now()
-            });
-            alert(`Payment marked as Paid. Seller notified with balance: ₹${pending}`);
-        };
-                // --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
-        onValue(ref(db, 'promotions'), (snap) => {
-            const shelf = document.getElementById('sec-8.4');
-            let rows = "";
-            snap.forEach(child => {
-                const p = child.val();
-                rows += `
-                    <tr class="text-sm border-b border-zinc-800 hover:bg-white/[0.01]">
-                        <td class="px-6 py-4">
-                            <p class="font-bold text-zinc-200">${p.sellerName}</p>
-                            <p class="text-[10px] text-zinc-500">ID: ${p.sellerId}</p>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-[10px] space-y-1">
-                                <p><span class="text-zinc-500">AADHAR:</span> ${p.aadhar}</p>
-                                <p><span class="text-zinc-500">PAN:</span> ${p.pan}</p>
-                                <p><span class="text-zinc-500">GST:</span> ${p.gst}</p>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 font-mono text-xs text-indigo-400">${p.productId}</td>
-                        <td class="px-6 py-4 text-zinc-300">${p.mobile}</td>
-                        <td class="px-6 py-4 font-bold text-emerald-400">₹${p.amount}</td>
-                        <td class="px-6 py-4 text-xs text-zinc-500">${p.reference || 'REF-8829'}</td>
-                    </tr>
-                `;
-            });
-
-            shelf.innerHTML = `
-                <div class="glass-panel overflow-hidden">
-                    <div class="p-6 border-b border-zinc-800">
-                        <h3 class="text-lg font-bold">8.4 Promotion Payment Records</h3>
-                    </div>
-                    <table class="w-full text-left">
-                        <thead class="bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
-                            <tr>
-                                <th class="px-6 py-4">Seller Info</th>
-                                <th class="px-6 py-4">Legal Docs</th>
-                                <th class="px-6 py-4">Product ID</th>
-                                <th class="px-6 py-4">Mobile</th>
-                                <th class="px-6 py-4">Payment Recv.</th>
-                                <th class="px-6 py-4">Reference</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            `;
-        });
-
-        // --- 8.5 FEATURED PRODUCTS (PIN TO HOME) ---
-        window.applyFeaturedPin = () => {
-            const pid = document.getElementById('feat_pid').value;
-            const spid = document.getElementById('feat_spid').value;
-            const prio = document.getElementById('feat_priority').value;
-            const date = document.getElementById('feat_expiry').value;
-
-            if(!pid || !date) return alert("Missing Product ID or Expiry Date");
-
-            set(ref(db, 'featured_home/' + pid), {
-                productId: pid,
-                sellerProductId: spid,
-                priority: parseInt(prio),
-                expiryDate: date,
-                pinnedAt: Date.now()
-            });
-            alert("Product Pinned to Homepage Top");
-        };
-
-        onValue(ref(db, 'featured_home'), (snap) => {
-            const shelf = document.getElementById('sec-8.5');
-            let listHtml = "";
-            snap.forEach(child => {
-                const f = child.val();
-                listHtml += `
-                    <div class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 mb-3">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-indigo-500/10 rounded flex items-center justify-center text-indigo-500 font-bold">${f.priority}</div>
-                            <div>
-                                <p class="text-sm font-bold text-zinc-200">${f.productId}</p>
-                                <p class="text-[10px] text-zinc-500 uppercase">Ends: ${f.expiryDate}</p>
-                            </div>
-                        </div>
-                        <button onclick="unpin('${child.key}')" class="text-zinc-600 hover:text-red-500"><i class="fa-solid fa-circle-xmark"></i></button>
-                    </div>
-                `;
-            });
-
-            shelf.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="glass-panel p-8">
-                        <h3 class="text-xl font-bold mb-6">8.5 Pin to Homepage</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="text-[10px] font-bold text-zinc-500 uppercase">Product Details</label>
-                                <input type="text" id="feat_pid" placeholder="SRP Product ID (Unique)">
-                                <input type="text" id="feat_spid" placeholder="Seller Specific Product ID">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-bold text-zinc-500 uppercase">Display Priority</label>
-                                    <input type="number" id="feat_priority" value="1">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-zinc-500 uppercase">Display Until</label>
-                                    <input type="date" id="feat_expiry">
-                                </div>
-                            </div>
-                            <button onclick="applyFeaturedPin()" class="btn-action w-full">Set Featured Status</button>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-8">
-                        <h3 class="text-xl font-bold mb-6">Active Featured Shelf</h3>
-                        <div class="max-h-[400px] overflow-y-auto pr-2">${listHtml || '<p class="text-zinc-600 text-sm">No products currently pinned.</p>'}</div>
-                    </div>
-                </div>
-            `;
-        });
-
-        window.unpin = (key) => remove(ref(db, 'featured_home/' + key));
-
-        // --- 8.6 GLOBAL ORDER DASHBOARD ---
-        onValue(ref(db, 'orders'), (snap) => {
-            const shelf = document.getElementById('sec-8.6');
-            let totalComm = 0;
-            let orderItems = "";
-
-            snap.forEach(child => {
-                const o = child.val();
-                const comm = (parseFloat(o.totalAmount || 0) * 0.12); // Assuming 12% commission
-                totalComm += comm;
-                orderItems += `
-                    <tr class="text-xs border-b border-zinc-800 hover:bg-white/[0.01]">
-                        <td class="px-6 py-4 font-mono font-bold text-indigo-400">${o.orderId}</td>
-                        <td class="px-6 py-4">
-                            <p class="font-bold">${o.userName}</p>
-                            <p class="text-[10px] text-zinc-500">${o.email}</p>
-                        </td>
-                        <td class="px-6 py-4 text-zinc-300">${o.sellerName || 'Platform Direct'}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-bold uppercase">
-                                ${o.paymentStatus || 'Completed'}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 font-bold">₹${o.totalAmount}</td>
-                        <td class="px-6 py-4 text-indigo-400 font-bold">₹${comm.toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-
-            shelf.innerHTML = `
-                <div class="glass-panel">
-                    <div class="p-8 border-b border-zinc-800 flex justify-between items-center">
-                        <h3 class="text-xl font-bold">8.6 Global Order Intel</h3>
-                        <div class="text-right">
-                            <p class="text-[10px] text-zinc-500 uppercase font-black">Net Commission Earned</p>
-                            <p class="text-2xl font-black text-emerald-400">₹${totalComm.toFixed(2)}</p>
-                        </div>
-                    </div>
-                    <table class="w-full text-left">
-                        <thead class="bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
-                            <tr>
-                                <th class="px-6 py-4">Order ID</th>
-                                <th class="px-6 py-4">User</th>
-                                <th class="px-6 py-4">Seller</th>
-                                <th class="px-6 py-4">Payment</th>
-                                <th class="px-6 py-4">Amount</th>
-                                <th class="px-6 py-4">Comm. (12%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>${orderItems}</tbody>
-                    </table>
-                </div>
-            `;
-        });
-
-        // --- 8.7 ADMIN SECURITY & SYSTEM ---
-        const sec87Html = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="glass-panel p-8 border-l-4 border-l-red-500">
-                    <h3 class="text-xl font-bold mb-2">8.7 Security Protocol</h3>
-                    <p class="text-zinc-500 text-xs mb-8">Maintain administrative credentials and 2FA access.</p>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-[10px] font-bold text-zinc-500 uppercase">Change Password</label>
-                            <input type="password" id="admin_pass" placeholder="Enter new master password">
-                            <button onclick="updateAdminPass()" class="bg-red-500/10 text-red-500 text-xs font-bold py-2 px-4 rounded-lg hover:bg-red-500 hover:text-white transition w-full mt-2">Update Credentials</button>
-                        </div>
-                        <hr class="border-zinc-800 my-6">
-                        <div class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-xl">
-                            <div>
-                                <p class="text-sm font-bold">Enable 2FA Authentication</p>
-                                <p class="text-[10px] text-zinc-500">Require mobile OTP for login</p>
-                            </div>
-                            <button onclick="toggle2FA(true)" class="w-12 h-6 bg-zinc-800 rounded-full relative"><div class="w-4 h-4 bg-zinc-500 rounded-full absolute left-1 top-1"></div></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="glass-panel p-8">
-                    <h3 class="text-xl font-bold mb-2">Interface Management</h3>
-                    <p class="text-zinc-500 text-xs mb-8">Toggle day/night cycle and account visibility.</p>
-                    <div class="grid grid-cols-2 gap-4">
-                        <button onclick="setUIMode('night')" class="p-6 bg-zinc-900 rounded-2xl border border-indigo-500/30 text-center group hover:border-indigo-500 transition">
-                            <i class="fa-solid fa-moon text-2xl text-indigo-400 mb-2"></i>
-                            <p class="text-xs font-bold">Night Mode</p>
-                        </button>
-                        <button onclick="setUIMode('day')" class="p-6 bg-white rounded-2xl border border-zinc-200 text-zinc-900 text-center group hover:bg-zinc-50 transition">
-                            <i class="fa-solid fa-sun text-2xl text-amber-500 mb-2"></i>
-                            <p class="text-xs font-bold">Day Mode</p>
-                        </button>
-                    </div>
-                    <button class="w-full mt-6 py-3 border border-zinc-800 rounded-xl text-xs font-bold hover:bg-zinc-800 transition">Manage Admin Accounts</button>
-                </div>
-            </div>
-        `;
-
-        window.updateAdminPass = () => {
-            const val = document.getElementById('admin_pass').value;
-            if(val.length < 8) return alert("Security requires at least 8 characters");
-            update(ref(db, 'admin/config'), { masterPass: val });
-            alert("Administrative Password Changed");
-        };
-
-        window.setUIMode = (mode) => {
-            if(mode === 'day') {
-                document.body.style.background = "#f4f4f5";
-                document.body.style.color = "#18181b";
-            } else {
-                document.body.style.background = "#09090b";
-                document.body.style.color = "#fafafa";
-            }
-        };
-
-        // --- 8.8, 8.9, 8.10 ANALYTICS HUB ---
-        onValue(ref(db, 'platform_stats'), (snap) => {
-            const s = snap.val() || {};
-            const shelf = document.getElementById('sec-8.8');
-            
-            // 8.10 Income Calc
-            const promoRev = parseFloat(s.promoRevenue || 0);
-            const commRev = parseFloat(s.commRevenue || 0);
-            const totalAdminIncome = promoRev + commRev;
-
-            shelf.innerHTML = `
-                <div class="space-y-8">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        <div class="glass-panel p-4 text-center">
-                            <p class="text-[9px] text-zinc-500 uppercase font-black">Total Users</p>
-                            <h4 class="text-2xl font-bold">${s.totalUsers || 0}</h4>
-                        </div>
-                        <div class="glass-panel p-4 text-center">
-                            <p class="text-[9px] text-zinc-500 uppercase font-black">Total Sellers</p>
-                            <h4 class="text-2xl font-bold">${s.totalSellers || 0}</h4>
-                        </div>
-                        <div class="glass-panel p-4 text-center border-b-2 border-indigo-500">
-                            <p class="text-[9px] text-indigo-400 uppercase font-black">Today Users</p>
-                            <h4 class="text-2xl font-bold">${s.todayUsers || 0}</h4>
-                        </div>
-                        <div class="glass-panel p-4 text-center border-b-2 border-indigo-500">
-                            <p class="text-[9px] text-indigo-400 uppercase font-black">Today Sellers</p>
-                            <h4 class="text-2xl font-bold">${s.todaySellers || 0}</h4>
-                        </div>
-                        <div class="glass-panel p-4 text-center">
-                            <p class="text-[9px] text-zinc-500 uppercase font-black">Total Visits</p>
-                            <h4 class="text-2xl font-bold">${s.totalVisits || 0}</h4>
-                        </div>
-                        <div class="glass-panel p-4 text-center border-b-2 border-emerald-500">
-                            <p class="text-[9px] text-emerald-400 uppercase font-black">Today Visits</p>
-                            <h4 class="text-2xl font-bold">${s.todayVisits || 0}</h4>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="glass-panel p-8 bg-gradient-to-br from-indigo-950/20 to-transparent">
-                            <h3 class="text-xl font-bold mb-6">8.9 Sales Performance</h3>
-                            <div class="grid grid-cols-2 gap-8">
-                                <div>
-                                    <p class="text-[10px] text-zinc-500 uppercase">Gross Sales</p>
-                                    <p class="text-3xl font-black text-indigo-400">₹${s.totalSales || 0}</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-zinc-500 uppercase">Orders Processed</p>
-                                    <p class="text-3xl font-black text-zinc-200">${s.totalOrders || 0}</p>
-                                </div>
-                            </div>
-                            <div class="mt-8 p-4 bg-white/5 rounded-xl">
-                                <p class="text-[10px] text-zinc-500 uppercase mb-2">Seller Revenue Share</p>
-                                <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-indigo-500 h-full" style="width: 85%"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="glass-panel p-8 bg-gradient-to-br from-emerald-950/20 to-transparent">
-                            <h3 class="text-xl font-bold mb-6">8.10 Administrative Yield</h3>
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-zinc-400 text-sm">Platform Commission</span>
-                                    <span class="font-bold">₹${commRev.toFixed(2)}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-zinc-400 text-sm">Promotion Payments</span>
-                                    <span class="font-bold">₹${promoRev.toFixed(2)}</span>
-                                </div>
-                                <div class="pt-4 border-t border-zinc-800 flex justify-between items-center">
-                                    <span class="text-emerald-400 font-black uppercase text-xs">Total Net Income</span>
-                                    <span class="text-3xl font-black text-emerald-400">₹${totalAdminIncome.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        // Initializing Section 8.7 UI
-        document.getElementById('sec-8.7').innerHTML = sec87Html;
-        // --- 8.11 to 8.15 UI INJECTION PATCH ---
-        // This ensures the new sections exist in the HTML without you having to manually edit Part 1
-        const navContainer = document.querySelector('nav');
-        const mainView = document.querySelector('.main-view');
-
-        const extraNav = `
-            <p class="px-8 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-6 mb-2">Content & Users</p>
-            <a href="#" onclick="switchTab('8.11')" class="nav-item" id="btn-8.11">
-                <i class="fa-solid fa-list-ul"></i> 8.11 Categories
-            </a>
-            <a href="#" onclick="switchTab('8.12')" class="nav-item" id="btn-8.12">
-                <i class="fa-solid fa-ticket"></i> 8.12 Coupons
-            </a>
-            <a href="#" onclick="switchTab('8.13')" class="nav-item" id="btn-8.13">
-                <i class="fa-solid fa-images"></i> 8.13 Banners
-            </a>
-            <a href="#" onclick="switchTab('8.14')" class="nav-item" id="btn-8.14">
-                <i class="fa-solid fa-comment-dots"></i> 8.14 Reviews
-            </a>
-            <a href="#" onclick="switchTab('8.15')" class="nav-item" id="btn-8.15">
-                <i class="fa-solid fa-user-gear"></i> 8.15 User Base
-            </a>
-        `;
-        navContainer.insertAdjacentHTML('beforeend', extraNav);
-
-        const extraSections = `
-            <section id="sec-8.11" class="section-content"></section>
-            <section id="sec-8.12" class="section-content"></section>
-            <section id="sec-8.13" class="section-content"></section>
-            <section id="sec-8.14" class="section-content"></section>
-            <section id="sec-8.15" class="section-content"></section>
-        `;
-        mainView.insertAdjacentHTML('beforeend', extraSections);
-
-        // --- 8.11 CATEGORY MANAGEMENT ---
-        window.saveCategory = () => {
-            const name = document.getElementById('cat_name').value;
-            const icon = document.getElementById('cat_icon').value;
-            if(!name) return alert("Category Name Required");
-
-            const catId = push(ref(db, 'categories')).key;
-            set(ref(db, 'categories/' + catId), {
-                name: name,
-                icon: icon || 'fa-tag',
-                createdAt: Date.now()
-            });
-            document.getElementById('cat_name').value = "";
-        };
-
-        onValue(ref(db, 'categories'), (snap) => {
-            const shelf = document.getElementById('sec-8.11');
-            let list = "";
-            snap.forEach(child => {
-                const c = child.val();
-                list += `
-                    <div class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 mb-2">
-                        <div class="flex items-center gap-4">
-                            <i class="fa-solid ${c.icon} text-indigo-400"></i>
-                            <span class="font-bold">${c.name}</span>
-                        </div>
-                        <button onclick="removeCat('${child.key}')" class="text-zinc-600 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>`;
-            });
-
-            shelf.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="glass-panel p-8">
-                        <h3 class="text-xl font-bold mb-6">8.11 Category Control</h3>
-                        <input type="text" id="cat_name" placeholder="Category Name (e.g. Mens Fashion)">
-                        <input type="text" id="cat_icon" placeholder="FontAwesome Icon Class (e.g. fa-shirt)">
-                        <button onclick="saveCategory()" class="btn-action w-full mt-2">Add New Category</button>
-                    </div>
-                    <div class="glass-panel p-8">
-                        <h3 class="text-xl font-bold mb-6">Live Categories</h3>
-                        <div class="max-h-[400px] overflow-y-auto">${list || '<p class="text-zinc-600">No categories defined.</p>'}</div>
-                    </div>
-                </div>`;
-        });
-        window.removeCat = (key) => remove(ref(db, 'categories/' + key));
-
-        // --- 8.12 COUPON MANAGEMENT ---
-        window.createCoupon = () => {
-            const code = document.getElementById('cp_code').value.toUpperCase();
-            const perc = document.getElementById('cp_perc').value;
-            const exp = document.getElementById('cp_exp').value;
-            const limit = document.getElementById('cp_limit').value;
-
-            if(!code || !perc) return alert("Code and Percentage are mandatory");
-
-            set(ref(db, 'coupons/' + code), {
-                code, discount: perc, expiry: exp, usageLimit: limit,
-                status: 'Active', createdAt: Date.now()
-            });
-            alert("Coupon " + code + " is now Live");
-        };
-
-        onValue(ref(db, 'coupons'), (snap) => {
-            const shelf = document.getElementById('sec-8.12');
-            let rows = "";
-            snap.forEach(child => {
-                const c = child.val();
-                rows += `
-                    <tr class="text-sm border-b border-zinc-800">
-                        <td class="px-6 py-4 font-black text-indigo-400">${c.code}</td>
-                        <td class="px-6 py-4 text-emerald-400 font-bold">${c.discount}% OFF</td>
-                        <td class="px-6 py-4 text-zinc-500">${c.expiry || 'No Expiry'}</td>
-                        <td class="px-6 py-4 text-zinc-500">Max: ${c.usageLimit || '∞'}</td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="deleteCoupon('${child.key}')" class="text-zinc-600 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-
-            shelf.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1 glass-panel p-8">
-                        <h3 class="text-xl font-bold mb-6">8.12 Coupon Creator</h3>
-                        <input type="text" id="cp_code" placeholder="PROMO CODE (e.g. SAVE50)">
-                        <input type="number" id="cp_perc" placeholder="Discount Percentage (%)">
-                        <input type="date" id="cp_exp">
-                        <input type="number" id="cp_limit" placeholder="Usage limit per user">
-                        <button onclick="createCoupon()" class="btn-action w-full mt-2">Generate Coupon</button>
-                    </div>
-                    <div class="lg:col-span-2 glass-panel overflow-hidden">
-                        <table class="w-full text-left">
-                            <thead class="bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
-                                <tr>
-                                    <th class="px-6 py-4">Code</th>
-                                    <th class="px-6 py-4">Discount</th>
-                                    <th class="px-6 py-4">Expiry</th>
-                                    <th class="px-6 py-4">Limits</th>
-                                    <th class="px-6 py-4"></th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
-                    </div>
-                </div>`;
-        });
-        window.deleteCoupon = (key) => remove(ref(db, 'coupons/' + key));
-
-        // --- 8.13 BANNER MANAGEMENT ---
-        window.uploadBanner = async () => {
-            const file = document.getElementById('bn_file').files[0];
-            const type = document.getElementById('bn_type').value;
-            const link = document.getElementById('bn_link').value;
-
-            if(!file) return alert("Select an image");
-
-            const bRef = sRef(storage, `banners/${Date.now()}`);
-            const snap = await uploadBytes(bRef, file);
-            const url = await getDownloadURL(snap.ref);
-
-            push(ref(db, 'banners'), {
-                imageUrl: url, type: type, productLink: link,
-                createdAt: Date.now()
-            });
-            alert("Marketing Banner Published");
-        };
-
-        onValue(ref(db, 'banners'), (snap) => {
-            const shelf = document.getElementById('sec-8.13');
-            let bannerHtml = "";
-            snap.forEach(child => {
-                const b = child.val();
-                bannerHtml += `
-                    <div class="relative group rounded-2xl overflow-hidden border border-zinc-800">
-                        <img src="${b.imageUrl}" class="w-full h-32 object-cover">
-                        <div class="p-3 bg-zinc-900 flex justify-between items-center">
-                            <div>
-                                <p class="text-[10px] font-bold text-indigo-400 uppercase">${b.type}</p>
-                                <p class="text-[9px] text-zinc-500 truncate w-32">${b.productLink}</p>
-                            </div>
-                            <button onclick="removeBanner('${child.key}')" class="text-red-500/50 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </div>`;
-            });
-
-            shelf.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    <div class="lg:col-span-1 glass-panel p-8">
-                        <h3 class="text-xl font-bold mb-6">8.13 Media Center</h3>
-                        <label class="text-[10px] font-bold text-zinc-500">Banner Image</label>
-                        <input type="file" id="bn_file">
-                        <select id="bn_type">
-                            <option value="Homepage Top">Homepage Top</option>
-                            <option value="Festival Sale">Festival Sale</option>
-                            <option value="Category Hero">Category Hero</option>
-                        </select>
-                        <input type="text" id="bn_link" placeholder="Linked Product/Category ID">
-                        <button onclick="uploadBanner()" class="btn-action w-full mt-2">Upload Banner</button>
-                    </div>
-                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        ${bannerHtml}
-                    </div>
-                </div>`;
-        });
-        window.removeBanner = (key) => remove(ref(db, 'banners/' + key));
-
-        // --- 8.14 REVIEW MODERATION ---
-        onValue(ref(db, 'reviews'), (snap) => {
-            const shelf = document.getElementById('sec-8.14');
-            let reviews = "";
-            snap.forEach(child => {
-                const r = child.val();
-                reviews += `
-                    <div class="glass-panel p-6 border-l-4 ${r.status=='Approved'?'border-emerald-500':'border-amber-500'} mb-4">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="flex items-center gap-2 mb-2">
-                                    <div class="flex text-yellow-500 text-xs">
-                                        ${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}
-                                    </div>
-                                    <span class="text-[10px] text-zinc-500 uppercase font-bold">Product ID: ${r.productId}</span>
-                                </div>
-                                <p class="text-zinc-200 text-sm mb-2 italic">"${r.comment}"</p>
-                                <p class="text-[10px] text-zinc-500">— By ${r.userName} on ${new Date(r.timestamp).toLocaleDateString()}</p>
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                ${r.status !== 'Approved' ? `<button onclick="approveReview('${child.key}')" class="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full font-bold">Approve</button>` : ''}
-                                <button onclick="deleteReview('${child.key}')" class="text-[10px] bg-red-500/10 text-red-500 px-3 py-1 rounded-full font-bold">Delete Fake</button>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-
-            shelf.innerHTML = `
-                <div class="max-w-4xl">
-                    <h3 class="text-2xl font-bold mb-6">8.14 Review Moderation</h3>
-                    ${reviews || '<div class="glass-panel p-10 text-center text-zinc-500">No product reviews found.</div>'}
-                </div>`;
-        });
-        window.approveReview = (key) => update(ref(db, 'reviews/' + key), { status: 'Approved' });
-        window.deleteReview = (key) => remove(ref(db, 'reviews/' + key));
-
-        // --- 8.15 USER MANAGEMENT ---
-        onValue(ref(db, 'users'), (snap) => {
-            const shelf = document.getElementById('sec-8.15');
-            let rows = "";
-            snap.forEach(child => {
-                const u = child.val();
-                rows += `
-                    <tr class="text-sm border-b border-zinc-800 ${u.blocked ? 'opacity-40' : ''}">
-                        <td class="px-6 py-4">
-                            <p class="font-bold text-zinc-200">${u.name}</p>
-                            <p class="text-[10px] text-zinc-500">${u.email}</p>
-                        </td>
-                        <td class="px-6 py-4 text-zinc-400 text-xs">${u.phone || 'No Phone'}</td>
-                        <td class="px-6 py-4 text-[10px] font-mono text-zinc-500">
-                            ${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${u.blocked ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}">
-                                ${u.blocked ? 'Blocked' : 'Active'}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="toggleBlockUser('${child.key}', ${u.blocked})" class="text-zinc-500 hover:text-white mx-2">
-                                <i class="fa-solid ${u.blocked ? 'fa-user-check' : 'fa-user-slash'}"></i>
-                            </button>
-                            <button onclick="deleteUser('${child.key}')" class="text-zinc-500 hover:text-red-500 mx-2">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-            });
-
-            shelf.innerHTML = `
-                <div class="glass-panel overflow-hidden">
-                    <div class="p-8 border-b border-zinc-800">
-                        <h3 class="text-xl font-bold">8.15 Global User Base</h3>
-                        <p class="text-xs text-zinc-500">Manage customer accounts and access levels.</p>
-                    </div>
-                    <table class="w-full text-left">
-                        <thead class="bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
-                            <tr>
-                                <th class="px-6 py-4">User Details</th>
-                                <th class="px-6 py-4">Contact</th>
-                                <th class="px-6 py-4">Last Activity</th>
-                                <th class="px-6 py-4">Status</th>
-                                <th class="px-6 py-4"></th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>`;
-        });
-        window.toggleBlockUser = (key, current) => update(ref(db, 'users/' + key), { blocked: !current });
-        window.deleteUser = (key) => { if(confirm("Delete this user permanently?")) remove(ref(db, 'users/' + key)); };
-
-</script>
+    </script>
