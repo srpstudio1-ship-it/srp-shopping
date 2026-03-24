@@ -1265,167 +1265,230 @@ alert("Website Active: "+val);
 }
 
 
-// ==============================
-// ✅ FINAL WORKING CODE CHECKER
-// ==============================
+// =============================================
+// 🔥 8.21 ULTRA PRO GITHUB CODE CHECKER
+// =============================================
 
+// ================= CONFIG =====================
 const GITHUB_USER = "srpstudio1-ship-it";
 const GITHUB_REPO = "srp-shopping";
+const BRANCH = "main";
 
+// ================= MAIN =======================
 async function runCodeCheck(){
 
-document.getElementById("codeResult").innerHTML="🔍 Scanning all files...";
+const output = document.getElementById("codeResult");
+output.innerHTML = "🔍 Scanning repository...";
 
-let report="";
+let finalReport = "";
+let totalIssues = 0;
 
 try{
 
-// ✅ GET FILE LIST (ROOT)
-const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/`);
-const files = await res.json();
+// FETCH FILE TREE
+const treeRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/git/trees/${BRANCH}?recursive=1`);
+const treeData = await treeRes.json();
 
+if(!treeData.tree){
+output.innerHTML = "❌ Failed to fetch repo tree";
+return;
+}
+
+// FILTER FILES
+const files = treeData.tree.filter(f =>
+f.path.endsWith(".html") || f.path.endsWith(".js")
+);
+
+// LOOP FILES
 for(let file of files){
 
-// ONLY CHECK HTML + JS
-if(file.name.endsWith(".html") || file.name.endsWith(".js")){
+let fileReport = `<h3 style="margin-top:20px">📄 File: ${file.path}</h3>`;
+let fileIssues = 0;
 
 try{
 
-const fileRes = await fetch(file.download_url);
-const text = await fileRes.text();
+const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/${file.path}`;
+const res = await fetch(rawUrl);
+const text = await res.text();
 
+// ================= HTML CHECK =================
+if(file.path.endsWith(".html")){
+
+const parser = new DOMParser();
+const doc = parser.parseFromString(text, "text/html");
+
+// ---------- ALT CHECK ----------
+const imgs = doc.querySelectorAll("img");
+
+imgs.forEach(img=>{
+if(!img.hasAttribute("alt") || img.getAttribute("alt").trim()===""){
+
+fileIssues++;
+totalIssues++;
+
+fileReport += formatIssue(
+"❌ Missing ALT tag",
+findLine(text, img.outerHTML),
+img.outerHTML,
+'Add alt="description"'
+);
+
+}
+});
+
+// ---------- INLINE CSS ----------
+const styled = doc.querySelectorAll("[style]");
+styled.forEach(el=>{
+fileIssues++;
+totalIssues++;
+
+fileReport += formatIssue(
+"⚠ Inline CSS used",
+findLine(text, el.outerHTML),
+el.outerHTML,
+"Move styles to CSS file"
+);
+});
+
+// ---------- EMPTY ATTRIBUTES ----------
+const all = doc.querySelectorAll("*");
+all.forEach(el=>{
+for(let attr of el.attributes){
+if(attr.value === ""){
+fileIssues++;
+totalIssues++;
+
+fileReport += formatIssue(
+"⚠ Empty attribute",
+findLine(text, el.outerHTML),
+el.outerHTML,
+"Remove or fill attribute"
+);
+}
+}
+});
+
+}
+
+// ================= JS CHECK =================
 const lines = text.split("\n");
 
-let fileReport = `<h3 class="text-xl mt-4">📄 File: ${file.name}</h3>`;
-
-// ==============================
-// ✅ CHECK 1: REAL ALT CHECK
-// ==============================
+// ---------- CONSOLE ----------
 lines.forEach((line,i)=>{
-if(line.includes("<img")){
-if(!/alt\s*=/.test(line)){
-fileReport += `
-<div class="bg-red-700 p-2 mt-1">
-❌ Missing ALT tag<br>
-Line: ${i+1}<br>
-Code: ${line.trim()}<br>
-Fix: Add alt="description"
-</div>`;
-}
+if(line.includes("console.log")){
+fileIssues++;
+totalIssues++;
+
+fileReport += formatIssue(
+"ℹ Console log",
+i+1,
+line.trim(),
+"Remove in production"
+);
 }
 });
 
-// ==============================
-// ✅ CHECK 2: EMPTY HTML ATTRIBUTES ONLY
-// ==============================
-lines.forEach((line,i)=>{
-if(line.match(/\s\w+=""/)){
-fileReport += `
-<div class="bg-yellow-700 p-2 mt-1">
-⚠ Empty HTML attribute<br>
-Line: ${i+1}<br>
-Code: ${line.trim()}<br>
-Fix: Remove or fill attribute
-</div>`;
-}
-});
-
-// ==============================
-// ✅ CHECK 3: UNUSED VARIABLES (FIXED)
-// ==============================
+// ---------- UNUSED VARIABLES ----------
 let vars = [];
 lines.forEach(line=>{
 let m = line.match(/(let|const|var)\s+(\w+)/);
-if(m){ vars.push(m[2]); }
+if(m) vars.push(m[2]);
 });
 
 vars.forEach(v=>{
-let regex = new RegExp("\\b"+v+"\\b","g");
-let usage = text.match(regex);
-if(usage && usage.length === 1){
-fileReport += `
-<div class="bg-yellow-600 p-2 mt-1">
-⚠ Unused variable: ${v}<br>
-Fix: Remove or use variable
-</div>`;
+let count = (text.match(new RegExp("\\b"+v+"\\b","g")) || []).length;
+if(count === 1){
+fileIssues++;
+totalIssues++;
+
+fileReport += formatIssue(
+"⚠ Unused variable",
+"-",
+v,
+"Remove or use variable"
+);
 }
 });
 
-// ==============================
-// ✅ CHECK 4: CONSOLE LOG
-// ==============================
+// ---------- EMPTY STRING FILTER (SMART FIX) ----------
 lines.forEach((line,i)=>{
-if(line.includes("console.log")){
-fileReport += `
-<div class="bg-blue-700 p-2 mt-1">
-ℹ Console log found<br>
-Line: ${i+1}<br>
-Fix: Remove in production
-</div>`;
+// Ignore JS strings like let html=""
+if(line.includes('=""') && line.includes("<")){
+fileIssues++;
+totalIssues++;
+
+fileReport += formatIssue(
+"⚠ Empty HTML attribute",
+i+1,
+line.trim(),
+"Fix attribute"
+);
 }
 });
 
-// ==============================
-// ✅ CHECK 5: INLINE STYLE
-// ==============================
-lines.forEach((line,i)=>{
-if(line.includes('style=')){
-fileReport += `
-<div class="bg-purple-700 p-2 mt-1">
-⚠ Inline CSS used<br>
-Line: ${i+1}<br>
-Fix: Move to CSS
-</div>`;
-}
-});
-
-// ==============================
-// ✅ CLEAN FILE
-// ==============================
-if(fileReport === `<h3 class="text-xl mt-4">📄 File: ${file.name}</h3>`){
-fileReport += `
-<div class="bg-green-700 p-2 mt-2">
-✔ No issues found
-</div>`;
+// ================= CLEAN FILE =================
+if(fileIssues === 0){
+fileReport += `<div style="color:lightgreen">✔ No issues found</div>`;
 }
 
-report += fileReport;
+finalReport += fileReport;
 
 }catch(err){
-report += `
-<div class="bg-red-800 p-2 mt-2">
-❌ Failed to read file: ${file.name}
-</div>`;
+finalReport += `<div style="color:red">❌ Error reading ${file.path}</div>`;
 }
 
 }
 
-}
-
-// SHOW RESULT
-document.getElementById("codeResult").innerHTML = report;
-
-// LOG
-if(typeof db !== "undefined"){
-db.ref("logs/admin").push({
-msg:"Full repo scan success",
-time:Date.now()
-});
-}
+// ================= OUTPUT =================
+output.innerHTML = `
+<h2>✅ Scan Complete</h2>
+<p>Total Issues: ${totalIssues}</p>
+${finalReport}
+`;
 
 }catch(err){
-document.getElementById("codeResult").innerHTML = `
-<div class="bg-red-800 p-2">
-❌ Failed to fetch repository<br>
-Check internet / repo public
-</div>`;
+output.innerHTML = `<div style="color:red">❌ Error fetching repo</div>`;
 }
 
 }
 
-// AUTO RUN EVERY 7 DAYS
-setInterval(runCodeCheck, 604800000);
+// ================= HELPERS =================
 
+// FORMAT ISSUE
+function formatIssue(title,line,code,fix){
+return `
+<div style="background:#1f2937;padding:10px;margin:5px;border-radius:6px">
+<b>${title}</b><br>
+Line: ${line}<br>
+Code: ${escapeHTML(code)}<br>
+Fix: ${fix}
+</div>
+`;
+}
+
+// FIND LINE NUMBER
+function findLine(text,snippet){
+let lines = text.split("\n");
+for(let i=0;i<lines.length;i++){
+if(lines[i].includes(snippet.substring(0,30))){
+return i+1;
+}
+}
+return "?";
+}
+
+// ESCAPE HTML
+function escapeHTML(str){
+return str
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;");
+}
+
+// ================= AUTO RUN =================
+setTimeout(runCodeCheck,1000);
+
+// ================= INTERVAL =================
+setInterval(runCodeCheck,604800000);
 
 
 
