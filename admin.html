@@ -213,6 +213,107 @@
             <div id="withdrawals-section" class="section-container">... Withdrawals Loading (Part 2) ...</div>
             <div id="promotions-section" class="section-container">... Promotions Loading (Part 2) ...</div>
             </div>
+                    <div id="orders-section" class="section-container">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700">
+                        <h3 class="font-bold text-lg">Global Orders Dashboard</h3>
+                        <div class="space-x-2">
+                            <input type="text" id="search-order" placeholder="Search Order ID..." class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="p-3 border-b dark:border-gray-600">Order ID</th>
+                                    <th class="p-3 border-b dark:border-gray-600">User / Seller Info</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Product</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Financials</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Status / Tracking</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="invoice-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6 relative">
+                    <button onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times text-xl"></i></button>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">Order Invoice</h2>
+                    <div class="grid grid-cols-2 gap-4 mb-4 text-sm" id="invoice-content">
+                        </div>
+                </div>
+            </div>
+
+            <div id="tracking-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+                    <button onclick="closeTrackingModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times"></i></button>
+                    <h2 class="text-xl font-bold mb-4">Update Order Status</h2>
+                    <input type="hidden" id="update-order-id">
+                    <input type="hidden" id="update-user-id">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Status</label>
+                        <select id="update-status" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Tracking ID</label>
+                        <input type="text" id="update-tracking-id" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" placeholder="Enter Carrier Tracking ID">
+                    </div>
+                    <button onclick="saveTrackingInfo()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Send Notification & Update</button>
+                </div>
+            </div>
+
+            <div id="withdrawals-section" class="section-container">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2 dark:border-gray-700">Seller Withdrawal Requests</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="p-3 border-b dark:border-gray-600">Date</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Seller Details</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Balances</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Request Amt</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Status</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawal-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="promotions-section" class="section-container">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2 dark:border-gray-700">Promotion Payments</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="p-3 border-b dark:border-gray-600">Seller Name / Mobile</th>
+                                    <th class="p-3 border-b dark:border-gray-600">KYC Details</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Product ID</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Order Ref</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Promo Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="promotions-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
     </main>
 
     <script>
@@ -357,107 +458,7 @@
         setInterval(() => {
             console.log("Running scheduled 7-day code check...");
         }, 7 * 24 * 60 * 60 * 1000);
-            <div id="orders-section" class="section-container">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700">
-                        <h3 class="font-bold text-lg">Global Orders Dashboard</h3>
-                        <div class="space-x-2">
-                            <input type="text" id="search-order" placeholder="Search Order ID..." class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="p-3 border-b dark:border-gray-600">Order ID</th>
-                                    <th class="p-3 border-b dark:border-gray-600">User / Seller Info</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Product</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Financials</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Status / Tracking</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="orders-list-body">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="invoice-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6 relative">
-                    <button onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times text-xl"></i></button>
-                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">Order Invoice</h2>
-                    <div class="grid grid-cols-2 gap-4 mb-4 text-sm" id="invoice-content">
-                        </div>
-                </div>
-            </div>
-
-            <div id="tracking-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 relative">
-                    <button onclick="closeTrackingModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times"></i></button>
-                    <h2 class="text-xl font-bold mb-4">Update Order Status</h2>
-                    <input type="hidden" id="update-order-id">
-                    <input type="hidden" id="update-user-id">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-1">Status</label>
-                        <select id="update-status" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
-                            <option value="Confirmed">Confirmed</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-1">Tracking ID</label>
-                        <input type="text" id="update-tracking-id" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" placeholder="Enter Carrier Tracking ID">
-                    </div>
-                    <button onclick="saveTrackingInfo()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Send Notification & Update</button>
-                </div>
-            </div>
-
-            <div id="withdrawals-section" class="section-container">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="font-bold text-lg mb-4 border-b pb-2 dark:border-gray-700">Seller Withdrawal Requests</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="p-3 border-b dark:border-gray-600">Date</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Seller Details</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Balances</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Request Amt</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Status</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="withdrawal-list-body">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="promotions-section" class="section-container">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-                    <h3 class="font-bold text-lg mb-4 border-b pb-2 dark:border-gray-700">Promotion Payments</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="p-3 border-b dark:border-gray-600">Seller Name / Mobile</th>
-                                    <th class="p-3 border-b dark:border-gray-600">KYC Details</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Product ID</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Order Ref</th>
-                                    <th class="p-3 border-b dark:border-gray-600">Promo Payment</th>
-                                </tr>
-                            </thead>
-                            <tbody id="promotions-list-body">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        // ==========================================
+                    // ==========================================
         // ADD THIS JAVASCRIPT TO THE BOTTOM OF PART 1
         // ==========================================
 
@@ -686,7 +687,11 @@
         loadWithdrawals();
         loadPromotions();
 
+            
 
+            
+                    
+                
 
 
 </script>
