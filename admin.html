@@ -1038,6 +1038,362 @@ showSection = function(sectionId) {
         initAnalyticsCharts();
     }
 };
+// --- CONTINUATION OF SCRIPT (Part 3) ---
+
+/** * 8.11 CATEGORY MANAGEMENT
+ * Add, Edit, Delete categories with Icon support
+ */
+async function loadCategories() {
+    const container = document.getElementById('category-list');
+    if(!container) return;
+    
+    container.innerHTML = '<div class="spinner"></div>';
+    const snapshot = await db.collection('categories').get();
+    container.innerHTML = '';
+
+    snapshot.forEach(doc => {
+        const cat = doc.data();
+        container.innerHTML += `
+            <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 24px; color: var(--accent-blue)"><i class="${cat.icon || 'fas fa-tag'}"></i></div>
+                    <div>
+                        <h4 style="margin:0">${cat.name}</h4>
+                        <small style="color: var(--text-dim)">ID: ${doc.id}</small>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-sm" onclick="deleteCategory('${doc.id}')" style="color: var(--danger)"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function addNewCategory() {
+    const name = document.getElementById('new-cat-name').value;
+    const icon = document.getElementById('new-cat-icon').value;
+    
+    if(!name) return alert("Category name required");
+
+    await db.collection('categories').add({
+        name: name,
+        icon: icon || 'fas fa-box',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('new-cat-name').value = '';
+    loadCategories();
+}
+
+/** * 8.12 COUPON MANAGEMENT
+ * Create and Limit discount codes
+ */
+async function saveCoupon() {
+    const code = document.getElementById('cp-code').value.toUpperCase();
+    const percent = document.getElementById('cp-percent').value;
+    const expiry = document.getElementById('cp-expiry').value;
+    const limit = document.getElementById('cp-limit').value;
+
+    if(!code || !percent) return alert("Fill required fields");
+
+    await db.collection('coupons').doc(code).set({
+        code: code,
+        discount: parseInt(percent),
+        expiryDate: expiry,
+        usageLimit: parseInt(limit),
+        usedCount: 0,
+        status: 'active'
+    });
+    alert("Coupon Created!");
+    loadCoupons();
+}
+
+/** * 8.13 BANNER MANAGEMENT
+ * Homepage & Festival Sale Banners
+ */
+async function uploadBanner() {
+    const file = document.getElementById('banner-file').files[0];
+    const link = document.getElementById('banner-link').value;
+    const type = document.getElementById('banner-type').value;
+
+    if(!file) return alert("Select an image");
+
+    const storageRef = storage.ref(`banners/${Date.now()}_${file.name}`);
+    await storageRef.put(file);
+    const url = await storageRef.getDownloadURL();
+
+    await db.collection('banners').add({
+        imageUrl: url,
+        productLink: link,
+        type: type,
+        active: true,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert("Banner Live!");
+    loadBanners();
+}
+
+/** * 8.14 REVIEW MODERATION
+ * Clean the platform from fake reviews
+ */
+async function loadReviews() {
+    const tbody = document.getElementById('review-table-body');
+    const snapshot = await db.collection('reviews').orderBy('timestamp', 'desc').get();
+    tbody.innerHTML = '';
+
+    snapshot.forEach(doc => {
+        const r = doc.data();
+        tbody.innerHTML += `
+            <tr>
+                <td>${r.productName}</td>
+                <td>${r.userName}</td>
+                <td>
+                    <div style="color: var(--warning)">
+                        ${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}
+                    </div>
+                    <p><small>${r.comment}</small></p>
+                </td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteReview('${doc.id}')">Delete</button>
+                    ${!r.approved ? `<button class="btn btn-success btn-sm" onclick="approveReview('${doc.id}')">Approve</button>` : ''}
+                </td>
+            </tr>
+        `;
+    });
+}
+
+/** * 8.15 & 8.16 USER & SELLER MANAGEMENT
+ * Deep control over accounts
+ */
+async function loadUsers() {
+    const tbody = document.getElementById('user-table-body');
+    const snapshot = await db.collection('users').get();
+    tbody.innerHTML = '';
+
+    snapshot.forEach(doc => {
+        const u = doc.data();
+        tbody.innerHTML += `
+            <tr>
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td>${new Date(u.lastLogin).toLocaleString()}</td>
+                <td>
+                    <button class="btn ${u.isBlocked ? 'btn-success' : 'btn-danger'} btn-sm" onclick="toggleUserBlock('${doc.id}', ${u.isBlocked})">
+                        ${u.isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+async function loadSellers() {
+    const tbody = document.getElementById('seller-table-body');
+    const snapshot = await db.collection('sellers').get();
+    tbody.innerHTML = '';
+
+    snapshot.forEach(doc => {
+        const s = doc.data();
+        tbody.innerHTML += `
+            <tr onclick="viewSellerDetails('${doc.id}')" style="cursor:pointer">
+                <td>${s.shopName}</td>
+                <td>${s.email}</td>
+                <td><span class="status-pill ${s.verified ? 'bg-success' : 'bg-warning'}">${s.status}</span></td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); verifySeller('${doc.id}')">Verify</button>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); suspendSeller('${doc.id}')">Suspend</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+/** * 8.18 REFUND SYSTEM
+ * Process customer refunds to wallet
+ */
+async function processRefund(orderId, userId, amount) {
+    if(!confirm("Refund ₹" + amount + " to user wallet?")) return;
+
+    try {
+        const batch = db.batch();
+        // 1. Update Order Status
+        batch.update(db.collection('orders').doc(orderId), { status: 'Refunded' });
+        // 2. Add to User Wallet
+        const walletRef = db.collection('users').doc(userId).collection('wallet').doc();
+        batch.set(walletRef, {
+            amount: parseFloat(amount),
+            type: 'credit',
+            reason: 'Refund for Order ' + orderId,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await batch.commit();
+        logAction('Refund Processed', `Refunded ₹${amount} for order ${orderId}`);
+        alert("Refund successful!");
+    } catch(e) {
+        alert("Refund Error: " + e.message);
+    }
+}
+
+/** * 8.19 SYSTEM LOGS
+ * Track every move made in the admin panel
+ */
+function logAction(type, detail) {
+    db.collection('system_logs').add({
+        adminEmail: auth.currentUser.email,
+        actionType: type,
+        description: detail,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        ip: "Internal"
+    });
+}
+
+/** * 8.20 PLATFORM SETTINGS
+ * Global site switches
+ */
+async function updateSiteSettings() {
+    const settings = {
+        maintenanceMode: document.getElementById('set-maintenance').checked,
+        codEnabled: document.getElementById('set-cod').checked,
+        referralBonus: document.getElementById('set-ref-bonus').value,
+        contactEmail: document.getElementById('set-contact-email').value
+    };
+    
+    await db.collection('settings').doc('config').set(settings, {merge: true});
+    alert("Platform settings updated globally!");
+}
+
+// --- EXTENDING HTML FOR PART 3 ---
+const part3Sections = `
+    <div id="section-categories" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Manage Categories</h3>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" id="new-cat-name" placeholder="Category Name">
+                <input type="text" id="new-cat-icon" placeholder="FontAwesome Icon (e.g. fas fa-mobile)">
+                <button class="btn btn-primary" onclick="addNewCategory()">Add</button>
+            </div>
+            <div id="category-list"></div>
+        </div>
+    </div>
+
+    <div id="section-coupons" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Promo Codes</h3>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:20px;">
+                <input type="text" id="cp-code" placeholder="CODE2026">
+                <input type="number" id="cp-percent" placeholder="Discount %">
+                <input type="date" id="cp-expiry">
+                <input type="number" id="cp-limit" placeholder="Usage Limit">
+            </div>
+            <button class="btn btn-primary" onclick="saveCoupon()">Generate Coupon</button>
+        </div>
+    </div>
+
+    <div id="section-banners" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Marketing Banners</h3>
+            <div class="form-group">
+                <label>Select Banner Image</label>
+                <input type="file" id="banner-file">
+            </div>
+            <div class="form-group">
+                <label>Target Link (Product ID)</label>
+                <input type="text" id="banner-link">
+            </div>
+            <select id="banner-type" style="margin-bottom:15px;">
+                <option value="main">Main Slider</option>
+                <option value="festival">Festival Sale</option>
+                <option value="footer">Small Promo</option>
+            </select>
+            <button class="btn btn-primary" onclick="uploadBanner()">Upload & Sync</button>
+        </div>
+    </div>
+
+    <div id="section-user-mgmt" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Platform Users</h3>
+            <table>
+                <thead>
+                    <tr><th>Name</th><th>Email</th><th>Last Active</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="user-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="section-seller-mgmt" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Seller Directory</h3>
+            <table>
+                <thead>
+                    <tr><th>Shop Name</th><th>Email</th><th>Status</th><th>Control</th></tr>
+                </thead>
+                <tbody id="seller-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="section-logs" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Audit Trail</h3>
+            <div id="log-container" style="max-height: 500px; overflow-y: auto;">
+                </div>
+        </div>
+    </div>
+
+    <div id="section-settings" class="content-section hidden">
+        <div class="glass-card">
+            <h3>Master Platform Control</h3>
+            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                <label>Maintenance Mode (Lock Website)</label>
+                <input type="checkbox" id="set-maintenance" style="width:auto;">
+            </div>
+            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                <label>Enable Cash on Delivery</label>
+                <input type="checkbox" id="set-cod" checked style="width:auto;">
+            </div>
+            <div class="form-group">
+                <label>Global Referral Bonus (₹)</label>
+                <input type="number" id="set-ref-bonus" value="50">
+            </div>
+            <div class="form-group">
+                <label>Official Contact Email</label>
+                <input type="email" id="set-contact-email" value="support@srp.com">
+            </div>
+            <button class="btn btn-success" onclick="updateSiteSettings()">Save Global Config</button>
+        </div>
+    </div>
+`;
+
+document.getElementById('admin-panel-root').innerHTML += part3Sections;
+
+// Update Navigation Handlers for Part 3
+const finalShowSection = showSection;
+showSection = function(id) {
+    finalShowSection(id);
+    if(id === 'categories') loadCategories();
+    if(id === 'coupons') loadCoupons();
+    if(id === 'user-mgmt') loadUsers();
+    if(id === 'seller-mgmt') loadSellers();
+    if(id === 'reviews') loadReviews();
+    if(id === 'logs') loadSystemLogs();
+};
+
+async function loadSystemLogs() {
+    const logBox = document.getElementById('log-container');
+    const snap = await db.collection('system_logs').orderBy('timestamp', 'desc').limit(50).get();
+    logBox.innerHTML = '';
+    snap.forEach(doc => {
+        const l = doc.data();
+        logBox.innerHTML += `
+            <div style="padding:10px; border-bottom:1px solid var(--glass); font-size:13px;">
+                <span style="color:var(--accent-blue)">[${new Date(l.timestamp?.toDate()).toLocaleTimeString()}]</span>
+                <strong>${l.adminEmail}</strong>: ${l.description}
+            </div>
+        `;
+    });
+}
 
         // Init
         window.onload = () => {
