@@ -1,426 +1,166 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Ultimate Admin Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+    <title>SRP SHOPPING - Super Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <script>
+        // Tailwind Configuration for Dark Mode & Custom Colors
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#4f46e5',
+                        darkbg: '#111827',
+                        darkcard: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --primary-bg: #0f172a;
-            --secondary-bg: #1e293b;
-            --accent-blue: #38bdf8;
-            --accent-purple: #818cf8;
-            --text-main: #f1f5f9;
-            --text-dim: #94a3b8;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --glass: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--primary-bg);
-            color: var(--text-main);
-            overflow-x: hidden;
-            display: flex;
-        }
-
-        /* --- Sidebar Navigation --- */
-        #sidebar {
-            width: 280px;
-            height: 100vh;
-            background: var(--secondary-bg);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            overflow-y: auto;
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .logo-area {
-            padding: 30px;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .logo-area h1 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 24px;
-            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            list-style: none;
-            padding: 20px 0;
-        }
-
-        .nav-item {
-            padding: 12px 25px;
-            display: flex;
-            align-items: center;
-            color: var(--text-dim);
-            text-decoration: none;
-            transition: 0.3s;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .nav-item i {
-            margin-right: 15px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            color: var(--text-main);
-            background: var(--glass);
-            border-left: 4px solid var(--accent-blue);
-        }
-
-        /* --- Main Content Area --- */
-        main {
-            flex: 1;
-            margin-left: 280px;
-            padding: 30px;
-            min-height: 100vh;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: var(--glass);
-            padding: 8px 20px;
-            border-radius: 50px;
-            border: 1px solid var(--border);
-        }
-
-        /* --- UI Components --- */
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary { background: var(--accent-blue); color: #fff; }
-        .btn-success { background: var(--success); color: #fff; }
-        .btn-danger { background: var(--danger); color: #fff; }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-dim);
-            font-size: 14px;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: white;
-            outline: none;
-        }
-
-        input:focus { border-color: var(--accent-blue); }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th {
-            text-align: left;
-            padding: 15px;
-            color: var(--text-dim);
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid var(--glass);
-        }
-
-        .status-pill {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: var(--secondary-bg);
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border-radius: 20px;
-            padding: 40px;
-            position: relative;
-        }
-
-        /* --- 8. Admin Panel Master --- */
-        #admin-panel-root {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hidden { display: none; }
-
+        /* Custom Scrollbar for a premium feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+        
+        .nav-item { transition: all 0.2s ease-in-out; }
+        .nav-item:hover, .nav-item.active { background-color: #4f46e5; color: white; }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 dark:bg-darkbg dark:text-gray-200 transition-colors duration-200 flex h-screen overflow-hidden">
 
-    <nav id="sidebar">
-        <div class="logo-area">
-            <h1>SRP SHOPPING</h1>
-            <p style="font-size: 10px; color: var(--text-dim);">MASTER ADMIN PRO</p>
+    <aside class="w-64 bg-white dark:bg-darkcard border-r border-gray-200 dark:border-gray-700 flex flex-col h-full z-20 shadow-lg shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
+            <i class="fa-solid fa-cart-shopping text-primary text-2xl mr-3"></i>
+            <span class="text-xl font-bold tracking-wider">SRP ADMIN</span>
         </div>
-        <ul class="nav-links">
-            <li class="nav-item active" onclick="showSection('dashboard')"><i class="fas fa-chart-line"></i> 8.0 Global Dashboard</li>
-            <li class="nav-item" onclick="showSection('product-mgmt')"><i class="fas fa-box-open"></i> 8.1 Product Management</li>
-            <li class="nav-item" onclick="showSection('order-mgmt')"><i class="fas fa-shopping-cart"></i> 8.2 Orders Management</li>
-            <li class="nav-item" onclick="showSection('seller-withdraw')"><i class="fas fa-wallet"></i> 8.3 Withdrawal Approval</li>
-            <li class="nav-item" onclick="showSection('promotion-pay')"><i class="fas fa-ad"></i> 8.4 Promotion System</li>
-            <li class="nav-item" onclick="showSection('featured-mgmt')"><i class="fas fa-star"></i> 8.5 Featured Products</li>
-            <li class="nav-item" onclick="showSection('global-orders')"><i class="fas fa-globe"></i> 8.6 Global Orders</li>
-            <li class="nav-item" onclick="showSection('admin-security')"><i class="fas fa-shield-alt"></i> 8.7 Admin Security</li>
-            <li class="nav-item" onclick="showSection('analytics')"><i class="fas fa-microchip"></i> 8.8-8.10 Analytics & Income</li>
-            <li class="nav-item" onclick="showSection('categories')"><i class="fas fa-list"></i> 8.11 Category Management</li>
-            <li class="nav-item" onclick="showSection('coupons')"><i class="fas fa-ticket-alt"></i> 8.12 Coupon Management</li>
-            <li class="nav-item" onclick="showSection('banners')"><i class="fas fa-image"></i> 8.13 Banner Management</li>
-            <li class="nav-item" onclick="showSection('reviews')"><i class="fas fa-comment-dots"></i> 8.14 Review Moderation</li>
-            <li class="nav-item" onclick="showSection('user-mgmt')"><i class="fas fa-users"></i> 8.15 User Management</li>
-            <li class="nav-item" onclick="showSection('seller-mgmt')"><i class="fas fa-store"></i> 8.16 Seller Management</li>
-            <li class="nav-item" onclick="showSection('history')"><i class="fas fa-history"></i> 8.17 Payment History</li>
-            <li class="nav-item" onclick="showSection('refunds')"><i class="fas fa-undo"></i> 8.18 Refund System</li>
-            <li class="nav-item" onclick="showSection('logs')"><i class="fas fa-terminal"></i> 8.19 System Logs</li>
-            <li class="nav-item" onclick="showSection('settings')"><i class="fas fa-cog"></i> 8.20 Platform Settings</li>
-            <li class="nav-item" onclick="showSection('code-checker')"><i class="fab fa-github"></i> 8.21 AI Code Checker</li>
-        </ul>
-    </nav>
 
-    <main id="admin-panel-root">
-        <header>
-            <h2 id="section-title">Global Dashboard</h2>
-            <div class="user-profile">
-                <i class="fas fa-moon" id="theme-toggle" onclick="toggleTheme()" style="cursor:pointer"></i>
-                <div class="admin-info">
-                    <p style="font-weight: 600;">Super Admin</p>
-                    <small style="color: var(--text-dim);">Online</small>
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-4">Core Management</p>
+            <button onclick="loadSection('8.6', 'Global Dashboard')" class="nav-item active w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-chart-pie w-6"></i> 8.6 Dashboard
+            </button>
+            <button onclick="loadSection('8.1', 'Product Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-box w-6"></i> 8.1 Products
+            </button>
+            <button onclick="loadSection('8.2', 'Orders Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-truck-fast w-6"></i> 8.2 Orders
+            </button>
+            <button onclick="loadSection('8.11', 'Category Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-tags w-6"></i> 8.11 Categories
+            </button>
+            <button onclick="loadSection('8.5', 'Featured Products')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-star w-6"></i> 8.5 Featured
+            </button>
+
+            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">Users & Sellers</p>
+            <button onclick="loadSection('8.15', 'User Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-users w-6"></i> 8.15 Users
+            </button>
+            <button onclick="loadSection('8.16', 'Seller Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-store w-6"></i> 8.16 Sellers
+            </button>
+            <button onclick="loadSection('8.3', 'Seller Withdrawals')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-money-bill-transfer w-6"></i> 8.3 Withdrawals
+            </button>
+
+            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">Finance & Analytics</p>
+            <button onclick="loadSection('8.10', 'Admin Income')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-wallet w-6"></i> 8.10 Income
+            </button>
+            <button onclick="loadSection('8.4', 'Promotion Payments')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-bullhorn w-6"></i> 8.4 Promotions
+            </button>
+            <button onclick="loadSection('8.8', 'Website Analytics')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-chart-line w-6"></i> 8.8 Web Analytics
+            </button>
+            <button onclick="loadSection('8.9', 'Sales Analytics')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-indian-rupee-sign w-6"></i> 8.9 Sales Analytics
+            </button>
+            <button onclick="loadSection('8.17', 'Payment History')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-file-invoice w-6"></i> 8.17 Payments
+            </button>
+            <button onclick="loadSection('8.18', 'Refund System')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-rotate-left w-6"></i> 8.18 Refunds
+            </button>
+
+            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">Marketing & Tools</p>
+            <button onclick="loadSection('8.12', 'Coupon Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-ticket w-6"></i> 8.12 Coupons
+            </button>
+            <button onclick="loadSection('8.13', 'Banner Management')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-images w-6"></i> 8.13 Banners
+            </button>
+            <button onclick="loadSection('8.14', 'Review Moderation')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-star-half-stroke w-6"></i> 8.14 Reviews
+            </button>
+
+            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-6">System</p>
+            <button onclick="loadSection('8.7', 'Admin Security')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-shield-halved w-6"></i> 8.7 Security
+            </button>
+            <button onclick="loadSection('8.19', 'System Logs')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-server w-6"></i> 8.19 Logs
+            </button>
+            <button onclick="loadSection('8.20', 'Platform Settings')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-gear w-6"></i> 8.20 Settings
+            </button>
+            <button onclick="loadSection('8.21', 'Code Checker')" class="nav-item w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300">
+                <i class="fa-brands fa-github w-6"></i> 8.21 Code Checker
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 dark:bg-darkbg">
+        
+        <header class="h-16 bg-white dark:bg-darkcard border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-10 shadow-sm">
+            <h1 id="current-section-title" class="text-xl font-semibold text-gray-800 dark:text-white">8.6 Global Dashboard</h1>
+            
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none" title="Toggle Day/Night Mode">
+                    <i id="theme-icon" class="fa-solid fa-moon text-gray-600 dark:text-gray-300 text-lg"></i>
+                </button>
+                
+                <div class="flex items-center space-x-2 border-l border-gray-300 dark:border-gray-600 pl-4 cursor-pointer">
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+                        A
+                    </div>
+                    <span class="text-sm font-medium hidden md:block">Super Admin</span>
                 </div>
-                <img src="https://ui-avatars.com/api/?name=Admin&background=38bdf8&color=fff" width="40" style="border-radius: 50%;">
             </div>
         </header>
 
-        <div id="section-dashboard" class="content-section">
-            <div class="glass-card" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-                <div class="stat-box">
-                    <p>Total Revenue</p>
-                    <h2 id="stat-revenue">₹0.00</h2>
-                </div>
-                <div class="stat-box">
-                    <p>Total Orders</p>
-                    <h2 id="stat-orders">0</h2>
-                </div>
-                <div class="stat-box">
-                    <p>Active Sellers</p>
-                    <h2 id="stat-sellers">0</h2>
-                </div>
-                <div class="stat-box">
-                    <p>Active Users</p>
-                    <h2 id="stat-users">0</h2>
-                </div>
+        <div id="main-viewport" class="flex-1 overflow-y-auto p-6 relative">
+            <div id="loading-spinner" class="absolute inset-0 bg-white/80 dark:bg-darkbg/80 z-50 flex items-center justify-center hidden">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-primary"></i>
             </div>
-            </div>
-
-        <div id="section-product-mgmt" class="content-section hidden">
-            <div class="glass-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3>Inventory Control</h3>
-                    <button class="btn btn-primary" onclick="openProductModal()"><i class="fas fa-plus"></i> Add New Product</button>
+            
+            <div id="app-content" class="max-w-7xl mx-auto space-y-6">
+                <div class="bg-white dark:bg-darkcard rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-2xl font-bold mb-4">Welcome to SRP Shopping Admin</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Firebase is initializing... Please wait.</p>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product ID</th>
-                            <th>Image</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>MRP</th>
-                            <th>Sale Price</th>
-                            <th>Stock</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="product-table-body">
-                        </tbody>
-                </table>
             </div>
         </div>
+    </main>
 
-        <div id="section-order-mgmt" class="content-section hidden">
-            <div class="glass-card">
-                <h3>Global Order Stream</h3>
-                <div style="margin: 20px 0; display: flex; gap: 10px;">
-                    <input type="text" id="order-search" placeholder="Search by Order ID or User..." style="max-width: 300px;">
-                    <select id="filter-status" style="max-width: 200px;">
-                        <option value="all">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                    </select>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>User Details</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="order-table-body">
-                        </tbody>
-                </table>
-            </div>
-        </div>
-
-        </main>
-
-    <div id="productModal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalTitle">Add New Product</h2>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
-            <form id="productForm">
-                <input type="hidden" id="edit-id">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div class="form-group">
-                        <label>Product Name</label>
-                        <input type="text" id="p-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select id="p-category">
-                            <option value="electronics">Electronics</option>
-                            <option value="fashion">Fashion</option>
-                            <option value="home">Home & Kitchen</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>MRP (₹)</label>
-                        <input type="number" id="p-mrp" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Discount Price (₹)</label>
-                        <input type="number" id="p-discount" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Stock Quantity</label>
-                        <input type="number" id="p-stock" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Product Image</label>
-                        <input type="file" id="p-image" accept="image/*">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Product Description</label>
-                    <textarea id="p-desc" rows="4"></textarea>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="btn" onclick="closeModal('productModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Product</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="orderModal" class="modal">
-        <div class="modal-content">
-            <h2>Order Details</h2>
-            <div id="order-detail-view" style="margin-top: 20px;">
-                </div>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
-            <h3>Update Logistics</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                <input type="text" id="update-tracking-id" placeholder="Tracking ID">
-                <select id="update-status">
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Delivered">Delivered</option>
-                </select>
-            </div>
-            <button class="btn btn-success" style="margin-top: 20px; width: 100%;" onclick="updateOrderLogistics()">Update Order & Notify User</button>
-            <button class="btn btn-danger" onclick="closeModal('orderModal')" style="margin-top: 10px; width: 100%;">Close</button>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
     <script>
-        // --- Firebase Configuration ---
+        // ==========================================
+        // 1. FIREBASE INITIALIZATION
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -432,1291 +172,102 @@
             measurementId: "G-3S7X8V8EFQ"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const storage = firebase.storage();
+        // Initialize Firebase safely
+        let app;
+        try {
+            if (!firebase.apps.length) {
+                app = firebase.initializeApp(firebaseConfig);
+                console.log("Firebase Initialized Successfully.");
+                document.getElementById('app-content').innerHTML = `
+                    <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 rounded-md shadow-sm">
+                        <div class="flex">
+                            <div class="flex-shrink-0"><i class="fa-solid fa-circle-check text-green-500"></i></div>
+                            <div class="ml-3"><p class="text-sm text-green-700 dark:text-green-400">System Ready: Connected to SRP Shopping Database.</p></div>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error("Firebase Initialization Error:", error);
+            document.getElementById('app-content').innerHTML = `
+                <div class="bg-red-50 border-l-4 border-red-500 p-4"><p class="text-red-700">Database Connection Failed. Check console.</p></div>
+            `;
+        }
+
+        const db = firebase.database();
         const auth = firebase.auth();
+        const storage = firebase.storage();
 
-        // --- Navigation Logic ---
-        function showSection(sectionId) {
-            document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            
-            const target = document.getElementById('section-' + sectionId);
-            if(target) target.classList.remove('hidden');
-            
-            // Update Title
-            const titleMap = {
-                'dashboard': '8.0 Global Dashboard',
-                'product-mgmt': '8.1 Product Management',
-                'order-mgmt': '8.2 Orders Management',
-                'seller-withdraw': '8.3 Withdrawal Approval',
-                'promotion-pay': '8.4 Promotion System'
-            };
-            document.getElementById('section-title').innerText = titleMap[sectionId] || 'Admin Panel';
-            
-            // Logic for specific sections
-            if(sectionId === 'product-mgmt') loadProducts();
-            if(sectionId === 'order-mgmt') loadOrders();
-        }
-
-        // --- 8.1 Product Management Logic ---
-        function openProductModal(id = null) {
-            const modal = document.getElementById('productModal');
-            modal.style.display = 'flex';
-            if(!id) {
-                document.getElementById('productForm').reset();
-                document.getElementById('edit-id').value = '';
-                document.getElementById('modalTitle').innerText = "Add New Product";
-            }
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        async function loadProducts() {
-            const tbody = document.getElementById('product-table-body');
-            tbody.innerHTML = '<tr><td colspan="8">Loading products...</td></tr>';
-            
-            const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
-            tbody.innerHTML = '';
-            
-            snapshot.forEach(doc => {
-                const p = doc.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td>#${doc.id.substring(0,6)}</td>
-                        <td><img src="${p.image || 'https://via.placeholder.com/50'}" width="50" style="border-radius:8px"></td>
-                        <td>${p.name}</td>
-                        <td>${p.category}</td>
-                        <td>₹${p.mrp}</td>
-                        <td>₹${p.discountPrice}</td>
-                        <td>${p.stock}</td>
-                        <td>
-                            <button onclick="editProduct('${doc.id}')" class="btn-success btn" style="padding:5px 10px"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteProduct('${doc.id}')" class="btn-danger btn" style="padding:5px 10px"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        document.getElementById('productForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-id').value;
-            const file = document.getElementById('p-image').files[0];
-            let imageUrl = "";
-
-            // Simple Auto ID generation
-            const uniqueId = "SRP" + Math.floor(Math.random() * 1000000);
-
-            const productData = {
-                name: document.getElementById('p-name').value,
-                category: document.getElementById('p-category').value,
-                mrp: document.getElementById('p-mrp').value,
-                discountPrice: document.getElementById('p-discount').value,
-                stock: document.getElementById('p-stock').value,
-                description: document.getElementById('p-desc').value,
-                productId: uniqueId,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            try {
-                if(id) {
-                    await db.collection('products').doc(id).update(productData);
-                } else {
-                    await db.collection('products').add(productData);
-                }
-                alert("Product saved successfully!");
-                closeModal('productModal');
-                loadProducts();
-            } catch(err) {
-                console.error(err);
-                alert("Error saving product");
-            }
-        };
-
-        // --- 8.2 Order Management Logic ---
-        async function loadOrders() {
-            const tbody = document.getElementById('order-table-body');
-            const snapshot = await db.collection('orders').get();
-            tbody.innerHTML = '';
-            
-            snapshot.forEach(doc => {
-                const o = doc.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${o.orderId || doc.id}</td>
-                        <td>
-                            <strong>${o.userName}</strong><br>
-                            <small>${o.phone}</small>
-                        </td>
-                        <td>₹${o.totalAmount}</td>
-                        <td><span class="status-pill" style="background:var(--accent-purple)">${o.status}</span></td>
-                        <td>${o.date || 'N/A'}</td>
-                        <td>
-                            <button onclick="viewOrder('${doc.id}')" class="btn btn-primary" style="padding:5px 10px">Manage</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        async function viewOrder(id) {
-            const doc = await db.collection('orders').doc(id).get();
-            const o = doc.data();
-            const detailDiv = document.getElementById('order-detail-view');
-            
-            detailDiv.innerHTML = `
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div>
-                        <p><strong>Customer:</strong> ${o.userName}</p>
-                        <p><strong>Email:</strong> ${o.email}</p>
-                        <p><strong>Address:</strong> ${o.address}, ${o.pincode}</p>
-                    </div>
-                    <div>
-                        <p><strong>Order ID:</strong> ${o.orderId}</p>
-                        <p><strong>Tracking:</strong> ${o.trackingId || 'Not Assigned'}</p>
-                        <p><strong>Payment:</strong> ${o.paymentStatus}</p>
-                    </div>
-                </div>
-                <div style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.3); border-radius:10px;">
-                   <img src="${o.productImage}" width="80" style="float:left; margin-right:15px; border-radius:5px;">
-                   <p><strong>Product:</strong> ${o.productName}</p>
-                   <p><strong>ID:</strong> ${o.productId}</p>
-                </div>
-            `;
-            
-            document.getElementById('update-tracking-id').value = o.trackingId || '';
-            document.getElementById('orderModal').style.display = 'flex';
-            window.currentOrderId = id;
-        }
-
-        // Logic for Theme Toggle (8.7 - day/night)
+        // ==========================================
+        // 2. UI & NAVIGATION CONTROLS
+        // ==========================================
+        
+        // Theme Toggle Logic (8.7 Day/Night Mode)
         function toggleTheme() {
-            const icon = document.getElementById('theme-toggle');
-            if(document.body.style.backgroundColor === 'white') {
-                document.body.style.backgroundColor = 'var(--primary-bg)';
-                document.body.style.color = 'white';
-                icon.className = "fas fa-moon";
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
             } else {
-                document.body.style.backgroundColor = 'white';
-                document.body.style.color = '#0f172a';
-                icon.className = "fas fa-sun";
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
             }
         }
-// --- CONTINUATION OF SCRIPT (Part 2) ---
 
-/** * 8.3 SELLER WITHDRAWAL APPROVAL
- * Logic to view, approve, reject, and notify sellers
- */
-async function loadWithdrawalRequests() {
-    const tbody = document.getElementById('withdrawal-table-body');
-    if(!tbody) return;
-    
-    tbody.innerHTML = '<tr><td colspan="7">Scanning financial records...</td></tr>';
-    
-    try {
-        const snapshot = await db.collection('withdrawals').orderBy('timestamp', 'desc').get();
-        tbody.innerHTML = '';
-        
-        if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="7">No pending withdrawal requests.</td></tr>';
-            return;
+        // Check local storage for theme preference on load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
         }
 
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const statusClass = data.status === 'Approved' ? 'bg-success' : (data.status === 'Rejected' ? 'bg-danger' : 'bg-warning');
+        // Navigation Logic
+        function loadSection(sectionId, sectionName) {
+            // Update Active State in Sidebar
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
             
-            tbody.innerHTML += `
-                <tr>
-                    <td>${data.sellerName}</td>
-                    <td>₹${data.balance}</td>
-                    <td><strong>₹${data.amount}</strong></td>
-                    <td><span class="status-pill ${statusClass}">${data.status}</span></td>
-                    <td>${new Date(data.timestamp?.toDate()).toLocaleDateString()}</td>
-                    <td>
-                        <button class="btn btn-success btn-sm" onclick="handleWithdrawal('${doc.id}', 'Approved', '${data.sellerId}', ${data.amount})">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="handleWithdrawal('${doc.id}', 'Rejected', '${data.sellerId}', 0)">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-    } catch (error) {
-        console.error("Error loading withdrawals:", error);
-    }
-}
-
-async function handleWithdrawal(requestId, action, sellerId, amount) {
-    if(!confirm(`Are you sure you want to mark this as ${action}?`)) return;
-
-    try {
-        const batch = db.batch();
-        const requestRef = db.collection('withdrawals').doc(requestId);
-        
-        // Update request status
-        batch.update(requestRef, { 
-            status: action,
-            processedAt: firebase.firestore.FieldValue.serverTimestamp() 
-        });
-
-        // 8.3 Automatic Notification Logic
-        const notificationRef = db.collection('notifications').doc();
-        batch.set(notificationRef, {
-            userId: sellerId,
-            title: `Withdrawal ${action}`,
-            message: `Your request for ₹${amount} has been ${action.toLowerCase()}. Pending balance: ₹0.`,
-            type: 'withdrawal_update',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        await batch.commit();
-        alert(`Withdrawal ${action} successfully. Seller notified.`);
-        loadWithdrawalRequests();
-    } catch (error) {
-        alert("Transaction failed: " + error.message);
-    }
-}
-
-/** * 8.4 SELLER PROMOTION PAYMENT SYSTEM
- * Tracking revenue from seller ad placements
- */
-async function loadPromotionPayments() {
-    const container = document.getElementById('promotion-list');
-    if(!container) return;
-
-    const snapshot = await db.collection('promotion_payments').get();
-    container.innerHTML = '';
-
-    snapshot.forEach(doc => {
-        const p = doc.data();
-        container.innerHTML += `
-            <div class="glass-card" style="margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <div>
-                    <p><small>Seller</small></p>
-                    <p><strong>${p.sellerName}</strong></p>
-                    <p><small>Mobile: ${p.mobile}</small></p>
-                </div>
-                <div>
-                    <p><small>KYC Details</small></p>
-                    <p>PAN: ${p.panNumber}</p>
-                    <p>GST: ${p.gstNumber}</p>
-                </div>
-                <div>
-                    <p><small>Payment Received</small></p>
-                    <h3 style="color: var(--success)">₹${p.amount}</h3>
-                    <p>Product ID: ${p.productId}</p>
-                </div>
-            </div>
-        `;
-    });
-}
-
-/** * 8.5 FEATURED PRODUCTS ON HOME PAGE
- * Pinning logic with priority and expiry
- */
-async function pinProductToHome() {
-    const pid = document.getElementById('f-product-id').value;
-    const sid = document.getElementById('f-seller-id').value;
-    const priority = document.getElementById('f-priority').value;
-    const expiry = document.getElementById('f-expiry-date').value;
-
-    if(!pid || !expiry) {
-        alert("Please fill all featured fields");
-        return;
-    }
-
-    try {
-        await db.collection('featured_products').doc(pid).set({
-            productId: pid,
-            sellerProductId: sid,
-            priority: parseInt(priority),
-            expiryDate: expiry,
-            status: 'active',
-            pinnedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert("Product successfully pinned to homepage!");
-        loadFeaturedProducts();
-    } catch (e) {
-        alert("Error pinning product: " + e.message);
-    }
-}
-
-/** * 8.6 GLOBAL ORDER DASHBOARD
- * Comprehensive view of the platform economy
- */
-async function renderGlobalDashboard() {
-    const snap = await db.collection('orders').get();
-    let totalSales = 0;
-    let totalCommission = 0;
-    let orderCount = 0;
-
-    snap.forEach(doc => {
-        const o = doc.data();
-        totalSales += parseFloat(o.totalAmount || 0);
-        // Assuming 10% commission platform-wide
-        totalCommission += parseFloat(o.totalAmount || 0) * 0.10;
-        orderCount++;
-    });
-
-    // Update UI Counters
-    document.getElementById('stat-revenue').innerText = `₹${totalSales.toLocaleString()}`;
-    document.getElementById('stat-orders').innerText = orderCount;
-    
-    // 8.10 Admin Income Calculation
-    const promoSnap = await db.collection('promotion_payments').get();
-    let promoTotal = 0;
-    promoSnap.forEach(d => promoTotal += parseFloat(d.data().amount || 0));
-
-    const totalAdminIncome = totalCommission + promoTotal;
-    
-    // Update Income Section (if exists)
-    const incomeEl = document.getElementById('total-admin-income');
-    if(incomeEl) incomeEl.innerText = `₹${totalAdminIncome.toLocaleString()}`;
-}
-
-/** * 8.7 ADMIN SECURITY & ACCOUNT MANAGEMENT
- * 2FA and Password logic
- */
-async function updateAdminPassword() {
-    const newPass = document.getElementById('new-admin-pass').value;
-    const user = auth.currentUser;
-
-    if(newPass.length < 8) {
-        alert("Password too weak!");
-        return;
-    }
-
-    try {
-        await user.updatePassword(newPass);
-        alert("Admin password updated successfully.");
-    } catch (e) {
-        alert("Security Error: " + e.message);
-    }
-}
-
-function toggle2FA() {
-    const isEnabled = document.getElementById('2fa-toggle').checked;
-    db.collection('settings').doc('security').update({
-        twoFactorEnabled: isEnabled
-    }).then(() => {
-        alert(`2FA has been ${isEnabled ? 'Enabled' : 'Disabled'}`);
-    });
-}
-
-/** * 8.8 & 8.9 WEBSITE & SALES ANALYTICS
- * Real-time data visualization
- */
-function initAnalyticsCharts() {
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Daily Sales (₹)',
-                data: [12000, 19000, 3000, 5000, 20000, 30000, 45000],
-                borderColor: '#38bdf8',
-                tension: 0.4,
-                fill: true,
-                backgroundColor: 'rgba(56, 189, 248, 0.1)'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: { grid: { color: 'rgba(255,255,255,0.05)' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
-}
-
-/** * 8.21 CODE CHECKER (GITHUB INTEGRATION)
- * Checks for errors in repository every 7 days (Logic Simulation)
- */
-async function runCodeChecker() {
-    const statusBox = document.getElementById('code-status');
-    statusBox.innerHTML = "<p>Connecting to GitHub API...</p><div class='spinner'></div>";
-    
-    // Simulate API delay
-    setTimeout(() => {
-        statusBox.innerHTML = `
-            <div class="glass-card" style="border-left: 5px solid var(--danger);">
-                <h4>Scan Report: 2026-03-24</h4>
-                <p style="color: var(--danger)"><i class="fas fa-exclamation-triangle"></i> 3 Critical Vulnerabilities found in firebase-config.js</p>
-                <p style="color: var(--warning)"><i class="fas fa-info-circle"></i> Deprecated SDK detected in app.js</p>
-                <button class="btn btn-primary" style="margin-top:10px" onclick="triggerAIAutoFix()">8.22 Run AI Auto-Fix</button>
-            </div>
-        `;
-    }, 2000);
-}
-
-// --- EXTENDING HTML SECTIONS FOR PART 2 ---
-const part2Sections = `
-    <div id="section-seller-withdraw" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Withdrawal Requests</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Seller Name</th>
-                        <th>Current Balance</th>
-                        <th>Requested Amount</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="withdrawal-table-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="section-promotion-pay" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Ad Promotion Revenue</h3>
-            <div id="promotion-list"></div>
-        </div>
-    </div>
-
-    <div id="section-featured-mgmt" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Pin Product to Home</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label>Product ID</label>
-                    <input type="text" id="f-product-id" placeholder="SRP-12345">
-                </div>
-                <div class="form-group">
-                    <label>Seller Product ID</label>
-                    <input type="text" id="f-seller-id" placeholder="SEL-99">
-                </div>
-                <div class="form-group">
-                    <label>Display Priority (1-10)</label>
-                    <input type="number" id="f-priority" value="1">
-                </div>
-                <div class="form-group">
-                    <label>Expiry Date</label>
-                    <input type="date" id="f-expiry-date">
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="pinProductToHome()">Update Home Pins</button>
-        </div>
-    </div>
-
-    <div id="section-analytics" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Platform Financial Health</h3>
-            <canvas id="salesChart" height="100"></canvas>
+            // Update Header Title
+            document.getElementById('current-section-title').innerText = `${sectionId} ${sectionName}`;
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 30px;">
-                <div class="glass-card" style="background: rgba(34, 197, 94, 0.1)">
-                    <p>Commission Earned</p>
-                    <h2 id="total-comm">₹0</h2>
-                </div>
-                <div class="glass-card" style="background: rgba(129, 140, 248, 0.1)">
-                    <p>Ad Revenue</p>
-                    <h2 id="total-promo-inc">₹0</h2>
-                </div>
-                <div class="glass-card" style="background: var(--accent-blue); color: white;">
-                    <p>Total Admin Net</p>
-                    <h2 id="total-admin-income">₹0</h2>
-                </div>
-            </div>
-        </div>
-    </div>
+            // Show Loading Spinner
+            const spinner = document.getElementById('loading-spinner');
+            spinner.classList.remove('hidden');
 
-    <div id="section-admin-security" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Security Settings</h3>
-            <div class="form-group">
-                <label>Change Master Password</label>
-                <input type="password" id="new-admin-pass" style="max-width: 400px;">
-                <button class="btn btn-danger" style="margin-top:10px" onclick="updateAdminPassword()">Update Credentials</button>
-            </div>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h4>Two-Factor Authentication (2FA)</h4>
-                    <p style="color: var(--text-dim);">Require OTP for Admin Login</p>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="2fa-toggle" onchange="toggle2FA()">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-        </div>
-    </div>
-
-    <div id="section-code-checker" class="content-section hidden">
-        <div class="glass-card">
-            <h3><i class="fab fa-github"></i> Repository Health Monitor</h3>
-            <p>Scanning all files in <code>srp-shopping-web</code></p>
-            <button class="btn btn-primary" style="margin: 20px 0;" onclick="runCodeChecker()">Scan GitHub Files</button>
-            <div id="code-status"></div>
-        </div>
-    </div>
-`;
-
-// Injecting Part 2 sections into the main root
-document.getElementById('admin-panel-root').innerHTML += part2Sections;
-
-// --- CSS Extensions for Part 2 Components ---
-const extraStyles = `
-<style>
-    .bg-success { background: var(--success); }
-    .bg-danger { background: var(--danger); }
-    .bg-warning { background: var(--warning); }
-    
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-    }
-
-    .switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #ccc;
-        transition: .4s;
-        border-radius: 34px;
-    }
-
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 26px; width: 26px;
-        left: 4px; bottom: 4px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-    }
-
-    input:checked + .slider { background-color: var(--accent-blue); }
-    input:checked + .slider:before { transform: translateX(26px); }
-
-    .spinner {
-        border: 4px solid rgba(255, 255, 255, 0.1);
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border-left-color: var(--accent-blue);
-        animation: spin 1s linear infinite;
-        margin: 20px auto;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
-`;
-document.head.innerHTML += extraStyles;
-
-// Update Loaders
-const originalShowSection = showSection;
-showSection = function(sectionId) {
-    originalShowSection(sectionId);
-    if(sectionId === 'seller-withdraw') loadWithdrawalRequests();
-    if(sectionId === 'promotion-pay') loadPromotionPayments();
-    if(sectionId === 'analytics') {
-        renderGlobalDashboard();
-        initAnalyticsCharts();
-    }
-};
-// --- CONTINUATION OF SCRIPT (Part 3) ---
-
-/** * 8.11 CATEGORY MANAGEMENT
- * Add, Edit, Delete categories with Icon support
- */
-async function loadCategories() {
-    const container = document.getElementById('category-list');
-    if(!container) return;
-    
-    container.innerHTML = '<div class="spinner"></div>';
-    const snapshot = await db.collection('categories').get();
-    container.innerHTML = '';
-
-    snapshot.forEach(doc => {
-        const cat = doc.data();
-        container.innerHTML += `
-            <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="font-size: 24px; color: var(--accent-blue)"><i class="${cat.icon || 'fas fa-tag'}"></i></div>
-                    <div>
-                        <h4 style="margin:0">${cat.name}</h4>
-                        <small style="color: var(--text-dim)">ID: ${doc.id}</small>
-                    </div>
-                </div>
-                <div>
-                    <button class="btn btn-sm" onclick="deleteCategory('${doc.id}')" style="color: var(--danger)"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-        `;
-    });
-}
-
-async function addNewCategory() {
-    const name = document.getElementById('new-cat-name').value;
-    const icon = document.getElementById('new-cat-icon').value;
-    
-    if(!name) return alert("Category name required");
-
-    await db.collection('categories').add({
-        name: name,
-        icon: icon || 'fas fa-box',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    document.getElementById('new-cat-name').value = '';
-    loadCategories();
-}
-
-/** * 8.12 COUPON MANAGEMENT
- * Create and Limit discount codes
- */
-async function saveCoupon() {
-    const code = document.getElementById('cp-code').value.toUpperCase();
-    const percent = document.getElementById('cp-percent').value;
-    const expiry = document.getElementById('cp-expiry').value;
-    const limit = document.getElementById('cp-limit').value;
-
-    if(!code || !percent) return alert("Fill required fields");
-
-    await db.collection('coupons').doc(code).set({
-        code: code,
-        discount: parseInt(percent),
-        expiryDate: expiry,
-        usageLimit: parseInt(limit),
-        usedCount: 0,
-        status: 'active'
-    });
-    alert("Coupon Created!");
-    loadCoupons();
-}
-
-/** * 8.13 BANNER MANAGEMENT
- * Homepage & Festival Sale Banners
- */
-async function uploadBanner() {
-    const file = document.getElementById('banner-file').files[0];
-    const link = document.getElementById('banner-link').value;
-    const type = document.getElementById('banner-type').value;
-
-    if(!file) return alert("Select an image");
-
-    const storageRef = storage.ref(`banners/${Date.now()}_${file.name}`);
-    await storageRef.put(file);
-    const url = await storageRef.getDownloadURL();
-
-    await db.collection('banners').add({
-        imageUrl: url,
-        productLink: link,
-        type: type,
-        active: true,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    alert("Banner Live!");
-    loadBanners();
-}
-
-/** * 8.14 REVIEW MODERATION
- * Clean the platform from fake reviews
- */
-async function loadReviews() {
-    const tbody = document.getElementById('review-table-body');
-    const snapshot = await db.collection('reviews').orderBy('timestamp', 'desc').get();
-    tbody.innerHTML = '';
-
-    snapshot.forEach(doc => {
-        const r = doc.data();
-        tbody.innerHTML += `
-            <tr>
-                <td>${r.productName}</td>
-                <td>${r.userName}</td>
-                <td>
-                    <div style="color: var(--warning)">
-                        ${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}
-                    </div>
-                    <p><small>${r.comment}</small></p>
-                </td>
-                <td>
-                    <button class="btn btn-danger btn-sm" onclick="deleteReview('${doc.id}')">Delete</button>
-                    ${!r.approved ? `<button class="btn btn-success btn-sm" onclick="approveReview('${doc.id}')">Approve</button>` : ''}
-                </td>
-            </tr>
-        `;
-    });
-}
-
-/** * 8.15 & 8.16 USER & SELLER MANAGEMENT
- * Deep control over accounts
- */
-async function loadUsers() {
-    const tbody = document.getElementById('user-table-body');
-    const snapshot = await db.collection('users').get();
-    tbody.innerHTML = '';
-
-    snapshot.forEach(doc => {
-        const u = doc.data();
-        tbody.innerHTML += `
-            <tr>
-                <td>${u.name}</td>
-                <td>${u.email}</td>
-                <td>${new Date(u.lastLogin).toLocaleString()}</td>
-                <td>
-                    <button class="btn ${u.isBlocked ? 'btn-success' : 'btn-danger'} btn-sm" onclick="toggleUserBlock('${doc.id}', ${u.isBlocked})">
-                        ${u.isBlocked ? 'Unblock' : 'Block'}
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-async function loadSellers() {
-    const tbody = document.getElementById('seller-table-body');
-    const snapshot = await db.collection('sellers').get();
-    tbody.innerHTML = '';
-
-    snapshot.forEach(doc => {
-        const s = doc.data();
-        tbody.innerHTML += `
-            <tr onclick="viewSellerDetails('${doc.id}')" style="cursor:pointer">
-                <td>${s.shopName}</td>
-                <td>${s.email}</td>
-                <td><span class="status-pill ${s.verified ? 'bg-success' : 'bg-warning'}">${s.status}</span></td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); verifySeller('${doc.id}')">Verify</button>
-                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); suspendSeller('${doc.id}')">Suspend</button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-/** * 8.18 REFUND SYSTEM
- * Process customer refunds to wallet
- */
-async function processRefund(orderId, userId, amount) {
-    if(!confirm("Refund ₹" + amount + " to user wallet?")) return;
-
-    try {
-        const batch = db.batch();
-        // 1. Update Order Status
-        batch.update(db.collection('orders').doc(orderId), { status: 'Refunded' });
-        // 2. Add to User Wallet
-        const walletRef = db.collection('users').doc(userId).collection('wallet').doc();
-        batch.set(walletRef, {
-            amount: parseFloat(amount),
-            type: 'credit',
-            reason: 'Refund for Order ' + orderId,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        await batch.commit();
-        logAction('Refund Processed', `Refunded ₹${amount} for order ${orderId}`);
-        alert("Refund successful!");
-    } catch(e) {
-        alert("Refund Error: " + e.message);
-    }
-}
-
-/** * 8.19 SYSTEM LOGS
- * Track every move made in the admin panel
- */
-function logAction(type, detail) {
-    db.collection('system_logs').add({
-        adminEmail: auth.currentUser.email,
-        actionType: type,
-        description: detail,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        ip: "Internal"
-    });
-}
-
-/** * 8.20 PLATFORM SETTINGS
- * Global site switches
- */
-async function updateSiteSettings() {
-    const settings = {
-        maintenanceMode: document.getElementById('set-maintenance').checked,
-        codEnabled: document.getElementById('set-cod').checked,
-        referralBonus: document.getElementById('set-ref-bonus').value,
-        contactEmail: document.getElementById('set-contact-email').value
-    };
-    
-    await db.collection('settings').doc('config').set(settings, {merge: true});
-    alert("Platform settings updated globally!");
-}
-
-// --- EXTENDING HTML FOR PART 3 ---
-const part3Sections = `
-    <div id="section-categories" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Manage Categories</h3>
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <input type="text" id="new-cat-name" placeholder="Category Name">
-                <input type="text" id="new-cat-icon" placeholder="FontAwesome Icon (e.g. fas fa-mobile)">
-                <button class="btn btn-primary" onclick="addNewCategory()">Add</button>
-            </div>
-            <div id="category-list"></div>
-        </div>
-    </div>
-
-    <div id="section-coupons" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Promo Codes</h3>
-            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:20px;">
-                <input type="text" id="cp-code" placeholder="CODE2026">
-                <input type="number" id="cp-percent" placeholder="Discount %">
-                <input type="date" id="cp-expiry">
-                <input type="number" id="cp-limit" placeholder="Usage Limit">
-            </div>
-            <button class="btn btn-primary" onclick="saveCoupon()">Generate Coupon</button>
-        </div>
-    </div>
-
-    <div id="section-banners" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Marketing Banners</h3>
-            <div class="form-group">
-                <label>Select Banner Image</label>
-                <input type="file" id="banner-file">
-            </div>
-            <div class="form-group">
-                <label>Target Link (Product ID)</label>
-                <input type="text" id="banner-link">
-            </div>
-            <select id="banner-type" style="margin-bottom:15px;">
-                <option value="main">Main Slider</option>
-                <option value="festival">Festival Sale</option>
-                <option value="footer">Small Promo</option>
-            </select>
-            <button class="btn btn-primary" onclick="uploadBanner()">Upload & Sync</button>
-        </div>
-    </div>
-
-    <div id="section-user-mgmt" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Platform Users</h3>
-            <table>
-                <thead>
-                    <tr><th>Name</th><th>Email</th><th>Last Active</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="user-table-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="section-seller-mgmt" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Seller Directory</h3>
-            <table>
-                <thead>
-                    <tr><th>Shop Name</th><th>Email</th><th>Status</th><th>Control</th></tr>
-                </thead>
-                <tbody id="seller-table-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="section-logs" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Audit Trail</h3>
-            <div id="log-container" style="max-height: 500px; overflow-y: auto;">
-                </div>
-        </div>
-    </div>
-
-    <div id="section-settings" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Master Platform Control</h3>
-            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
-                <label>Maintenance Mode (Lock Website)</label>
-                <input type="checkbox" id="set-maintenance" style="width:auto;">
-            </div>
-            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
-                <label>Enable Cash on Delivery</label>
-                <input type="checkbox" id="set-cod" checked style="width:auto;">
-            </div>
-            <div class="form-group">
-                <label>Global Referral Bonus (₹)</label>
-                <input type="number" id="set-ref-bonus" value="50">
-            </div>
-            <div class="form-group">
-                <label>Official Contact Email</label>
-                <input type="email" id="set-contact-email" value="support@srp.com">
-            </div>
-            <button class="btn btn-success" onclick="updateSiteSettings()">Save Global Config</button>
-        </div>
-    </div>
-`;
-
-document.getElementById('admin-panel-root').innerHTML += part3Sections;
-
-// Update Navigation Handlers for Part 3
-const finalShowSection = showSection;
-showSection = function(id) {
-    finalShowSection(id);
-    if(id === 'categories') loadCategories();
-    if(id === 'coupons') loadCoupons();
-    if(id === 'user-mgmt') loadUsers();
-    if(id === 'seller-mgmt') loadSellers();
-    if(id === 'reviews') loadReviews();
-    if(id === 'logs') loadSystemLogs();
-};
-
-async function loadSystemLogs() {
-    const logBox = document.getElementById('log-container');
-    const snap = await db.collection('system_logs').orderBy('timestamp', 'desc').limit(50).get();
-    logBox.innerHTML = '';
-    snap.forEach(doc => {
-        const l = doc.data();
-        logBox.innerHTML += `
-            <div style="padding:10px; border-bottom:1px solid var(--glass); font-size:13px;">
-                <span style="color:var(--accent-blue)">[${new Date(l.timestamp?.toDate()).toLocaleTimeString()}]</span>
-                <strong>${l.adminEmail}</strong>: ${l.description}
-            </div>
-        `;
-    });
-}
-        // --- CONTINUATION OF SCRIPT (Part 4: AI & Advanced Systems) ---
-
-/** * 8.21 & 8.22 AI CODE CHECKER & AUTO-FIX
- * Advanced GitHub Integration and AI Logic
- */
-const GITHUB_CONFIG = {
-    repo: "srp-shopping-web",
-    owner: "admin-srp",
-    branch: "main"
-};
-
-async function triggerAIAutoFix() {
-    const statusBox = document.getElementById('code-status');
-    statusBox.innerHTML = `
-        <div class="glass-card" style="border-left: 5px solid var(--accent-blue);">
-            <p><i class="fas fa-robot"></i> AI Engine Initializing...</p>
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="ai-progress"></div>
-            </div>
-            <p id="ai-step" style="font-size:12px; color:var(--text-dim); margin-top:10px;">Analyzing repository structure...</p>
-        </div>
-    `;
-
-    const steps = [
-        "Fetching latest commits from GitHub...",
-        "Running Static Analysis on 'firebase-config.js'...",
-        "Identifying Security Vulnerability: API Key Exposure.",
-        "Generating Patch: Implementing Environment Variables...",
-        "Applying fix to 'app.js'...",
-        "Verifying code integrity...",
-        "Pushing changes to GitHub branch 'main'..."
-    ];
-
-    let progress = 0;
-    for (let i = 0; i < steps.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        progress += (100 / steps.length);
-        document.getElementById('ai-progress').style.width = progress + "%";
-        document.getElementById('ai-step').innerText = steps[i];
-    }
-
-    statusBox.innerHTML = `
-        <div class="glass-card" style="border-left: 5px solid var(--success);">
-            <h4 style="color: var(--success)"><i class="fas fa-check-circle"></i> AI Auto-Fix Complete</h4>
-            <p>3 Files modified and pushed to GitHub.</p>
-            <p><small>Commit Hash: <span style="color:var(--accent-blue)">#a7b2c91</span></small></p>
-            <button class="btn btn-sm btn-primary" onclick="runCodeChecker()">Run New Scan</button>
-        </div>
-    `;
-    
-    logAction('AI Code Fix', 'AI automatically patched 3 security vulnerabilities in GitHub repository.');
-}
-
-/** * 8.2 & 8.3 NOTIFICATION ENGINE
- * Sends real-time browser/app notifications to users
- */
-async function sendNotification(userId, title, body, type = 'info') {
-    try {
-        await db.collection('notifications').add({
-            userId: userId,
-            title: title,
-            message: body,
-            type: type,
-            read: false,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log(`Notification sent to ${userId}`);
-    } catch (e) {
-        console.error("Notification failed", e);
-    }
-}
-
-/** * 8.17 OVERALL PAYMENT HISTORY & EXPORT
- * Logic for financial auditing
- */
-async function exportPaymentHistory() {
-    const snap = await db.collection('orders').where('paymentStatus', '==', 'Paid').get();
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Order ID,User,Amount,Date,Status\n";
-
-    snap.forEach(doc => {
-        const o = doc.data();
-        csvContent += `${o.orderId},${o.userName},${o.totalAmount},${o.date},${o.status}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "SRP_Payment_History_2026.csv");
-    document.body.appendChild(link);
-    link.click();
-}
-
-/** * 8.20 PLATFORM SETTINGS: UI THEME CONTROLLER
- * Dynamic Day/Night CSS Injection
- */
-function applyNightMode() {
-    const styles = `
-        :root {
-            --primary-bg: #020617;
-            --secondary-bg: #0f172a;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.08);
+            // Simulate loading the respective component (Parts 2, 3, etc. will hook into this)
+            setTimeout(() => {
+                const contentDiv = document.getElementById('app-content');
+                
+                // This is a router switch. Future parts will provide the HTML strings for these cases.
+                switch(sectionId) {
+                    case '8.1':
+                        contentDiv.innerHTML = getProductManagementHTML();
+                        initProductManagementLogic(); // Function to be provided in Part 2
+                        break;
+                    case '8.6':
+                        contentDiv.innerHTML = `<div class="p-6 bg-white dark:bg-darkcard rounded shadow"><h3>Dashboard loading...</h3></div>`;
+                        break;
+                    // Other cases will go here
+                    default:
+                        contentDiv.innerHTML = `
+                            <div class="flex flex-col items-center justify-center py-20 text-center">
+                                <i class="fa-solid fa-code text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                <h3 class="text-xl font-medium text-gray-600 dark:text-gray-400">Module ${sectionId} Pending Implementation</h3>
+                                <p class="text-sm text-gray-500 mt-2">Ready to insert code for this section.</p>
+                            </div>
+                        `;
+                }
+                spinner.classList.add('hidden');
+            }, 300); // 300ms delay for smooth UI transition
         }
-        .glass-card { box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
-    `;
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-}
 
-function applyDayMode() {
-    const styles = `
-        :root {
-            --primary-bg: #f8fafc;
-            --secondary-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-dim: #64748b;
-            --glass: rgba(0, 0, 0, 0.05);
-            --border: rgba(0, 0, 0, 0.1);
+        // Placeholder for Part 2
+        function getProductManagementHTML() {
+            return `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-primary text-3xl"></i><p class="mt-4">Load Part 2 here...</p></div>`;
         }
-        .glass-card { box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05); color: #1e293b !important; }
-        input, select, textarea { background: #f1f5f9; color: #1e293b; }
-    `;
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-}
-
-/** * 8.12 ADVANCED COUPON LOGIC
- * Validates and checks expiry dates
- */
-async function validateCoupons() {
-    const now = new Date();
-    const snap = await db.collection('coupons').get();
-    
-    snap.forEach(async doc => {
-        const data = doc.data();
-        const expiry = new Date(data.expiryDate);
-        
-        if (expiry < now && data.status !== 'expired') {
-            await db.collection('coupons').doc(doc.id).update({ status: 'expired' });
-            console.log(`Coupon ${doc.id} marked as expired.`);
-        }
-    });
-}
-
-/** * UI ENHANCEMENT: GLOW EFFECTS & ANIMATIONS
- * For the "Professional attractive UI"
- */
-const uiEnhancements = `
-<style>
-    .stat-box h2 {
-        font-size: 2rem;
-        text-shadow: 0 0 10px var(--accent-blue);
-    }
-
-    .nav-item i {
-        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    .nav-item:hover i {
-        transform: scale(1.4) rotate(10deg);
-        color: var(--accent-blue);
-    }
-
-    .progress-bar-container {
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        border-radius: 10px;
-        height: 10px;
-        overflow: hidden;
-        margin-top: 15px;
-    }
-
-    .progress-bar-fill {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
-        transition: width 0.5s ease;
-    }
-
-    /* Professional Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--primary-bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
-
-    /* Pulsing Notification Dot */
-    .nav-item::after {
-        content: '';
-        position: absolute;
-        right: 20px;
-        width: 8px;
-        height: 8px;
-        background: var(--danger);
-        border-radius: 50%;
-        display: none;
-    }
-    .nav-item.has-update::after { display: block; box-shadow: 0 0 10px var(--danger); }
-</style>
-`;
-document.head.innerHTML += uiEnhancements;
-
-/** * 8.2 UPDATING LOGISTICS & REAL NOTIFICATION
- * Extension from Part 1 with notification logic
- */
-async function updateOrderLogistics() {
-    const id = window.currentOrderId;
-    const trackingId = document.getElementById('update-tracking-id').value;
-    const status = document.getElementById('update-status').value;
-
-    if(!id) return;
-
-    try {
-        const orderRef = db.collection('orders').doc(id);
-        const doc = await orderRef.get();
-        const orderData = doc.data();
-
-        await orderRef.update({
-            trackingId: trackingId,
-            status: status,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // 8.2 Real notification for order confirmed and shipped
-        let msg = `Your order ${orderData.orderId} status is now: ${status}.`;
-        if(trackingId) msg += ` Tracking ID: ${trackingId}`;
-        
-        await sendNotification(orderData.userId, `Order ${status}`, msg, 'order_update');
-
-        alert("Order updated and user notified!");
-        closeModal('orderModal');
-        loadOrders();
-    } catch (e) {
-        alert("Update failed: " + e.message);
-    }
-}
-
-// --- INITIALIZATION ---
-function initMasterAdmin() {
-    console.log("SRP Master Admin Panel v4.0.0 Initialized");
-    validateCoupons();
-    
-    // Auto-refresh stats every 5 minutes
-    setInterval(() => {
-        renderGlobalDashboard();
-        loadSystemLogs();
-    }, 300000);
-}
-
-document.addEventListener('DOMContentLoaded', initMasterAdmin);
-
-/** * FINAL HTML WRAPPER FOR PART 4
- * (8.17, 8.18, 8.21 Sections)
- */
-const part4HTML = `
-    <div id="section-history" class="content-section hidden">
-        <div class="glass-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3>Transaction History</h3>
-                <button class="btn btn-primary" onclick="exportPaymentHistory()">
-                    <i class="fas fa-file-export"></i> Export CSV
-                </button>
-            </div>
-            <table>
-                <thead>
-                    <tr><th>Ref ID</th><th>User</th><th>Type</th><th>Amount</th><th>Status</th></tr>
-                </thead>
-                <tbody id="payment-table-body">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="section-refunds" class="content-section hidden">
-        <div class="glass-card">
-            <h3>Refund Requests</h3>
-            <table>
-                <thead>
-                    <tr><th>Order ID</th><th>User</th><th>Reason</th><th>Amount</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="refund-table-body">
-                    <tr>
-                        <td>#ORD-8821</td>
-                        <td>Rahul Sharma</td>
-                        <td>Size Issue</td>
-                        <td>₹1,200</td>
-                        <td>
-                            <button class="btn btn-success btn-sm" onclick="processRefund('ORD-8821', 'user_1', 1200)">Approve Refund</button>
-                            <button class="btn btn-danger btn-sm">Reject</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-`;
-
-document.getElementById('admin-panel-root').innerHTML += part4HTML;
-
-// Function to handle Section 8.21 Weekly Check (Simulated for Demo)
-function scheduleWeeklyCheck() {
-    const lastCheck = localStorage.getItem('lastCodeCheck');
-    const now = new Date().getTime();
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-
-    if (!lastCheck || (now - lastCheck) > sevenDays) {
-        console.log("Triggering 7-day automated code check...");
-        runCodeChecker();
-        localStorage.setItem('lastCodeCheck', now);
-    }
-}
-scheduleWeeklyCheck();
-
-// --- END OF CODE ---
-
-        // Init
-        window.onload = () => {
-            showSection('dashboard');
-        };
-
-    </script>
-</body>
-</html>
+        function initProductManagementLogic() { /* Empty for now */ }
