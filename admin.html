@@ -455,5 +455,184 @@ db.ref("withdrawals/"+id+"/status").set("Paid");
 alert("Marked Paid");
 }
 
-</script>
+
+// ==============================
+// 8.4 PROMOTION PAYMENT SYSTEM
+// ==============================
+
+function loadPromotions(){
+db.ref("promotions").on("value",snap=>{
+let html="";
+snap.forEach(d=>{
+const p=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<p>Name: ${p.name}</p>
+<p>Aadhar: ${p.aadhar}</p>
+<p>PAN: ${p.pan}</p>
+<p>GST: ${p.gst}</p>
+<p>Product ID: ${p.productId}</p>
+<p>Mobile: ${p.mobile}</p>
+<p>Payment: ${p.payment}</p>
+<p>Reference: ${p.reference}</p>
+</div>
+`;
+});
+document.getElementById("promotionList").innerHTML=html;
+});
+}
+loadPromotions();
+
+// ==============================
+// 8.5 FEATURED PRODUCTS
+// ==============================
+
+// ADD FEATURED FORM
+document.getElementById("featuredList").innerHTML=`
+<div class="bg-gray-800 p-4 mb-3">
+<input id="fProductId" placeholder="Product ID" class="p-2 w-full mb-2 text-black">
+<input id="fSellerId" placeholder="Seller Product ID" class="p-2 w-full mb-2 text-black">
+<input id="fPriority" placeholder="Priority" class="p-2 w-full mb-2 text-black">
+<input type="date" id="fExpire" class="p-2 w-full mb-2 text-black">
+<button onclick="addFeatured()" class="bg-green-600 p-2 w-full">Add Featured</button>
+</div>
+<div id="featuredItems"></div>
+`;
+
+// ADD FEATURED
+function addFeatured(){
+const id="FID"+Date.now();
+const productId=document.getElementById("fProductId").value;
+const sellerId=document.getElementById("fSellerId").value;
+const priority=document.getElementById("fPriority").value;
+const expire=document.getElementById("fExpire").value;
+
+db.ref("featured/"+id).set({
+id,productId,sellerId,priority,expire
+});
+
+alert("Added Featured");
+loadFeatured();
+}
+
+// LOAD FEATURED
+function loadFeatured(){
+db.ref("featured").on("value",snap=>{
+let html="";
+snap.forEach(d=>{
+const f=d.val();
+
+html+=`
+<div class="bg-gray-700 p-2 mb-2">
+<p>${f.productId}</p>
+<p>Priority: ${f.priority}</p>
+<p>Expire: ${f.expire}</p>
+<button onclick="deleteFeatured('${f.id}')" class="bg-red-600 p-1">Remove</button>
+</div>
+`;
+});
+document.getElementById("featuredItems").innerHTML=html;
+});
+}
+loadFeatured();
+
+// DELETE FEATURED
+function deleteFeatured(id){
+db.ref("featured/"+id).remove();
+alert("Removed");
+}
+
+// ==============================
+// 8.6 GLOBAL ORDER DASHBOARD
+// ==============================
+
+function loadGlobalOrders(){
+db.ref("orders").on("value",snap=>{
+let html="";
+let total=0;
+let commission=0;
+
+snap.forEach(d=>{
+const o=d.val();
+
+total+=Number(o.amount||0);
+commission+=Number(o.amount||0)*0.1;
+
+html+=`
+<div class="bg-gray-800 p-3 mb-2">
+<p>Order: ${o.orderId}</p>
+<p>User: ${o.name}</p>
+<p>Seller: ${o.seller}</p>
+<p>Amount: ${o.amount}</p>
+<p>Status: ${o.status}</p>
+<p>Payment: ${o.paymentStatus}</p>
+</div>
+`;
+});
+
+html+=`
+<div class="bg-green-700 p-3 mt-4">
+<p>Total Sales: ${total}</p>
+<p>Commission: ${commission}</p>
+</div>
+`;
+
+document.getElementById("globalOrderList").innerHTML=html;
+
+});
+}
+loadGlobalOrders();
+
+// ==============================
+// 8.7 ADMIN SECURITY
+// ==============================
+
+document.getElementById("security").innerHTML=`
+<div class="bg-gray-800 p-4">
+
+<h3 class="mb-2">Change Password</h3>
+<input type="password" id="newPass" placeholder="New Password" class="p-2 w-full mb-2 text-black">
+<button onclick="changePassword()" class="bg-blue-600 p-2 w-full mb-3">Change</button>
+
+<h3 class="mb-2">2FA</h3>
+<button onclick="toggle2FA()" class="bg-yellow-600 p-2 w-full mb-3">Enable/Disable 2FA</button>
+
+<h3 class="mb-2">Theme</h3>
+<button onclick="setTheme('dark')" class="bg-gray-900 p-2 w-full mb-2">Dark</button>
+<button onclick="setTheme('light')" class="bg-white text-black p-2 w-full">Light</button>
+
+</div>
+`;
+
+// CHANGE PASSWORD
+function changePassword(){
+const pass=document.getElementById("newPass").value;
+db.ref("admin/settings/password").set(pass);
+alert("Password Changed");
+}
+
+// 2FA TOGGLE
+function toggle2FA(){
+db.ref("admin/settings/2fa").once("value",snap=>{
+let val=!snap.val();
+db.ref("admin/settings/2fa").set(val);
+alert("2FA: "+val);
+});
+}
+
+// THEME SWITCH
+function setTheme(mode){
+if(mode==="light"){
+document.body.style.background="white";
+document.body.style.color="black";
+}else{
+document.body.style.background="#0f172a";
+document.body.style.color="white";
+}
+db.ref("admin/settings/theme").set(mode);
+}
+
+
+
     </script>
