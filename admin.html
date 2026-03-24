@@ -267,8 +267,161 @@
                 time: new Date().toLocaleString()
             });
         }
+        // --- 8.3 Seller Withdrawal Approval ---
+        function loadWithdrawals() {
+            const container = document.getElementById('withdrawal-content');
+            db.ref('withdrawals').on('value', (snapshot) => {
+                const data = snapshot.val();
+                let html = `<table><thead><tr>
+                    <th>Seller Name</th><th>Balance</th><th>Amount Requested</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody>`;
+                for (let id in data) {
+                    const w = data[id];
+                    html += `<tr>
+                        <td>${w.sellerName}</td>
+                        <td>₹${w.currentBalance}</td>
+                        <td><b style="color:var(--primary)">₹${w.requestAmount}</b></td>
+                        <td><span class="status-badge status-${w.status}">${w.status}</span></td>
+                        <td>
+                            <button class="btn btn-success" onclick="approveWithdrawal('${id}', '${w.sellerId}', ${w.requestAmount})">Approve & Pay</button>
+                            <button class="btn btn-danger" onclick="rejectWithdrawal('${id}')">Reject</button>
+                        </td>
+                    </tr>`;
+                }
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            });
+        }
 
-        // Initialize Loaders
+        function approveWithdrawal(requestId, sellerId, amount) {
+            const updates = {};
+            updates[`withdrawals/${requestId}/status`] = 'Paid';
+            updates[`withdrawals/${requestId}/paidDate`] = Date.now();
+            
+            // 8.4 Notification Logic
+            const notifId = db.ref('notifications/' + sellerId).push().key;
+            updates[`notifications/${sellerId}/${notifId}`] = {
+                title: "Withdrawal Approved",
+                message: `Your request for ₹${amount} has been processed. Check your bank.`,
+                timestamp: Date.now()
+            };
+
+            db.ref().update(updates).then(() => {
+                alert("Withdrawal Marked as Paid. Seller Notified.");
+                logAction("Approved withdrawal for seller: " + sellerId);
+            });
+        }
+
+        // --- 8.5 Featured Products on Home Page ---
+        function pinToHome() {
+            const pid = document.getElementById('feat-pid').value;
+            const priority = document.getElementById('feat-priority').value;
+            const expiry = document.getElementById('feat-expiry').value;
+
+            if(!pid || !expiry) return alert("Fill all fields");
+
+            db.ref('featured_products/' + pid).set({
+                productId: pid,
+                priority: parseInt(priority),
+                expiryDate: expiry,
+                addedOn: Date.now()
+            }).then(() => {
+                alert("Product Pinned to Homepage until " + expiry);
+                logAction("Pinned product to home: " + pid);
+            });
+        }
+
+        // --- 8.6 & 8.8 & 8.9 Global & Sales Analytics ---
+        function loadAnalytics() {
+            // 8.8 Website Analytics
+            db.ref('analytics/visits').on('value', s => {
+                document.getElementById('stat-total-visits').innerText = s.val() || 0;
+            });
+
+            db.ref('users').on('value', s => {
+                document.getElementById('stat-total-users').innerText = s.numChildren();
+            });
+
+            // 8.9 Sales Analytics
+            db.ref('orders').on('value', (snapshot) => {
+                let totalSales = 0;
+                let totalOrders = 0;
+                let adminCommission = 0;
+
+                snapshot.forEach(child => {
+                    const order = child.val();
+                    if(order.status === 'delivered') {
+                        totalSales += parseFloat(order.amount);
+                        // Example 10% commission calculation
+                        adminCommission += (parseFloat(order.amount) * 0.10);
+                    }
+                    totalOrders++;
+                });
+
+                document.getElementById('stat-total-sales').innerText = "₹" + totalSales.toFixed(2);
+                document.getElementById('stat-total-orders').innerText = totalOrders;
+                document.getElementById('stat-admin-income').innerText = "₹" + adminCommission.toFixed(2);
+            });
+        }
+
+        // --- 8.7 Admin Security ---
+        function toggleAdminTheme() {
+            const body = document.body;
+            if(body.style.filter === 'invert(1)') {
+                body.style.filter = 'invert(0)';
+                logAction("Switched to Light Mode");
+            } else {
+                body.style.filter = 'invert(1)';
+                logAction("Switched to Dark Mode");
+            }
+        }
+
+        function changePassword() {
+            const newPass = prompt("Enter new Admin Password:");
+            if(newPass && newPass.length > 5) {
+                db.ref('admin_settings/auth').update({password: newPass});
+                alert("Password changed successfully.");
+            }
+        }
+    </script>
+
+    <script>
+        // Injecting the HTML for sections 8.5 to 8.9 into the main content
+        document.getElementById('featured-mgmt').innerHTML += `
+            <div class="form-grid">
+                <input type="text" id="feat-pid" placeholder="Product ID">
+                <input type="number" id="feat-priority" placeholder="Priority (1-10)">
+                <input type="date" id="feat-expiry" placeholder="Display Until">
+                <button class="btn btn-primary" onclick="pinToHome()">Pin Product</button>
+            </div>
+        `;
+
+        document.getElementById('dashboard-mgmt').innerHTML = `
+            <h2>8.6 & 8.8 Global Dashboard & Analytics</h2>
+            <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--primary)">
+                    <h4>Total Users</h4>
+                    <h2 id="stat-total-users">0</h2>
+                </div>
+                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--success)">
+                    <h4>Total Sales</h4>
+                    <h2 id="stat-total-sales">₹0</h2>
+                </div>
+                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--warning)">
+                    <h4>Total Orders</h4>
+                    <h2 id="stat-total-orders">0</h2>
+                </div>
+                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--danger)">
+                    <h4>Admin Income</h4>
+                    <h2 id="stat-admin-income">₹0</h2>
+                </div>
+            </div>
+            <div style="margin-top:20px;">
+                <button class="btn btn-dark" onclick="toggleAdminTheme()">Toggle Day/Night</button>
+                <button class="btn btn-danger" onclick="changePassword()">Security: Change Pass</button>
+            </div>
+        `;
+            // Initialize Loaders
         window.onload = () => {
             loadOrders();
             // product loader function...
