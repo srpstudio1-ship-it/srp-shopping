@@ -782,5 +782,294 @@
         
         // Initializing Section 8.7 UI
         document.getElementById('sec-8.7').innerHTML = sec87Html;
+        // --- 8.11 to 8.15 UI INJECTION PATCH ---
+        // This ensures the new sections exist in the HTML without you having to manually edit Part 1
+        const navContainer = document.querySelector('nav');
+        const mainView = document.querySelector('.main-view');
+
+        const extraNav = `
+            <p class="px-8 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-6 mb-2">Content & Users</p>
+            <a href="#" onclick="switchTab('8.11')" class="nav-item" id="btn-8.11">
+                <i class="fa-solid fa-list-ul"></i> 8.11 Categories
+            </a>
+            <a href="#" onclick="switchTab('8.12')" class="nav-item" id="btn-8.12">
+                <i class="fa-solid fa-ticket"></i> 8.12 Coupons
+            </a>
+            <a href="#" onclick="switchTab('8.13')" class="nav-item" id="btn-8.13">
+                <i class="fa-solid fa-images"></i> 8.13 Banners
+            </a>
+            <a href="#" onclick="switchTab('8.14')" class="nav-item" id="btn-8.14">
+                <i class="fa-solid fa-comment-dots"></i> 8.14 Reviews
+            </a>
+            <a href="#" onclick="switchTab('8.15')" class="nav-item" id="btn-8.15">
+                <i class="fa-solid fa-user-gear"></i> 8.15 User Base
+            </a>
+        `;
+        navContainer.insertAdjacentHTML('beforeend', extraNav);
+
+        const extraSections = `
+            <section id="sec-8.11" class="section-content"></section>
+            <section id="sec-8.12" class="section-content"></section>
+            <section id="sec-8.13" class="section-content"></section>
+            <section id="sec-8.14" class="section-content"></section>
+            <section id="sec-8.15" class="section-content"></section>
+        `;
+        mainView.insertAdjacentHTML('beforeend', extraSections);
+
+        // --- 8.11 CATEGORY MANAGEMENT ---
+        window.saveCategory = () => {
+            const name = document.getElementById('cat_name').value;
+            const icon = document.getElementById('cat_icon').value;
+            if(!name) return alert("Category Name Required");
+
+            const catId = push(ref(db, 'categories')).key;
+            set(ref(db, 'categories/' + catId), {
+                name: name,
+                icon: icon || 'fa-tag',
+                createdAt: Date.now()
+            });
+            document.getElementById('cat_name').value = "";
+        };
+
+        onValue(ref(db, 'categories'), (snap) => {
+            const shelf = document.getElementById('sec-8.11');
+            let list = "";
+            snap.forEach(child => {
+                const c = child.val();
+                list += `
+                    <div class="flex items-center justify-between p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 mb-2">
+                        <div class="flex items-center gap-4">
+                            <i class="fa-solid ${c.icon} text-indigo-400"></i>
+                            <span class="font-bold">${c.name}</span>
+                        </div>
+                        <button onclick="removeCat('${child.key}')" class="text-zinc-600 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>`;
+            });
+
+            shelf.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-panel p-8">
+                        <h3 class="text-xl font-bold mb-6">8.11 Category Control</h3>
+                        <input type="text" id="cat_name" placeholder="Category Name (e.g. Mens Fashion)">
+                        <input type="text" id="cat_icon" placeholder="FontAwesome Icon Class (e.g. fa-shirt)">
+                        <button onclick="saveCategory()" class="btn-action w-full mt-2">Add New Category</button>
+                    </div>
+                    <div class="glass-panel p-8">
+                        <h3 class="text-xl font-bold mb-6">Live Categories</h3>
+                        <div class="max-h-[400px] overflow-y-auto">${list || '<p class="text-zinc-600">No categories defined.</p>'}</div>
+                    </div>
+                </div>`;
+        });
+        window.removeCat = (key) => remove(ref(db, 'categories/' + key));
+
+        // --- 8.12 COUPON MANAGEMENT ---
+        window.createCoupon = () => {
+            const code = document.getElementById('cp_code').value.toUpperCase();
+            const perc = document.getElementById('cp_perc').value;
+            const exp = document.getElementById('cp_exp').value;
+            const limit = document.getElementById('cp_limit').value;
+
+            if(!code || !perc) return alert("Code and Percentage are mandatory");
+
+            set(ref(db, 'coupons/' + code), {
+                code, discount: perc, expiry: exp, usageLimit: limit,
+                status: 'Active', createdAt: Date.now()
+            });
+            alert("Coupon " + code + " is now Live");
+        };
+
+        onValue(ref(db, 'coupons'), (snap) => {
+            const shelf = document.getElementById('sec-8.12');
+            let rows = "";
+            snap.forEach(child => {
+                const c = child.val();
+                rows += `
+                    <tr class="text-sm border-b border-zinc-800">
+                        <td class="px-6 py-4 font-black text-indigo-400">${c.code}</td>
+                        <td class="px-6 py-4 text-emerald-400 font-bold">${c.discount}% OFF</td>
+                        <td class="px-6 py-4 text-zinc-500">${c.expiry || 'No Expiry'}</td>
+                        <td class="px-6 py-4 text-zinc-500">Max: ${c.usageLimit || '∞'}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="deleteCoupon('${child.key}')" class="text-zinc-600 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+
+            shelf.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 glass-panel p-8">
+                        <h3 class="text-xl font-bold mb-6">8.12 Coupon Creator</h3>
+                        <input type="text" id="cp_code" placeholder="PROMO CODE (e.g. SAVE50)">
+                        <input type="number" id="cp_perc" placeholder="Discount Percentage (%)">
+                        <input type="date" id="cp_exp">
+                        <input type="number" id="cp_limit" placeholder="Usage limit per user">
+                        <button onclick="createCoupon()" class="btn-action w-full mt-2">Generate Coupon</button>
+                    </div>
+                    <div class="lg:col-span-2 glass-panel overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
+                                <tr>
+                                    <th class="px-6 py-4">Code</th>
+                                    <th class="px-6 py-4">Discount</th>
+                                    <th class="px-6 py-4">Expiry</th>
+                                    <th class="px-6 py-4">Limits</th>
+                                    <th class="px-6 py-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        });
+        window.deleteCoupon = (key) => remove(ref(db, 'coupons/' + key));
+
+        // --- 8.13 BANNER MANAGEMENT ---
+        window.uploadBanner = async () => {
+            const file = document.getElementById('bn_file').files[0];
+            const type = document.getElementById('bn_type').value;
+            const link = document.getElementById('bn_link').value;
+
+            if(!file) return alert("Select an image");
+
+            const bRef = sRef(storage, `banners/${Date.now()}`);
+            const snap = await uploadBytes(bRef, file);
+            const url = await getDownloadURL(snap.ref);
+
+            push(ref(db, 'banners'), {
+                imageUrl: url, type: type, productLink: link,
+                createdAt: Date.now()
+            });
+            alert("Marketing Banner Published");
+        };
+
+        onValue(ref(db, 'banners'), (snap) => {
+            const shelf = document.getElementById('sec-8.13');
+            let bannerHtml = "";
+            snap.forEach(child => {
+                const b = child.val();
+                bannerHtml += `
+                    <div class="relative group rounded-2xl overflow-hidden border border-zinc-800">
+                        <img src="${b.imageUrl}" class="w-full h-32 object-cover">
+                        <div class="p-3 bg-zinc-900 flex justify-between items-center">
+                            <div>
+                                <p class="text-[10px] font-bold text-indigo-400 uppercase">${b.type}</p>
+                                <p class="text-[9px] text-zinc-500 truncate w-32">${b.productLink}</p>
+                            </div>
+                            <button onclick="removeBanner('${child.key}')" class="text-red-500/50 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>`;
+            });
+
+            shelf.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div class="lg:col-span-1 glass-panel p-8">
+                        <h3 class="text-xl font-bold mb-6">8.13 Media Center</h3>
+                        <label class="text-[10px] font-bold text-zinc-500">Banner Image</label>
+                        <input type="file" id="bn_file">
+                        <select id="bn_type">
+                            <option value="Homepage Top">Homepage Top</option>
+                            <option value="Festival Sale">Festival Sale</option>
+                            <option value="Category Hero">Category Hero</option>
+                        </select>
+                        <input type="text" id="bn_link" placeholder="Linked Product/Category ID">
+                        <button onclick="uploadBanner()" class="btn-action w-full mt-2">Upload Banner</button>
+                    </div>
+                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${bannerHtml}
+                    </div>
+                </div>`;
+        });
+        window.removeBanner = (key) => remove(ref(db, 'banners/' + key));
+
+        // --- 8.14 REVIEW MODERATION ---
+        onValue(ref(db, 'reviews'), (snap) => {
+            const shelf = document.getElementById('sec-8.14');
+            let reviews = "";
+            snap.forEach(child => {
+                const r = child.val();
+                reviews += `
+                    <div class="glass-panel p-6 border-l-4 ${r.status=='Approved'?'border-emerald-500':'border-amber-500'} mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="flex text-yellow-500 text-xs">
+                                        ${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}
+                                    </div>
+                                    <span class="text-[10px] text-zinc-500 uppercase font-bold">Product ID: ${r.productId}</span>
+                                </div>
+                                <p class="text-zinc-200 text-sm mb-2 italic">"${r.comment}"</p>
+                                <p class="text-[10px] text-zinc-500">— By ${r.userName} on ${new Date(r.timestamp).toLocaleDateString()}</p>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                ${r.status !== 'Approved' ? `<button onclick="approveReview('${child.key}')" class="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full font-bold">Approve</button>` : ''}
+                                <button onclick="deleteReview('${child.key}')" class="text-[10px] bg-red-500/10 text-red-500 px-3 py-1 rounded-full font-bold">Delete Fake</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            shelf.innerHTML = `
+                <div class="max-w-4xl">
+                    <h3 class="text-2xl font-bold mb-6">8.14 Review Moderation</h3>
+                    ${reviews || '<div class="glass-panel p-10 text-center text-zinc-500">No product reviews found.</div>'}
+                </div>`;
+        });
+        window.approveReview = (key) => update(ref(db, 'reviews/' + key), { status: 'Approved' });
+        window.deleteReview = (key) => remove(ref(db, 'reviews/' + key));
+
+        // --- 8.15 USER MANAGEMENT ---
+        onValue(ref(db, 'users'), (snap) => {
+            const shelf = document.getElementById('sec-8.15');
+            let rows = "";
+            snap.forEach(child => {
+                const u = child.val();
+                rows += `
+                    <tr class="text-sm border-b border-zinc-800 ${u.blocked ? 'opacity-40' : ''}">
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-zinc-200">${u.name}</p>
+                            <p class="text-[10px] text-zinc-500">${u.email}</p>
+                        </td>
+                        <td class="px-6 py-4 text-zinc-400 text-xs">${u.phone || 'No Phone'}</td>
+                        <td class="px-6 py-4 text-[10px] font-mono text-zinc-500">
+                            ${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${u.blocked ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}">
+                                ${u.blocked ? 'Blocked' : 'Active'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="toggleBlockUser('${child.key}', ${u.blocked})" class="text-zinc-500 hover:text-white mx-2">
+                                <i class="fa-solid ${u.blocked ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                            </button>
+                            <button onclick="deleteUser('${child.key}')" class="text-zinc-500 hover:text-red-500 mx-2">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            shelf.innerHTML = `
+                <div class="glass-panel overflow-hidden">
+                    <div class="p-8 border-b border-zinc-800">
+                        <h3 class="text-xl font-bold">8.15 Global User Base</h3>
+                        <p class="text-xs text-zinc-500">Manage customer accounts and access levels.</p>
+                    </div>
+                    <table class="w-full text-left">
+                        <thead class="bg-zinc-900/50 text-[10px] uppercase text-zinc-500">
+                            <tr>
+                                <th class="px-6 py-4">User Details</th>
+                                <th class="px-6 py-4">Contact</th>
+                                <th class="px-6 py-4">Last Activity</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4"></th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
+        });
+        window.toggleBlockUser = (key, current) => update(ref(db, 'users/' + key), { blocked: !current });
+        window.deleteUser = (key) => { if(confirm("Delete this user permanently?")) remove(ref(db, 'users/' + key)); };
 
 </script>
