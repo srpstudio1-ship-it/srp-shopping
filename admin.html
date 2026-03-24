@@ -634,5 +634,468 @@ db.ref("admin/settings/theme").set(mode);
 }
 
 
+// ==============================
+// 8.8 WEBSITE ANALYTICS
+// ==============================
+
+function loadWebsiteAnalytics(){
+db.ref("analytics").on("value",snap=>{
+const data=snap.val()||{};
+
+const totalUsers=data.totalUsers||0;
+const totalSellers=data.totalSellers||0;
+const todayUsers=data.todayUsers||0;
+const todaySellers=data.todaySellers||0;
+const totalVisits=data.totalVisits||0;
+const todayVisits=data.todayVisits||0;
+
+document.getElementById("analytics").innerHTML=`
+<h2 class="text-2xl mb-4">Website Analytics</h2>
+
+<div class="bg-gray-800 p-4 mb-2">
+<p>Total Users: ${totalUsers}</p>
+<p>Total Sellers: ${totalSellers}</p>
+<p>Today New Users: ${todayUsers}</p>
+<p>Today New Sellers: ${todaySellers}</p>
+<p>Total Site Visits: ${totalVisits}</p>
+<p>Today's Visits: ${todayVisits}</p>
+</div>
+`;
+});
+}
+loadWebsiteAnalytics();
+
+// ==============================
+// 8.9 SALES ANALYTICS
+// ==============================
+
+function loadSalesAnalytics(){
+db.ref("orders").on("value",snap=>{
+let totalSales=0;
+let totalOrders=0;
+let commission=0;
+let sellerRevenue=0;
+
+snap.forEach(d=>{
+const o=d.val();
+const amount=Number(o.amount||0);
+
+totalSales+=amount;
+totalOrders++;
+commission+=amount*0.1;
+sellerRevenue+=amount*0.9;
+});
+
+document.getElementById("sales").innerHTML=`
+<h2 class="text-2xl mb-4">Sales Analytics</h2>
+
+<div class="bg-gray-800 p-4">
+<p>Total Sales: ${totalSales}</p>
+<p>Total Orders: ${totalOrders}</p>
+<p>Commission: ${commission}</p>
+<p>Seller Revenue: ${sellerRevenue}</p>
+</div>
+`;
+});
+}
+loadSalesAnalytics();
+
+// ==============================
+// 8.10 ADMIN INCOME
+// ==============================
+
+function loadAdminIncome(){
+db.ref("orders").once("value",snap=>{
+let commission=0;
+
+snap.forEach(d=>{
+const o=d.val();
+commission+=Number(o.amount||0)*0.1;
+});
+
+db.ref("promotions").once("value",snap2=>{
+let promo=0;
+
+snap2.forEach(d=>{
+const p=d.val();
+promo+=Number(p.payment||0);
+});
+
+const totalIncome=commission+promo;
+
+document.getElementById("income").innerHTML=`
+<h2 class="text-2xl mb-4">Admin Income</h2>
+
+<div class="bg-gray-800 p-4">
+<p>Total Commission: ${commission}</p>
+<p>Promotion Earnings: ${promo}</p>
+<p>Total Income: ${totalIncome}</p>
+</div>
+`;
+});
+
+});
+}
+loadAdminIncome();
+
+// ==============================
+// 8.11 CATEGORY MANAGEMENT
+// ==============================
+
+document.getElementById("category").innerHTML=`
+<h2 class="text-2xl mb-4">Category Management</h2>
+
+<div class="bg-gray-800 p-4 mb-3">
+<input id="catName" placeholder="Category Name" class="p-2 w-full mb-2 text-black">
+<input id="catIcon" placeholder="Icon URL" class="p-2 w-full mb-2 text-black">
+<button onclick="addCategory()" class="bg-green-600 p-2 w-full">Add Category</button>
+</div>
+
+<div id="categoryList"></div>
+`;
+
+// ADD CATEGORY
+function addCategory(){
+const id="CAT"+Date.now();
+const name=document.getElementById("catName").value;
+const icon=document.getElementById("catIcon").value;
+
+db.ref("categories/"+id).set({
+id,name,icon
+});
+
+alert("Category Added");
+loadCategories();
+}
+
+// LOAD CATEGORY
+function loadCategories(){
+db.ref("categories").on("value",snap=>{
+let html="";
+
+snap.forEach(d=>{
+const c=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<img src="${c.icon}" class="w-10 inline">
+<span>${c.name}</span>
+
+<button onclick="deleteCategory('${c.id}')" class="bg-red-600 p-1 ml-2">Delete</button>
+<button onclick="editCategory('${c.id}')" class="bg-yellow-600 p-1 ml-2">Edit</button>
+</div>
+`;
+});
+
+document.getElementById("categoryList").innerHTML=html;
+});
+}
+loadCategories();
+
+// DELETE CATEGORY
+function deleteCategory(id){
+db.ref("categories/"+id).remove();
+alert("Deleted");
+}
+
+// EDIT CATEGORY
+function editCategory(id){
+db.ref("categories/"+id).once("value",snap=>{
+const c=snap.val();
+
+document.getElementById("catName").value=c.name;
+document.getElementById("catIcon").value=c.icon;
+
+db.ref("categories/"+id).remove();
+});
+}
+
+// ==============================
+// 8.12 COUPON MANAGEMENT
+// ==============================
+
+document.getElementById("coupon").innerHTML=`
+<h2 class="text-2xl mb-4">Coupon Management</h2>
+
+<div class="bg-gray-800 p-4 mb-3">
+<input id="couponCode" placeholder="Coupon Code" class="p-2 w-full mb-2 text-black">
+<input id="couponDiscount" placeholder="Discount %" class="p-2 w-full mb-2 text-black">
+<input type="date" id="couponExpiry" class="p-2 w-full mb-2 text-black">
+<input id="couponLimit" placeholder="Usage per user" class="p-2 w-full mb-2 text-black">
+<button onclick="addCoupon()" class="bg-green-600 p-2 w-full">Create Coupon</button>
+</div>
+
+<div id="couponList"></div>
+`;
+
+// ADD COUPON
+function addCoupon(){
+const code=document.getElementById("couponCode").value;
+const discount=document.getElementById("couponDiscount").value;
+const expiry=document.getElementById("couponExpiry").value;
+const limit=document.getElementById("couponLimit").value;
+
+db.ref("coupons/"+code).set({
+code,discount,expiry,limit
+});
+
+alert("Coupon Created");
+loadCoupons();
+}
+
+// LOAD COUPONS
+function loadCoupons(){
+db.ref("coupons").on("value",snap=>{
+let html="";
+
+snap.forEach(d=>{
+const c=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<p>${c.code}</p>
+<p>${c.discount}%</p>
+<p>Expiry: ${c.expiry}</p>
+<p>Limit: ${c.limit}</p>
+
+<button onclick="deleteCoupon('${c.code}')" class="bg-red-600 p-1">Delete</button>
+</div>
+`;
+});
+
+document.getElementById("couponList").innerHTML=html;
+});
+}
+loadCoupons();
+
+// DELETE COUPON
+function deleteCoupon(code){
+db.ref("coupons/"+code).remove();
+alert("Deleted");
+}
+
+
+// ==============================
+// 8.13 BANNER MANAGEMENT
+// ==============================
+
+document.getElementById("banner").innerHTML=`
+<h2 class="text-2xl mb-4">Banner Management</h2>
+
+<div class="bg-gray-800 p-4 mb-3">
+<input id="bannerLink" placeholder="Product ID / Link" class="p-2 w-full mb-2 text-black">
+<input type="file" id="bannerImage" class="mb-2">
+<button onclick="addBanner()" class="bg-green-600 p-2 w-full">Upload Banner</button>
+</div>
+
+<div id="bannerList"></div>
+`;
+
+// ADD BANNER
+function addBanner(){
+const id="BAN"+Date.now();
+const link=document.getElementById("bannerLink").value;
+const file=document.getElementById("bannerImage").files[0];
+
+if(!file){ alert("Select Image"); return; }
+
+const ref=storage.ref("banners/"+id);
+
+ref.put(file).then(()=>{
+ref.getDownloadURL().then(url=>{
+
+db.ref("banners/"+id).set({
+id,link,image:url
+});
+
+alert("Banner Uploaded");
+loadBanners();
+
+});
+});
+}
+
+// LOAD BANNERS
+function loadBanners(){
+db.ref("banners").on("value",snap=>{
+let html="";
+
+snap.forEach(d=>{
+const b=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<img src="${b.image}" class="w-32 mb-2">
+<p>Link: ${b.link}</p>
+
+<button onclick="deleteBanner('${b.id}')" class="bg-red-600 p-1">Delete</button>
+</div>
+`;
+});
+
+document.getElementById("bannerList").innerHTML=html;
+});
+}
+loadBanners();
+
+// DELETE BANNER
+function deleteBanner(id){
+db.ref("banners/"+id).remove();
+alert("Deleted");
+}
+
+// ==============================
+// 8.14 REVIEW MODERATION
+// ==============================
+
+document.getElementById("reviews").innerHTML=`
+<h2 class="text-2xl mb-4">Review Moderation</h2>
+<div id="reviewList"></div>
+`;
+
+// LOAD REVIEWS
+function loadReviews(){
+db.ref("reviews").on("value",snap=>{
+let html="";
+
+snap.forEach(d=>{
+const r=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<p>Product: ${r.productId}</p>
+<p>User: ${r.user}</p>
+<p>Rating: ${r.rating}</p>
+<p>${r.text}</p>
+
+<button onclick="approveReview('${d.key}')" class="bg-green-600 p-1">Approve</button>
+<button onclick="deleteReview('${d.key}')" class="bg-red-600 p-1">Delete</button>
+</div>
+`;
+});
+
+document.getElementById("reviewList").innerHTML=html;
+});
+}
+loadReviews();
+
+// APPROVE REVIEW
+function approveReview(id){
+db.ref("reviews/"+id+"/status").set("approved");
+alert("Approved");
+}
+
+// DELETE REVIEW
+function deleteReview(id){
+db.ref("reviews/"+id).remove();
+alert("Deleted");
+}
+
+// ==============================
+// 8.15 USER MANAGEMENT
+// ==============================
+
+document.getElementById("users").innerHTML=`
+<h2 class="text-2xl mb-4">User Management</h2>
+<div id="userList"></div>
+`;
+
+// LOAD USERS
+function loadUsers(){
+db.ref("users").on("value",snap=>{
+let html="";
+
+snap.forEach(d=>{
+const u=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<p>Name: ${u.name}</p>
+<p>Email: ${u.email}</p>
+<p>Phone: ${u.phone}</p>
+<p>Last Login: ${u.lastLogin||"N/A"}</p>
+
+<button onclick="blockUser('${d.key}')" class="bg-yellow-600 p-1">Block</button>
+<button onclick="deleteUser('${d.key}')" class="bg-red-600 p-1">Delete</button>
+</div>
+`;
+});
+
+document.getElementById("userList").innerHTML=html;
+});
+}
+loadUsers();
+
+// BLOCK USER
+function blockUser(id){
+db.ref("users/"+id+"/status").set("blocked");
+alert("User Blocked");
+}
+
+// DELETE USER
+function deleteUser(id){
+db.ref("users/"+id).remove();
+alert("User Deleted");
+}
+
+// ==============================
+// 8.16 SELLER MANAGEMENT
+// ==============================
+
+document.getElementById("sellers").innerHTML=`
+<h2 class="text-2xl mb-4">Seller Management</h2>
+<div id="sellerList"></div>
+`;
+
+// LOAD SELLERS
+function loadSellers(){
+db.ref("sellers").on("value",snap=>{
+let html="";
+
+snap.forEach(d=>{
+const s=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<p>Name: ${s.name}</p>
+<p>Email: ${s.email}</p>
+<p>Phone: ${s.phone}</p>
+<p>Address: ${s.address}</p>
+<p>Aadhar: ${s.aadhar}</p>
+<p>PAN: ${s.pan}</p>
+<p>GST: ${s.gst}</p>
+
+<button onclick="approveSeller('${d.key}')" class="bg-green-600 p-1">Approve</button>
+<button onclick="rejectSeller('${d.key}')" class="bg-red-600 p-1">Reject</button>
+<button onclick="suspendSeller('${d.key}')" class="bg-yellow-600 p-1">Suspend</button>
+</div>
+`;
+});
+
+document.getElementById("sellerList").innerHTML=html;
+});
+}
+loadSellers();
+
+// APPROVE SELLER
+function approveSeller(id){
+db.ref("sellers/"+id+"/status").set("approved");
+alert("Seller Approved");
+}
+
+// REJECT SELLER
+function rejectSeller(id){
+db.ref("sellers/"+id+"/status").set("rejected");
+alert("Seller Rejected");
+}
+
+// SUSPEND SELLER
+function suspendSeller(id){
+db.ref("sellers/"+id+"/status").set("suspended");
+alert("Seller Suspended");
+}
+
+
+
 
     </script>
