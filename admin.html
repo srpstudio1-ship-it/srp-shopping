@@ -1265,37 +1265,38 @@ alert("Website Active: "+val);
 }
 
 
-// =============================================
-// 🔥 8.21.1 ULTRA PRO GITHUB CODE CHECKER
-// =============================================
+// ======================================================
+// 🔥 8.21 ULTRA PRO CHECKER + AI AUTO FIX (MERGED)
+// ======================================================
 
-// ================= CONFIG =====================
-const GITHUB_USER = "srpstudio1-ship-it";
-const GITHUB_REPO = "srp-shopping";
+// ================= CONFIG =================
+const USER = "srpstudio1-ship-it";
+const REPO = "srp-shopping";
 const BRANCH = "main";
 
-// ================= MAIN =======================
-async function runCodeCheck(){
+// ================= MAIN ===================
+async function runFullCheck(){
 
-const output = document.getElementById("codeResult");
-output.innerHTML = "🔍 Scanning repository...";
+const out = document.getElementById("codeResult");
+out.innerHTML = "🔍 AI scanning + fixing...";
 
 let finalReport = "";
 let totalIssues = 0;
+let fixedFiles = [];
 
 try{
 
-// FETCH FILE TREE
-const treeRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/git/trees/${BRANCH}?recursive=1`);
-const treeData = await treeRes.json();
+// FETCH TREE
+const treeRes = await fetch(`https://api.github.com/repos/${USER}/${REPO}/git/trees/${BRANCH}?recursive=1`);
+const tree = await treeRes.json();
 
-if(!treeData.tree){
-output.innerHTML = "❌ Failed to fetch repo tree";
+if(!tree.tree){
+out.innerHTML = "❌ Repo fetch failed";
 return;
 }
 
 // FILTER FILES
-const files = treeData.tree.filter(f =>
+const files = tree.tree.filter(f =>
 f.path.endsWith(".html") || f.path.endsWith(".js")
 );
 
@@ -1303,19 +1304,21 @@ f.path.endsWith(".html") || f.path.endsWith(".js")
 for(let file of files){
 
 let fileReport = `<h3 style="margin-top:20px">📄 File: ${file.path}</h3>`;
-let fileIssues = 0;
+let issues = 0;
+let fixes = [];
 
 try{
 
-const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/${file.path}`;
-const res = await fetch(rawUrl);
-const text = await res.text();
+const raw = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/${file.path}`;
+const res = await fetch(raw);
+let text = await res.text();
+let original = text;
 
 // ================= HTML CHECK =================
 if(file.path.endsWith(".html")){
 
 const parser = new DOMParser();
-const doc = parser.parseFromString(text, "text/html");
+const doc = parser.parseFromString(text,"text/html");
 
 // ---------- ALT CHECK ----------
 const imgs = doc.querySelectorAll("img");
@@ -1323,15 +1326,21 @@ const imgs = doc.querySelectorAll("img");
 imgs.forEach(img=>{
 if(!img.hasAttribute("alt") || img.getAttribute("alt").trim()===""){
 
-fileIssues++;
-totalIssues++;
+issues++; totalIssues++;
 
-fileReport += formatIssue(
-"❌ Missing ALT tag",
-findLine(text, img.outerHTML),
+fileReport += format(
+"❌ Missing ALT",
+findLine(text,img.outerHTML),
 img.outerHTML,
-'Add alt="description"'
+"Add alt='description'"
 );
+
+// AUTO FIX
+text = text.replace(img.outerHTML,
+img.outerHTML.replace(">",' alt="Image">')
+);
+
+fixes.push("Added ALT");
 
 }
 });
@@ -1339,31 +1348,44 @@ img.outerHTML,
 // ---------- INLINE CSS ----------
 const styled = doc.querySelectorAll("[style]");
 styled.forEach(el=>{
-fileIssues++;
-totalIssues++;
+issues++; totalIssues++;
 
-fileReport += formatIssue(
-"⚠ Inline CSS used",
-findLine(text, el.outerHTML),
+fileReport += format(
+"⚠ Inline CSS",
+findLine(text,el.outerHTML),
 el.outerHTML,
-"Move styles to CSS file"
+"Move to CSS"
 );
+
+// AUTO FIX
+text = text.replace(el.outerHTML,
+el.outerHTML.replace(/style=".*?"/,'class="auto-style"')
+);
+
+fixes.push("Moved inline CSS");
+
 });
 
 // ---------- EMPTY ATTRIBUTES ----------
 const all = doc.querySelectorAll("*");
 all.forEach(el=>{
 for(let attr of el.attributes){
-if(attr.value === ""){
-fileIssues++;
-totalIssues++;
+if(attr.value===""){
 
-fileReport += formatIssue(
+issues++; totalIssues++;
+
+fileReport += format(
 "⚠ Empty attribute",
-findLine(text, el.outerHTML),
+findLine(text,el.outerHTML),
 el.outerHTML,
-"Remove or fill attribute"
+"Remove attribute"
 );
+
+// AUTO FIX
+text = text.replace(` ${attr.name}=""`,"");
+
+fixes.push("Removed empty attribute");
+
 }
 }
 });
@@ -1376,97 +1398,104 @@ const lines = text.split("\n");
 // ---------- CONSOLE ----------
 lines.forEach((line,i)=>{
 if(line.includes("console.log")){
-fileIssues++;
-totalIssues++;
 
-fileReport += formatIssue(
+issues++; totalIssues++;
+
+fileReport += format(
 "ℹ Console log",
 i+1,
 line.trim(),
-"Remove in production"
+"Remove"
 );
+
+// AUTO FIX
+text = text.replace(line,"");
+fixes.push("Removed console.log");
+
 }
 });
 
-// ---------- UNUSED VARIABLES ----------
-let vars = [];
-lines.forEach(line=>{
-let m = line.match(/(let|const|var)\s+(\w+)/);
-if(m) vars.push(m[2]);
-});
+// ---------- UNUSED VAR ----------
+let vars = [...text.matchAll(/(let|const|var)\s+(\w+)/g)];
 
 vars.forEach(v=>{
-let count = (text.match(new RegExp("\\b"+v+"\\b","g")) || []).length;
-if(count === 1){
-fileIssues++;
-totalIssues++;
+let name = v[2];
+let count = (text.match(new RegExp("\\b"+name+"\\b","g")) || []).length;
 
-fileReport += formatIssue(
+if(count === 1){
+
+issues++; totalIssues++;
+
+fileReport += format(
 "⚠ Unused variable",
 "-",
-v,
-"Remove or use variable"
+name,
+"Remove or use"
 );
+
+// AUTO FIX
+text = text.replace(new RegExp(`(let|const|var)\\s+${name}.*?;`),"");
+
+fixes.push("Removed unused var: "+name);
+
 }
 });
 
-// ---------- EMPTY STRING FILTER (SMART FIX) ----------
-lines.forEach((line,i)=>{
-// Ignore JS strings like let html=""
-if(line.includes('=""') && line.includes("<")){
-fileIssues++;
-totalIssues++;
+// ================= CLEAN =================
+text = text.replace(/\n\s*\n/g,"\n");
 
-fileReport += formatIssue(
-"⚠ Empty HTML attribute",
-i+1,
-line.trim(),
-"Fix attribute"
-);
-}
-});
+// ================= REPORT =================
+if(issues === 0){
+fileReport += `<div style="color:lightgreen">✔ No issues</div>`;
+}else{
 
-// ================= CLEAN FILE =================
-if(fileIssues === 0){
-fileReport += `<div style="color:lightgreen">✔ No issues found</div>`;
+fileReport += `
+<div style="background:#222;padding:10px;margin-top:10px">
+<b>Auto Fix Applied:</b><br>
+${fixes.join("<br>")}
+</div>
+`;
+
+fixedFiles.push({path:file.path,content:text});
 }
 
 finalReport += fileReport;
 
 }catch(err){
-finalReport += `<div style="color:red">❌ Error reading ${file.path}</div>`;
+finalReport += `<div style="color:red">❌ Error ${file.path}</div>`;
 }
 
 }
 
 // ================= OUTPUT =================
-output.innerHTML = `
+out.innerHTML = `
 <h2>✅ Scan Complete</h2>
 <p>Total Issues: ${totalIssues}</p>
 ${finalReport}
+<button onclick="downloadAll()">⬇ Download Fixed Files</button>
 `;
 
+window.fixedFiles = fixedFiles;
+
 }catch(err){
-output.innerHTML = `<div style="color:red">❌ Error fetching repo</div>`;
+out.innerHTML = "❌ Fatal error";
 }
 
 }
 
 // ================= HELPERS =================
 
-// FORMAT ISSUE
-function formatIssue(title,line,code,fix){
+function format(title,line,code,fix){
 return `
 <div style="background:#1f2937;padding:10px;margin:5px;border-radius:6px">
 <b>${title}</b><br>
 Line: ${line}<br>
-Code: ${escapeHTML(code)}<br>
+Code: ${escape(code)}<br>
 Fix: ${fix}
 </div>
 `;
 }
 
-// FIND LINE NUMBER
 function findLine(text,snippet){
 let lines = text.split("\n");
 for(let i=0;i<lines.length;i++){
@@ -1477,214 +1506,31 @@ return i+1;
 return "?";
 }
 
-// ESCAPE HTML
-function escapeHTML(str){
-return str
-.replace(/</g,"&lt;")
-.replace(/>/g,"&gt;");
+function escape(str){
+return str.replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ================= AUTO RUN =================
-setTimeout(runCodeCheck,1000);
-
-// ================= INTERVAL =================
-setInterval(runCodeCheck,604800000);
-
-
-
-// =============================================
-// 🔥 8.21.2 AI AUTO-FIX CODE CHECKER SYSTEM
-// =============================================
-
-// CONFIG
-const USER = "srpstudio1-ship-it";
-const REPO = "srp-shopping";
-const BRANCH = "main";
-
-// MAIN FUNCTION
-async function runAICheck(){
-
-const output = document.getElementById("codeResult");
-output.innerHTML = "🤖 AI scanning & fixing...";
-
-let report = "";
-let fixedFiles = [];
-
-try{
-
-// FETCH TREE
-const treeRes = await fetch(`https://api.github.com/repos/${USER}/${REPO}/git/trees/${BRANCH}?recursive=1`);
-const tree = await treeRes.json();
-
-const files = tree.tree.filter(f =>
-f.path.endsWith(".html") || f.path.endsWith(".js")
-);
-
-// LOOP FILES
-for(let file of files){
-
-const url = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/${file.path}`;
-const res = await fetch(url);
-let text = await res.text();
-
-let original = text;
-let changes = [];
-
-
-// =============================================
-// ✅ FIX 1: ALT AUTO ADD
-// =============================================
-if(file.path.endsWith(".html")){
-
-text = text.replace(/<img([^>]*?)>/g,(match)=>{
-
-if(!match.includes("alt=")){
-let fixed = match.replace(">",' alt="Image">');
-changes.push("Added ALT");
-return fixed;
-}
-return match;
-
-});
-
-}
-
-
-// =============================================
-// ✅ FIX 2: REMOVE EMPTY ATTRIBUTES
-// =============================================
-text = text.replace(/\s\w+=""/g,(m)=>{
-changes.push("Removed empty attribute");
-return "";
-});
-
-
-// =============================================
-// ✅ FIX 3: REMOVE CONSOLE LOG
-// =============================================
-text = text.replace(/console\.log\(.*?\);?/g,(m)=>{
-changes.push("Removed console.log");
-return "";
-});
-
-
-// =============================================
-// ✅ FIX 4: INLINE CSS → CLASS (BASIC)
-// =============================================
-text = text.replace(/style="([^"]*)"/g,(m,style)=>{
-changes.push("Moved inline CSS");
-return `class="auto-style"`;
-});
-
-
-// =============================================
-// ✅ FIX 5: UNUSED VARIABLE REMOVE (SAFE)
-// =============================================
-let vars = [...text.matchAll(/(let|const|var)\s+(\w+)/g)];
-
-vars.forEach(v=>{
-let name = v[2];
-let count = (text.match(new RegExp("\\b"+name+"\\b","g")) || []).length;
-
-if(count === 1){
-let regex = new RegExp(`(let|const|var)\\s+${name}.*?;`);
-text = text.replace(regex,"");
-changes.push("Removed unused variable: "+name);
-}
-});
-
-
-// =============================================
-// ✅ FIX 6: FORMAT CLEAN
-// =============================================
-text = text.replace(/\n\s*\n/g,"\n");
-text = text.replace(/[ \t]+/g," ");
-
-
-// =============================================
-// REPORT
-// =============================================
-if(changes.length > 0){
-
-report += `
-<div style="background:#111;padding:10px;margin:10px;border-radius:8px">
-<h3>📄 ${file.path}</h3>
-<b>Changes:</b><br>
-${changes.join("<br>")}
-<br><br>
-<b>Preview:</b>
-<pre style="max-height:200px;overflow:auto">${escapeHTML(text.substring(0,500))}</pre>
-</div>
-`;
-
-fixedFiles.push({
-path:file.path,
-content:text
-});
-
-}else{
-
-report += `
-<div style="color:lightgreen">✔ ${file.path} - No changes</div>
-`;
-
-}
-
-}
-
-
-// =============================================
-// FINAL OUTPUT
-// =============================================
-output.innerHTML = `
-<h2>🤖 AI Auto-Fix Complete</h2>
-${report}
-<button onclick="downloadFix()">⬇ Download Fixed Code</button>
-`;
-
-window.fixedFiles = fixedFiles;
-
-}catch(err){
-output.innerHTML = "❌ Error running AI checker";
-}
-
-}
-
-
-// =============================================
-// DOWNLOAD FIXED FILES
-// =============================================
-function downloadFix(){
-
-if(!window.fixedFiles) return;
+// ================= DOWNLOAD =================
+function downloadAll(){
 
 window.fixedFiles.forEach(f=>{
-
-let blob = new Blob([f.content], {type:"text/plain"});
+let blob = new Blob([f.content],{type:"text/plain"});
 let a = document.createElement("a");
 
 a.href = URL.createObjectURL(blob);
 a.download = f.path.split("/").pop();
-
 a.click();
-
 });
 
 }
 
-
-// =============================================
-// ESCAPE HTML
-// =============================================
-function escapeHTML(str){
-return str.replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
+// ================= AUTO RUN =================
+setTimeout(runFullCheck,1000);
 
 
-// =============================================
-// AUTO RUN
-// =============================================
-setTimeout(runAICheck,1000);
+
+
+
 
 
 
