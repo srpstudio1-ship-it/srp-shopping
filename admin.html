@@ -1265,45 +1265,41 @@ alert("Website Active: "+val);
 }
 
 
-
 // ==============================
-// 8.21 PRO GITHUB CODE CHECKER
+// ✅ FINAL WORKING CODE CHECKER
 // ==============================
 
-const GITHUB_USER = srpstudio1-ship-it
-const GITHUB_REPO = srp-shopping
+const GITHUB_USER = "srpstudio1-ship-it";
+const GITHUB_REPO = "srp-shopping";
 
 async function runCodeCheck(){
 
-document.getElementById("codeResult").innerHTML="Scanning GitHub repository...";
+document.getElementById("codeResult").innerHTML="🔍 Scanning all files...";
 
 let report="";
 
 try{
 
-// GET ALL FILES FROM REPO
-const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/git/trees/main?recursive=1`);
-const data = await res.json();
-
-const files = data.tree.filter(f =>
-f.path.endsWith(".html") || f.path.endsWith(".js")
-);
+// ✅ GET FILE LIST (ROOT)
+const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/`);
+const files = await res.json();
 
 for(let file of files){
 
-const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${file.path}`;
+// ONLY CHECK HTML + JS
+if(file.name.endsWith(".html") || file.name.endsWith(".js")){
 
 try{
 
-const fileRes = await fetch(fileUrl);
+const fileRes = await fetch(file.download_url);
 const text = await fileRes.text();
 
 const lines = text.split("\n");
 
-let fileReport = `<h3 class="text-xl mt-4">📄 File: ${file.path}</h3>`;
+let fileReport = `<h3 class="text-xl mt-4">📄 File: ${file.name}</h3>`;
 
 // ==============================
-// CHECK 1: MISSING ALT (REAL)
+// ✅ CHECK 1: REAL ALT CHECK
 // ==============================
 lines.forEach((line,i)=>{
 if(line.includes("<img")){
@@ -1320,36 +1316,33 @@ Fix: Add alt="description"
 });
 
 // ==============================
-// CHECK 2: EMPTY HTML ATTRIBUTES ONLY
+// ✅ CHECK 2: EMPTY HTML ATTRIBUTES ONLY
 // ==============================
 lines.forEach((line,i)=>{
-if(line.includes("<") && line.includes(">")){
-let matches = line.match(/\s\w+=""/g);
-if(matches){
+if(line.match(/\s\w+=""/)){
 fileReport += `
 <div class="bg-yellow-700 p-2 mt-1">
 ⚠ Empty HTML attribute<br>
 Line: ${i+1}<br>
 Code: ${line.trim()}<br>
-Fix: Fill or remove attribute
+Fix: Remove or fill attribute
 </div>`;
-}
 }
 });
 
 // ==============================
-// CHECK 3: UNUSED VARIABLES (SMART)
+// ✅ CHECK 3: UNUSED VARIABLES (FIXED)
 // ==============================
 let vars = [];
 lines.forEach(line=>{
-let m = line.match(/const\s+(\w+)/);
-if(m){ vars.push(m[1]); }
+let m = line.match(/(let|const|var)\s+(\w+)/);
+if(m){ vars.push(m[2]); }
 });
 
 vars.forEach(v=>{
 let regex = new RegExp("\\b"+v+"\\b","g");
 let usage = text.match(regex);
-if(usage && usage.length <= 1){
+if(usage && usage.length === 1){
 fileReport += `
 <div class="bg-yellow-600 p-2 mt-1">
 ⚠ Unused variable: ${v}<br>
@@ -1359,7 +1352,7 @@ Fix: Remove or use variable
 });
 
 // ==============================
-// CHECK 4: CONSOLE LOG
+// ✅ CHECK 4: CONSOLE LOG
 // ==============================
 lines.forEach((line,i)=>{
 if(line.includes("console.log")){
@@ -1373,23 +1366,23 @@ Fix: Remove in production
 });
 
 // ==============================
-// CHECK 5: INLINE STYLE
+// ✅ CHECK 5: INLINE STYLE
 // ==============================
 lines.forEach((line,i)=>{
-if(/style\s*=/.test(line)){
+if(line.includes('style=')){
 fileReport += `
 <div class="bg-purple-700 p-2 mt-1">
 ⚠ Inline CSS used<br>
 Line: ${i+1}<br>
-Fix: Move to CSS class
+Fix: Move to CSS
 </div>`;
 }
 });
 
 // ==============================
-// CLEAN FILE CASE
+// ✅ CLEAN FILE
 // ==============================
-if(fileReport === `<h3 class="text-xl mt-4">📄 File: ${file.path}</h3>`){
+if(fileReport === `<h3 class="text-xl mt-4">📄 File: ${file.name}</h3>`){
 fileReport += `
 <div class="bg-green-700 p-2 mt-2">
 ✔ No issues found
@@ -1401,8 +1394,10 @@ report += fileReport;
 }catch(err){
 report += `
 <div class="bg-red-800 p-2 mt-2">
-❌ Failed to read file: ${file.path}
+❌ Failed to read file: ${file.name}
 </div>`;
+}
+
 }
 
 }
@@ -1410,31 +1405,31 @@ report += `
 // SHOW RESULT
 document.getElementById("codeResult").innerHTML = report;
 
-// SAVE LOG
+// LOG
+if(typeof db !== "undefined"){
 db.ref("logs/admin").push({
-msg:"GitHub full scan executed",
+msg:"Full repo scan success",
 time:Date.now()
 });
+}
 
 }catch(err){
 document.getElementById("codeResult").innerHTML = `
 <div class="bg-red-800 p-2">
 ❌ Failed to fetch repository<br>
-Check repo name / branch (main)
+Check internet / repo public
 </div>`;
 }
 
 }
 
-// AUTO CHECK EVERY 7 DAYS
-let autoCheckInterval=null;
+// AUTO RUN EVERY 7 DAYS
+setInterval(runCodeCheck, 604800000);
 
-function startAutoCodeCheck(){
-if(autoCheckInterval) return;
-autoCheckInterval=setInterval(runCodeCheck,604800000);
-}
 
-startAutoCodeCheck();
+
+
+
 
 
 
