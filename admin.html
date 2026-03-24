@@ -291,8 +291,7 @@ let html="";
 snap.forEach(d=>{
 const p = d.val();
 html+=`
-<div class="bg-gray-700 p-3 mb-2">
-<img src="${p.image}" class="w-20">
+<div class="bg-gray-700 p-3 mb-2"><img src="${p.image}" alt="Product Image" class="w-20">
 <p>${p.name}</p>
 <p>${p.id}</p>
 <button onclick="deleteProduct('${p.id}')" class="bg-red-600 p-1">Delete</button>
@@ -778,7 +777,7 @@ const c=d.val();
 
 html+=`
 <div class="bg-gray-700 p-3 mb-2">
-<img src="${c.icon}" class="w-10 inline">
+<img src="${c.icon}" alt="Category Icon" class="w-10 inline">
 <span>${c.name}</span>
 
 <button onclick="deleteCategory('${c.id}')" class="bg-red-600 p-1 ml-2">Delete</button>
@@ -925,7 +924,7 @@ const b=d.val();
 
 html+=`
 <div class="bg-gray-700 p-3 mb-2">
-<img src="${b.image}" class="w-32 mb-2">
+<img src="${b.image}" alt="Banner Image" class="w-32 mb-2">
 <p>Link: ${b.link}</p>
 
 <button onclick="deleteBanner('${b.id}')" class="bg-red-600 p-1">Delete</button>
