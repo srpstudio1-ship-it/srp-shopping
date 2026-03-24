@@ -3,121 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Admin Panel</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>SRP SHOPPING | Ultimate Admin Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         :root {
-            --color-primary: #7380ec;
-            --color-danger: #ff7782;
-            --color-success: #41f1b6;
-            --color-warning: #ffbb55;
-            --color-white: #fff;
-            --color-info-dark: #7d8da1;
-            --color-info-light: #dce1eb;
-            --color-dark: #363949;
-            --color-light: rgba(132, 139, 200, 0.18);
-            --color-primary-variant: #111e88;
-            --color-dark-variant: #677483;
-            --color-background: #f6f6f9;
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-purple: #818cf8;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
-        .dark-theme-variables {
-            --color-background: #181a1e;
-            --color-white: #202528;
-            --color-dark: #edeffd;
-            --color-dark-variant: #a3bdcc;
-            --color-light: rgba(0, 0, 0, 0.4);
-            box-shadow: none;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
-        * { margin: 0; padding: 0; outline: 0; appearance: none; border: 0; text-decoration: none; list-style: none; box-sizing: border-box; }
-        body { width: 100vw; height: 100vh; font-family: poppins, sans-serif; font-size: 0.88rem; background: var(--color-background); user-select: none; overflow-x: hidden; color: var(--color-dark); }
-        
-        .container { display: grid; width: 96%; margin: 0 auto; gap: 1.8rem; grid-template-columns: 14rem auto; }
-        
-        aside { height: 100vh; }
-        aside .top { display: flex; align-items: center; justify-content: space-between; margin-top: 1.4rem; }
-        aside .logo { display: flex; gap: 0.8rem; }
-        aside .logo img { width: 2rem; height: 2rem; }
-        aside .sidebar { display: flex; flex-direction: column; height: 86vh; position: relative; top: 3rem; overflow-y: auto; }
-        aside h3 { font-weight: 500; }
-        aside .sidebar a { display: flex; color: var(--color-info-dark); margin-left: 2rem; gap: 1rem; align-items: center; position: relative; height: 3.7rem; transition: all 300ms ease; }
-        aside .sidebar a span { font-size: 1.6rem; transition: all 300ms ease; }
-        aside .sidebar a.active { background: var(--color-light); color: var(--color-primary); margin-left: 0; }
-        aside .sidebar a.active:before { content: ""; width: 6px; height: 100%; background: var(--color-primary); }
-        aside .sidebar a:hover { color: var(--color-primary); }
-        aside .sidebar a:hover span { margin-left: 1rem; }
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            display: flex;
+        }
 
-        main { margin-top: 1.4rem; }
-        .section-panel { display: none; background: var(--color-white); padding: 1.5rem; border-radius: 2rem; box-shadow: 0 2rem 3rem var(--color-light); transition: all 300ms ease; }
-        .section-panel.active { display: block; }
-        
-        input, select, textarea { background: var(--color-light); padding: 0.6rem; border-radius: 0.4rem; color: var(--color-dark); margin-bottom: 0.5rem; width: 100%; }
-        button { cursor: pointer; background: var(--color-primary); color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; font-weight: 600; }
-        
-        table { width: 100%; text-align: left; border-collapse: collapse; }
-        table th, table td { padding: 12px; border-bottom: 1px solid var(--color-light); }
+        /* --- Sidebar Navigation --- */
+        #sidebar {
+            width: 280px;
+            height: 100vh;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
 
-        .theme-toggler { background: var(--color-light); display: flex; justify-content: space-between; align-items: center; height: 1.6rem; width: 4.2rem; cursor: pointer; border-radius: 0.4rem; }
-        .theme-toggler span { font-size: 1.2rem; width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .theme-toggler span.active { background: var(--color-primary); color: white; border-radius: 0.4rem; }
+        .logo-area {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-area h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            padding: 12px 25px;
+            display: flex;
+            align-items: center;
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--text-main);
+            background: var(--glass);
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        /* --- Main Content Area --- */
+        main {
+            flex: 1;
+            margin-left: 280px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--glass);
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+        }
+
+        /* --- UI Components --- */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--accent-blue); color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--accent-blue); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--secondary-bg);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+        }
+
+        /* --- 8. Admin Panel Master --- */
+        #admin-panel-root {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden { display: none; }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <aside>
-            <div class="top">
-                <div class="logo">
-                    <h2>SRP <span class="text-blue-600">SHOP</span></h2>
+
+    <nav id="sidebar">
+        <div class="logo-area">
+            <h1>SRP SHOPPING</h1>
+            <p style="font-size: 10px; color: var(--text-dim);">MASTER ADMIN PRO</p>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="showSection('dashboard')"><i class="fas fa-chart-line"></i> 8.0 Global Dashboard</li>
+            <li class="nav-item" onclick="showSection('product-mgmt')"><i class="fas fa-box-open"></i> 8.1 Product Management</li>
+            <li class="nav-item" onclick="showSection('order-mgmt')"><i class="fas fa-shopping-cart"></i> 8.2 Orders Management</li>
+            <li class="nav-item" onclick="showSection('seller-withdraw')"><i class="fas fa-wallet"></i> 8.3 Withdrawal Approval</li>
+            <li class="nav-item" onclick="showSection('promotion-pay')"><i class="fas fa-ad"></i> 8.4 Promotion System</li>
+            <li class="nav-item" onclick="showSection('featured-mgmt')"><i class="fas fa-star"></i> 8.5 Featured Products</li>
+            <li class="nav-item" onclick="showSection('global-orders')"><i class="fas fa-globe"></i> 8.6 Global Orders</li>
+            <li class="nav-item" onclick="showSection('admin-security')"><i class="fas fa-shield-alt"></i> 8.7 Admin Security</li>
+            <li class="nav-item" onclick="showSection('analytics')"><i class="fas fa-microchip"></i> 8.8-8.10 Analytics & Income</li>
+            <li class="nav-item" onclick="showSection('categories')"><i class="fas fa-list"></i> 8.11 Category Management</li>
+            <li class="nav-item" onclick="showSection('coupons')"><i class="fas fa-ticket-alt"></i> 8.12 Coupon Management</li>
+            <li class="nav-item" onclick="showSection('banners')"><i class="fas fa-image"></i> 8.13 Banner Management</li>
+            <li class="nav-item" onclick="showSection('reviews')"><i class="fas fa-comment-dots"></i> 8.14 Review Moderation</li>
+            <li class="nav-item" onclick="showSection('user-mgmt')"><i class="fas fa-users"></i> 8.15 User Management</li>
+            <li class="nav-item" onclick="showSection('seller-mgmt')"><i class="fas fa-store"></i> 8.16 Seller Management</li>
+            <li class="nav-item" onclick="showSection('history')"><i class="fas fa-history"></i> 8.17 Payment History</li>
+            <li class="nav-item" onclick="showSection('refunds')"><i class="fas fa-undo"></i> 8.18 Refund System</li>
+            <li class="nav-item" onclick="showSection('logs')"><i class="fas fa-terminal"></i> 8.19 System Logs</li>
+            <li class="nav-item" onclick="showSection('settings')"><i class="fas fa-cog"></i> 8.20 Platform Settings</li>
+            <li class="nav-item" onclick="showSection('code-checker')"><i class="fab fa-github"></i> 8.21 AI Code Checker</li>
+        </ul>
+    </nav>
+
+    <main id="admin-panel-root">
+        <header>
+            <h2 id="section-title">Global Dashboard</h2>
+            <div class="user-profile">
+                <i class="fas fa-moon" id="theme-toggle" onclick="toggleTheme()" style="cursor:pointer"></i>
+                <div class="admin-info">
+                    <p style="font-weight: 600;">Super Admin</p>
+                    <small style="color: var(--text-dim);">Online</small>
                 </div>
-                <div class="theme-toggler" id="theme-toggler">
-                    <span class="material-icons-sharp active">light_mode</span>
-                    <span class="material-icons-sharp">dark_mode</span>
+                <img src="https://ui-avatars.com/api/?name=Admin&background=38bdf8&color=fff" width="40" style="border-radius: 50%;">
+            </div>
+        </header>
+
+        <div id="section-dashboard" class="content-section">
+            <div class="glass-card" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                <div class="stat-box">
+                    <p>Total Revenue</p>
+                    <h2 id="stat-revenue">₹0.00</h2>
+                </div>
+                <div class="stat-box">
+                    <p>Total Orders</p>
+                    <h2 id="stat-orders">0</h2>
+                </div>
+                <div class="stat-box">
+                    <p>Active Sellers</p>
+                    <h2 id="stat-sellers">0</h2>
+                </div>
+                <div class="stat-box">
+                    <p>Active Users</p>
+                    <h2 id="stat-users">0</h2>
                 </div>
             </div>
-
-            <div class="sidebar" id="sidebar-nav">
-                <a href="#" onclick="showSection('8-dashboard')" class="active"><span class="material-icons-sharp">grid_view</span><h3>8. Admin Dashboard</h3></a>
-                <a href="#" onclick="showSection('8-1-products')"><span class="material-icons-sharp">inventory</span><h3>8.1 Product Management</h3></a>
-                <a href="#" onclick="showSection('8-2-orders')"><span class="material-icons-sharp">shopping_basket</span><h3>8.2 Order Management</h3></a>
-                <a href="#" onclick="showSection('8-3-withdrawals')"><span class="material-icons-sharp">payments</span><h3>8.3 Seller Withdrawals</h3></a>
-                <a href="#" onclick="showSection('8-4-promotion')"><span class="material-icons-sharp">campaign</span><h3>8.4 Promotion System</h3></a>
-                <a href="#" onclick="showSection('8-5-featured')"><span class="material-icons-sharp">star</span><h3>8.5 Featured Products</h3></a>
-                <a href="#" onclick="showSection('8-6-global-dashboard')"><span class="material-icons-sharp">public</span><h3>8.6 Global Dashboard</h3></a>
-                <a href="#" onclick="showSection('8-7-security')"><span class="material-icons-sharp">security</span><h3>8.7 Admin Security</h3></a>
-                <a href="#" onclick="showSection('8-8-web-analytics')"><span class="material-icons-sharp">analytics</span><h3>8.8 Web Analytics</h3></a>
-                <a href="#" onclick="showSection('8-9-sales-analytics')"><span class="material-icons-sharp">trending_up</span><h3>8.9 Sales Analytics</h3></a>
-                <a href="#" onclick="showSection('8-10-income')"><span class="material-icons-sharp">account_balance_wallet</span><h3>8.10 Admin Income</h3></a>
-                <a href="#" onclick="showSection('8-11-categories')"><span class="material-icons-sharp">category</span><h3>8.11 Category Management</h3></a>
-                <a href="#" onclick="showSection('8-12-coupons')"><span class="material-icons-sharp">confirmation_number</span><h3>8.12 Coupon Management</h3></a>
-                <a href="#" onclick="showSection('8-13-banners')"><span class="material-icons-sharp">ad_units</span><h3>8.13 Banner Management</h3></a>
-                <a href="#" onclick="showSection('8-14-reviews')"><span class="material-icons-sharp">rate_review</span><h3>8.14 Review Moderation</h3></a>
-                <a href="#" onclick="showSection('8-15-users')"><span class="material-icons-sharp">person_outline</span><h3>8.15 User Management</h3></a>
-                <a href="#" onclick="showSection('8-16-sellers')"><span class="material-icons-sharp">storefront</span><h3>8.16 Seller Management</h3></a>
-                <a href="#" onclick="showSection('8-17-payments')"><span class="material-icons-sharp">receipt_long</span><h3>8.17 Payment History</h3></a>
-                <a href="#" onclick="showSection('8-18-refunds')"><span class="material-icons-sharp">undo</span><h3>8.18 Refund System</h3></a>
-                <a href="#" onclick="showSection('8-19-logs')"><span class="material-icons-sharp">history_edu</span><h3>8.19 System Logs</h3></a>
-                <a href="#" onclick="showSection('8-20-settings')"><span class="material-icons-sharp">settings</span><h3>8.20 Platform Settings</h3></a>
-                <a href="#" onclick="showSection('8-21-codechecker')"><span class="material-icons-sharp">code</span><h3>8.21 Code Checker</h3></a>
             </div>
-        </aside>
 
-        <main id="main-content">
-            <div id="8-dashboard" class="section-panel active">
-                <h1>8. Admin Panel Overview</h1>
-                <p>Welcome to the SRP SHOPPING Master Control.</p>
+        <div id="section-product-mgmt" class="content-section hidden">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Inventory Control</h3>
+                    <button class="btn btn-primary" onclick="openProductModal()"><i class="fas fa-plus"></i> Add New Product</button>
                 </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>MRP</th>
+                            <th>Sale Price</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-order-mgmt" class="content-section hidden">
+            <div class="glass-card">
+                <h3>Global Order Stream</h3>
+                <div style="margin: 20px 0; display: flex; gap: 10px;">
+                    <input type="text" id="order-search" placeholder="Search by Order ID or User..." style="max-width: 300px;">
+                    <select id="filter-status" style="max-width: 200px;">
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>User Details</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
         </main>
+
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add New Product</h2>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
+            <form id="productForm">
+                <input type="hidden" id="edit-id">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" id="p-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="p-category">
+                            <option value="electronics">Electronics</option>
+                            <option value="fashion">Fashion</option>
+                            <option value="home">Home & Kitchen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>MRP (₹)</label>
+                        <input type="number" id="p-mrp" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Discount Price (₹)</label>
+                        <input type="number" id="p-discount" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Quantity</label>
+                        <input type="number" id="p-stock" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Image</label>
+                        <input type="file" id="p-image" accept="image/*">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Product Description</label>
+                    <textarea id="p-desc" rows="4"></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn" onclick="closeModal('productModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Product</button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <h2>Order Details</h2>
+            <div id="order-detail-view" style="margin-top: 20px;">
+                </div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
+            <h3>Update Logistics</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <input type="text" id="update-tracking-id" placeholder="Tracking ID">
+                <select id="update-status">
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                </select>
+            </div>
+            <button class="btn btn-success" style="margin-top: 20px; width: 100%;" onclick="updateOrderLogistics()">Update Order & Notify User</button>
+            <button class="btn btn-danger" onclick="closeModal('orderModal')" style="margin-top: 10px; width: 100%;">Close</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
     <script>
-        // 8. CONFIGURATION
+        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -128,1176 +431,186 @@
             appId: "1:491906168702:web:2873565fcd2d561077252f",
             measurementId: "G-3S7X8V8EFQ"
         };
-        
+
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const auth = firebase.auth();
+        const db = firebase.firestore();
         const storage = firebase.storage();
+        const auth = firebase.auth();
 
-        // UI Logic for Switching Sections
+        // --- Navigation Logic ---
         function showSection(sectionId) {
-            document.querySelectorAll('.section-panel').forEach(panel => panel.classList.remove('active'));
-            document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             
-            const target = document.getElementById(sectionId);
-            if(target) target.classList.add('active');
+            const target = document.getElementById('section-' + sectionId);
+            if(target) target.classList.remove('hidden');
             
-            event.currentTarget.classList.add('active');
+            // Update Title
+            const titleMap = {
+                'dashboard': '8.0 Global Dashboard',
+                'product-mgmt': '8.1 Product Management',
+                'order-mgmt': '8.2 Orders Management',
+                'seller-withdraw': '8.3 Withdrawal Approval',
+                'promotion-pay': '8.4 Promotion System'
+            };
+            document.getElementById('section-title').innerText = titleMap[sectionId] || 'Admin Panel';
+            
+            // Logic for specific sections
+            if(sectionId === 'product-mgmt') loadProducts();
+            if(sectionId === 'order-mgmt') loadOrders();
         }
 
-        // 8.7 Dark Mode Toggle Logic
-        const themeToggler = document.querySelector("#theme-toggler");
-        themeToggler.addEventListener('click', () => {
-            document.body.classList.toggle('dark-theme-variables');
-            themeToggler.querySelector('span:nth-child(1)').classList.toggle('active');
-            themeToggler.querySelector('span:nth-child(2)').classList.toggle('active');
-        });
-      /* --- PART 2: CORE SECTIONS HTML INJECTION --- */
+        // --- 8.1 Product Management Logic ---
+        function openProductModal(id = null) {
+            const modal = document.getElementById('productModal');
+            modal.style.display = 'flex';
+            if(!id) {
+                document.getElementById('productForm').reset();
+                document.getElementById('edit-id').value = '';
+                document.getElementById('modalTitle').innerText = "Add New Product";
+            }
+        }
 
-const mainContent = document.getElementById('main-content');
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
 
-const sectionsHTML = `
-    <div id="8-1-products" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.1 Product Management</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg dark:bg-gray-800">
-            <div>
-                <input type="text" id="prod-name" placeholder="Product Name">
-                <input type="number" id="prod-mrp" placeholder="MRP">
-                <input type="number" id="prod-discount" placeholder="Discount Price">
-                <input type="text" id="prod-category" placeholder="Category">
-                <input type="number" id="prod-stock" placeholder="Stock Quantity">
-                <textarea id="prod-desc" placeholder="Product Description"></textarea>
-                <input type="file" id="prod-image" class="mt-2">
-                <button onclick="uploadProduct()" class="mt-4 w-full bg-green-600">Add Product</button>
-            </div>
-            <div class="overflow-y-auto max-h-[500px]">
-                <table id="product-list">
-                    <thead><tr><th>ID</th><th>Name</th><th>Stock</th><th>Action</th></tr></thead>
-                    <tbody id="product-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div id="8-2-orders" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.2 Order Management</h2>
-        <div class="overflow-x-auto">
-            <table>
-                <thead>
-                    <tr><th>Order ID</th><th>User</th><th>Status</th><th>Tracking ID</th><th>Action</th></tr>
-                </thead>
-                <tbody id="orders-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="8-3-withdrawals" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.3 Seller Withdrawal Requests</h2>
-        <div id="withdrawal-list" class="grid grid-cols-1 gap-4"></div>
-    </div>
-
-    <div id="8-4-promotion" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.4 Seller Promotion Payment System</h2>
-        <table id="promo-table">
-            <thead>
-                <tr><th>Seller Name</th><th>Aadhar/PAN</th><th>Product ID</th><th>Payment</th></tr>
-            </thead>
-            <tbody id="promo-body"></tbody>
-        </table>
-    </div>
-
-    <div id="8-5-featured" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.5 Featured Products (Home Page)</h2>
-        <div class="flex gap-2 mb-4">
-            <input type="text" id="feat-prod-id" placeholder="Product ID">
-            <input type="number" id="feat-priority" placeholder="Priority (1-10)">
-            <input type="date" id="feat-expiry" placeholder="Display Till">
-            <button onclick="pinToHome()">Pin Product</button>
-        </div>
-        <div id="featured-list"></div>
-    </div>
-
-    <div id="8-6-global-dashboard" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.6 Global Order Dashboard</h2>
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="p-4 bg-blue-100 dark:bg-blue-900 rounded">Total Orders: <span id="glob-total-orders">0</span></div>
-            <div class="p-4 bg-green-100 dark:bg-green-900 rounded">Total Revenue: ₹<span id="glob-total-rev">0</span></div>
-            <div class="p-4 bg-purple-100 dark:bg-purple-900 rounded">Commission: ₹<span id="glob-total-comm">0</span></div>
-        </div>
-    </div>
-
-    <div id="8-7-security" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.7 Admin Security</h2>
-        <div class="max-w-md">
-            <input type="password" id="new-admin-pass" placeholder="New Password">
-            <button onclick="changeAdminPassword()" class="mb-4">Update Password</button>
-            <div class="flex items-center gap-2">
-                <input type="checkbox" id="2fa-toggle" style="width: auto;">
-                <label>Enable 2FA Login</label>
-            </div>
-        </div>
-    </div>
-
-    <div id="8-8-web-analytics" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.8 & 8.9 Site & Sales Analytics</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="card p-4 border rounded">Users: <h3 id="stat-users">0</h3></div>
-            <div class="card p-4 border rounded">Sellers: <h3 id="stat-sellers">0</h3></div>
-            <div class="card p-4 border rounded">Today Visits: <h3 id="stat-visits">0</h3></div>
-            <div class="card p-4 border rounded">Total Sales: <h3 id="stat-sales">0</h3></div>
-        </div>
-    </div>
-
-    <div id="8-10-income" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.10 Admin Income Report</h2>
-        <div class="bg-gray-100 dark:bg-gray-700 p-6 rounded-xl">
-            <h1 class="text-4xl font-bold text-green-500">Total Income: ₹<span id="income-total">0.00</span></h1>
-            <p class="mt-2">Commission Earned: ₹<span id="income-comm">0</span></p>
-            <p>Promotion Revenue: ₹<span id="income-promo">0</span></p>
-        </div>
-    </div>
-`;
-
-mainContent.innerHTML += sectionsHTML;
-
-/* --- LOGIC FOR 8.1: PRODUCT MANAGEMENT --- */
-
-function uploadProduct() {
-    const name = document.getElementById('prod-name').value;
-    const mrp = document.getElementById('prod-mrp').value;
-    const discount = document.getElementById('prod-discount').value;
-    const cat = document.getElementById('prod-category').value;
-    const stock = document.getElementById('prod-stock').value;
-    const desc = document.getElementById('prod-desc').value;
-    const imageFile = document.getElementById('prod-image').files[0];
-
-    if(!name || !imageFile) return alert("Please fill details and select image");
-
-    const prodId = "SRP" + Date.now(); // Automatic Unique ID
-    const storageRef = storage.ref('products/' + prodId);
-
-    storageRef.put(imageFile).then(snapshot => {
-        snapshot.ref.getDownloadURL().then(url => {
-            db.ref('products/' + prodId).set({
-                productId: prodId,
-                name: name,
-                mrp: mrp,
-                discountPrice: discount,
-                category: cat,
-                stock: stock,
-                description: desc,
-                imageUrl: url,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                alert("Product Added Successfully! ID: " + prodId);
-                location.reload();
+        async function loadProducts() {
+            const tbody = document.getElementById('product-table-body');
+            tbody.innerHTML = '<tr><td colspan="8">Loading products...</td></tr>';
+            
+            const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
+            tbody.innerHTML = '';
+            
+            snapshot.forEach(doc => {
+                const p = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${doc.id.substring(0,6)}</td>
+                        <td><img src="${p.image || 'https://via.placeholder.com/50'}" width="50" style="border-radius:8px"></td>
+                        <td>${p.name}</td>
+                        <td>${p.category}</td>
+                        <td>₹${p.mrp}</td>
+                        <td>₹${p.discountPrice}</td>
+                        <td>${p.stock}</td>
+                        <td>
+                            <button onclick="editProduct('${doc.id}')" class="btn-success btn" style="padding:5px 10px"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteProduct('${doc.id}')" class="btn-danger btn" style="padding:5px 10px"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
             });
-        });
-    });
-}
-
-// 8.2 Order Tracking Update Logic
-function updateOrderStatus(orderId, status) {
-    const trackingId = prompt("Enter Tracking ID:");
-    db.ref('orders/' + orderId).update({
-        status: status,
-        trackingId: trackingId
-    }).then(() => {
-        // Mock notification logic
-        alert("Notification sent to user: Order " + status);
-    });
-}
-
-// 8.3 Withdrawal Approval Logic
-function approveWithdrawal(sellerId, requestId, amount) {
-    db.ref('sellers/' + sellerId + '/balance').transaction((current) => {
-        return (current || 0) - amount;
-    }).then(() => {
-        db.ref('withdrawals/' + requestId).update({ status: 'Paid', paidAt: new Date().toISOString() });
-        alert("Withdrawal Approved & Seller Notified automatically.");
-    });
-}
-
-// Listeners for Data
-db.ref('products').on('value', snap => {
-    const body = document.getElementById('product-body');
-    body.innerHTML = "";
-    snap.forEach(child => {
-        const p = child.val();
-        body.innerHTML += `<tr>
-            <td>${p.productId}</td>
-            <td>${p.name}</td>
-            <td>${p.stock}</td>
-            <td><button class="bg-red-500 p-1 text-xs" onclick="deleteProduct('${p.productId}')">Delete</button></td>
-        </tr>`;
-    });
-});
-
-function deleteProduct(id) {
-    if(confirm("Delete product?")) db.ref('products/' + id).remove();
-}
- /* --- PART 3: ADVANCED MANAGEMENT & SYSTEM LOGIC --- */
-
-const part3HTML = `
-    <div id="8-11-categories" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.11 Category Management</h2>
-        <div class="flex gap-2 mb-4">
-            <input type="text" id="cat-name" placeholder="Category Name">
-            <input type="text" id="cat-icon" placeholder="Material Icon Name (e.g., home)">
-            <button onclick="addCategory()">Add Category</button>
-        </div>
-        <div id="category-display" class="grid grid-cols-4 gap-4"></div>
-    </div>
-
-    <div id="8-12-coupons" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.12 Coupon Management</h2>
-        <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 dark:bg-gray-800 rounded">
-            <div>
-                <input type="text" id="cpn-code" placeholder="COUPON50">
-                <input type="number" id="cpn-perc" placeholder="Discount %">
-                <input type="date" id="cpn-expiry">
-                <input type="number" id="cpn-limit" placeholder="Usage Limit per User">
-                <button onclick="createCoupon()" class="w-full">Create Coupon</button>
-            </div>
-            <div id="active-coupons" class="overflow-y-auto max-h-60"></div>
-        </div>
-    </div>
-
-    <div id="8-13-banners" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.13 Banner Management</h2>
-        <div class="border-2 border-dashed p-4 mb-4">
-            <input type="file" id="banner-file">
-            <input type="text" id="banner-link" placeholder="Linked Product ID">
-            <select id="banner-type">
-                <option value="home">Homepage Slider</option>
-                <option value="festival">Festival Sale</option>
-            </select>
-            <button onclick="uploadBanner()" class="mt-2">Upload & Sync</button>
-        </div>
-        <div id="banner-preview" class="flex gap-2"></div>
-    </div>
-
-    <div id="8-14-reviews" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.14 Review Moderation</h2>
-        <table class="w-full">
-            <thead>
-                <tr><th>User</th><th>Rating</th><th>Comment</th><th>Action</th></tr>
-            </thead>
-            <tbody id="reviews-body"></tbody>
-        </table>
-    </div>
-
-    <div id="8-15-users" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.15 User Management</h2>
-        <table class="w-full">
-            <thead>
-                <tr><th>Name</th><th>Email</th><th>Last Login</th><th>Status</th><th>Action</th></tr>
-            </thead>
-            <tbody id="users-body"></tbody>
-        </table>
-    </div>
-
-    <div id="8-16-sellers" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.16 Seller Management</h2>
-        <div id="seller-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-    </div>
-
-    <div id="8-17-payments" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.17 Payment History</h2>
-        <div id="payment-logs" class="text-xs font-mono"></div>
-    </div>
-
-    <div id="8-18-refunds" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.18 Refund System</h2>
-        <div id="refund-requests"></div>
-    </div>
-
-    <div id="8-19-logs" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.19 System Logs</h2>
-        <div class="flex gap-2 mb-4">
-            <button onclick="filterLogs('admin')">Admin Actions</button>
-            <button onclick="filterLogs('seller')">Seller Actions</button>
-            <button onclick="filterLogs('order')">Order Updates</button>
-        </div>
-        <div id="log-content" class="bg-black text-green-500 p-4 rounded h-80 overflow-y-auto"></div>
-    </div>
-
-    <div id="8-20-settings" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.20 Platform Settings</h2>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="p-4 border">
-                <h3>Maintenance Mode</h3>
-                <button onclick="toggleMaintenance()" id="maint-btn">Enable</button>
-            </div>
-            <div class="p-4 border">
-                <h3>Site Name</h3>
-                <input type="text" id="site-name-set" value="SRP SHOPPING">
-                <button onclick="updateSiteSettings()">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="8-21-codechecker" class="section-panel">
-        <h2 class="text-2xl font-bold mb-4">8.21 Automated GitHub Code Checker</h2>
-        <div class="bg-gray-900 text-white p-6 rounded-lg">
-            <div class="flex justify-between items-center mb-4">
-                <span>Repository: <b id="repo-url">srp-shopping-platform/main</b></span>
-                <button onclick="runCodeCheck()" class="bg-blue-500 px-4 py-2 rounded">Check All Files Now</button>
-            </div>
-            <div id="check-status" class="mb-2 text-yellow-400 italic">Next scheduled check: 7 days from last run.</div>
-            <div id="code-errors-list" class="bg-black p-4 border border-red-500 rounded h-64 overflow-y-auto font-mono text-sm">
-                [SYSTEM]: Waiting for manual trigger or 7-day cycle...
-            </div>
-        </div>
-    </div>
-`;
-
-mainContent.innerHTML += part3HTML;
-
-/* --- JAVASCRIPT LOGIC FOR PART 3 --- */
-
-// 8.11 Categories
-function addCategory() {
-    const name = document.getElementById('cat-name').value;
-    const icon = document.getElementById('cat-icon').value;
-    if(name) {
-        db.ref('categories').push({ name, icon });
-        alert("Category added");
-    }
-}
-
-// 8.15 User Logic
-db.ref('users').on('value', snap => {
-    const body = document.getElementById('users-body');
-    body.innerHTML = "";
-    snap.forEach(user => {
-        const u = user.val();
-        body.innerHTML += `
-            <tr class="${u.isBlocked ? 'bg-red-100' : ''}">
-                <td>${u.name}</td>
-                <td>${u.email}</td>
-                <td>${u.lastLogin || 'N/A'}</td>
-                <td>${u.isBlocked ? 'Blocked' : 'Active'}</td>
-                <td>
-                    <button onclick="toggleUserBlock('${user.key}', ${u.isBlocked})" class="bg-orange-400 p-1">
-                        ${u.isBlocked ? 'Unblock' : 'Block'}
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-});
-
-function toggleUserBlock(uid, currentStatus) {
-    db.ref('users/' + uid).update({ isBlocked: !currentStatus });
-}
-
-// 8.16 Seller Management Detailed
-db.ref('sellers').on('value', snap => {
-    const container = document.getElementById('seller-cards-container');
-    container.innerHTML = "";
-    snap.forEach(seller => {
-        const s = seller.val();
-        container.innerHTML += `
-            <div class="p-4 border rounded bg-white dark:bg-gray-800 shadow">
-                <h3 class="font-bold">${s.storeName} (${s.name})</h3>
-                <p class="text-xs">PAN: ${s.pan} | GST: ${s.gst}</p>
-                <p class="text-xs">Address: ${s.address}</p>
-                <div class="flex gap-2 mt-2">
-                    <button onclick="updateSellerStatus('${seller.key}', 'approved')" class="bg-green-500 text-xs px-2">Approve</button>
-                    <button onclick="updateSellerStatus('${seller.key}', 'suspended')" class="bg-red-500 text-xs px-2">Suspend</button>
-                </div>
-            </div>
-        `;
-    });
-});
-
-// 8.21 GitHub Code Checker Logic
-async function runCodeCheck() {
-    const logBox = document.getElementById('code-errors-list');
-    logBox.innerHTML += `<div>> [${new Date().toLocaleTimeString()}] Starting scan of GitHub files...</div>`;
-    
-    // Simulating API call to GitHub Content API
-    // In production, you would use: fetch('https://api.github.com/repos/USER/REPO/contents/')
-    
-    setTimeout(() => {
-        const issues = [
-            "Warning: Deprecated Firebase Auth method in auth.js line 42",
-            "Error: Missing validation in 8.3 withdrawal logic",
-            "Optimization: Banner images in 8.13 lack lazy-loading",
-            "Security: 2FA bypass possible in dev-mode config"
-        ];
-        
-        issues.forEach(issue => {
-            logBox.innerHTML += `<div class="text-red-400">> FIX REQUIRED: ${issue}</div>`;
-        });
-        
-        logBox.innerHTML += `<div class="text-green-400">> Scan complete. 0 critical, ${issues.length} warnings.</div>`;
-        db.ref('system/lastCodeCheck').set(Date.now());
-    }, 2000);
-}
-
-// Auto-check check logic (runs on admin login)
-function checkLastScan() {
-    db.ref('system/lastCodeCheck').once('value', snap => {
-        const last = snap.val() || 0;
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        if(Date.now() - last > sevenDays) {
-            console.log("Automatic 7-day scan triggered.");
-            runCodeCheck();
         }
-    });
-}
 
-// System Logs 8.19
-function logAdminAction(action) {
-    db.ref('logs/admin').push({
-        action: action,
-        time: firebase.database.ServerValue.TIMESTAMP
-    });
-}
+        document.getElementById('productForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const file = document.getElementById('p-image').files[0];
+            let imageUrl = "";
 
-// Run initial check
-checkLastScan();
-/* --- PART 4: HIGH-LEVEL BUSINESS LOGIC & UTILITIES --- */
+            // Simple Auto ID generation
+            const uniqueId = "SRP" + Math.floor(Math.random() * 1000000);
 
-// 8.2 & 8.6: Advanced Order Detail & Invoice Generator
-function viewOrderDetails(orderId) {
-    db.ref('orders/' + orderId).once('value', snap => {
-        const order = snap.val();
-        if (!order) return alert("Order not found");
+            const productData = {
+                name: document.getElementById('p-name').value,
+                category: document.getElementById('p-category').value,
+                mrp: document.getElementById('p-mrp').value,
+                discountPrice: document.getElementById('p-discount').value,
+                stock: document.getElementById('p-stock').value,
+                description: document.getElementById('p-desc').value,
+                productId: uniqueId,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
-        const modalHtml = `
-            <div id="order-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white dark:bg-gray-800 p-8 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                    <div class="flex justify-between border-b pb-4">
-                        <h2 class="text-xl font-bold">Invoice: ${order.orderId}</h2>
-                        <button onclick="document.getElementById('order-modal').remove()" class="text-red-500 font-bold">CLOSE</button>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
-                        <div>
-                            <p><strong>User:</strong> ${order.userName}</p>
-                            <p><strong>Phone:</strong> ${order.phone}</p>
-                            <p><strong>Address:</strong> ${order.address}, ${order.pincode}</p>
-                        </div>
-                        <div class="text-right">
-                            <p><strong>Date:</strong> ${new Date(order.timestamp).toLocaleString()}</p>
-                            <p><strong>Status:</strong> <span class="text-blue-500">${order.status}</span></p>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 border p-4 rounded">
-                        <div class="flex gap-4 items-center">
-                            <img src="${order.productImg}" class="w-20 h-20 object-cover rounded">
-                            <div>
-                                <p class="font-bold">${order.productName}</p>
-                                <p class="text-xs text-gray-500">Product ID: ${order.productId}</p>
-                                <p class="text-xs text-gray-500">Seller ID: ${order.sellerId}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <table class="w-full mt-6 text-sm">
-                        <tr class="border-b"><td>MRP</td><td class="text-right">₹${order.mrp}</td></tr>
-                        <tr class="border-b"><td>Discounted Price</td><td class="text-right text-green-600">₹${order.price}</td></tr>
-                        <tr class="border-b"><td>Platform Fee</td><td class="text-right">₹${order.commission || 0}</td></tr>
-                        <tr class="font-bold text-lg"><td>Total Paid</td><td class="text-right">₹${order.price}</td></tr>
-                    </table>
-
-                    <div class="mt-8 flex gap-2">
-                        <button onclick="window.print()" class="bg-gray-200 text-black px-4 py-2 rounded">Print Invoice</button>
-                        <button onclick="updateTracking('${order.orderId}')" class="bg-blue-600 px-4 py-2 rounded">Update Tracking</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    });
-}
-
-// 8.10 & 8.17: Master Income & Payment History Tracker
-function refreshFinancials() {
-    let totalComm = 0;
-    let totalPromo = 0;
-    const paymentLogContainer = document.getElementById('payment-logs');
-    paymentLogContainer.innerHTML = "";
-
-    // Calculate Commissions from Orders
-    db.ref('orders').once('value', snap => {
-        snap.forEach(child => {
-            const o = child.val();
-            if (o.status === 'Delivered') {
-                const comm = parseFloat(o.commission) || 0;
-                totalComm += comm;
-                paymentLogContainer.innerHTML += `<div class="p-1 border-b border-gray-700">[ORDER] Comm: +₹${comm} | ID: ${o.orderId}</div>`;
+            try {
+                if(id) {
+                    await db.collection('products').doc(id).update(productData);
+                } else {
+                    await db.collection('products').add(productData);
+                }
+                alert("Product saved successfully!");
+                closeModal('productModal');
+                loadProducts();
+            } catch(err) {
+                console.error(err);
+                alert("Error saving product");
             }
-        });
-        updateIncomeDisplay(totalComm, totalPromo);
-    });
+        };
 
-    // Calculate Promotion Payments
-    db.ref('promotions/payments').once('value', snap => {
-        snap.forEach(child => {
-            const p = child.val();
-            totalPromo += parseFloat(p.amount) || 0;
-            paymentLogContainer.innerHTML += `<div class="p-1 border-b border-gray-700 text-blue-400">[PROMO] Recv: +₹${p.amount} | Seller: ${p.sellerName}</div>`;
-        });
-        updateIncomeDisplay(totalComm, totalPromo);
-    });
-}
-
-function updateIncomeDisplay(comm, promo) {
-    document.getElementById('income-comm').innerText = comm.toFixed(2);
-    document.getElementById('income-promo').innerText = promo.toFixed(2);
-    document.getElementById('income-total').innerText = (comm + promo).toFixed(2);
-    document.getElementById('glob-total-comm').innerText = comm.toFixed(2);
-}
-
-// 8.19: Partitioned System Logs Logic
-function filterLogs(type) {
-    const logBox = document.getElementById('log-content');
-    logBox.innerHTML = `<div class="animate-pulse">Loading ${type} logs...</div>`;
-    
-    db.ref('logs/' + type).limitToLast(50).once('value', snap => {
-        logBox.innerHTML = "";
-        if (!snap.exists()) {
-            logBox.innerHTML = `<div class="text-gray-500">No logs found for ${type}.</div>`;
-            return;
-        }
-        snap.forEach(log => {
-            const data = log.val();
-            const time = new Date(data.time).toLocaleTimeString();
-            logBox.innerHTML += `<div><span class="text-gray-500">[${time}]</span> <span class="text-yellow-400">${data.adminId || 'SYSTEM'}:</span> ${data.action}</div>`;
-        });
-        logBox.scrollTop = logBox.scrollHeight;
-    });
-}
-
-// 8.21 Extension: Automated Integrity Check (The "Code Checker" Brain)
-async function performDeepCodeCheck() {
-    const logBox = document.getElementById('code-errors-list');
-    const files = ['index.html', 'admin.js', 'auth.js', 'firebase-config.js', 'seller-portal.js'];
-    
-    for (const file of files) {
-        logBox.innerHTML += `<div>> Scanning ${file}...</div>`;
-        await new Promise(r => setTimeout(r, 400)); // Simulate processing latency
-        
-        // Logic to simulate finding "problems" as requested in 8.21
-        if (Math.random() > 0.7) {
-            logBox.innerHTML += `<div class="text-red-500">  [!] ERROR in ${file}: Potential memory leak in event listener.</div>`;
-        }
-        if (file === 'firebase-config.js') {
-            logBox.innerHTML += `<div class="text-yellow-400">  [W] WARNING: Security rules should be reviewed for ${file}.</div>`;
-        }
-    }
-    logBox.innerHTML += `<div class="mt-2 text-blue-400 font-bold underline">TOTAL STATUS: 72% OPTIMIZED. Next check in 7 days.</div>`;
-}
-
-// 8.20: Platform Control Logic
-function toggleMaintenance() {
-    const btn = document.getElementById('maint-btn');
-    db.ref('settings/maintenanceMode').once('value', snap => {
-        const status = !snap.val();
-        db.ref('settings/maintenanceMode').set(status);
-        btn.innerText = status ? "Disable Maintenance" : "Enable Maintenance";
-        btn.className = status ? "bg-red-600 p-2 rounded" : "bg-green-600 p-2 rounded";
-        logAdminAction("Toggled Maintenance Mode to: " + status);
-    });
-}
-
-// Global Search functionality for 8.6
-function globalSearch(query) {
-    // This looks across products, users, and sellers simultaneously
-    query = query.toLowerCase();
-    console.log("Searching platform for: " + query);
-    // Real-time filtering logic would go here
-}
-
-// Initialization on Load
-window.onload = () => {
-    refreshFinancials();
-    filterLogs('admin');
-    // 8.19: Record Admin Login
-    logAdminAction("Admin Panel Accessed");
-};
-/* --- PART 5: THE ENGINE ROOM - AUTOMATION & ANALYTICS --- */
-
-/**
- * 8.2 & 8.4: Real-Time Notification System
- * This function handles the "Real Notification" requirement by writing to a 
- * user-specific notification node which the mobile/web app listens to.
- */
-function sendOrderNotification(uid, title, message, orderId) {
-    const notificationId = "NOTI_" + Date.now();
-    const notiData = {
-        title: title,
-        body: message,
-        orderId: orderId,
-        timestamp: firebase.database.ServerValue.TIMESTAMP,
-        status: "unread"
-    };
-
-    // Update User's Notification Tray
-    db.ref('notifications/' + uid + '/' + notificationId).set(notiData)
-    .then(() => {
-        console.log(`Notification sent to User ${uid}: ${title}`);
-        // Log this as an Admin Action (8.19)
-        logAdminAction(`Sent ${title} notification to user ${uid}`);
-    })
-    .catch(err => console.error("Notification Error:", err));
-}
-
-/**
- * 8.8 & 8.9: Advanced Analytics Data Processor
- * This engine calculates daily growth and total site metrics.
- */
-function runPlatformAnalytics() {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // 1. User Growth Analytics
-    db.ref('users').once('value', snap => {
-        let totalUsers = 0;
-        let todayUsers = 0;
-        snap.forEach(user => {
-            totalUsers++;
-            if (user.val().regDate === today) todayUsers++;
-        });
-        document.getElementById('stat-users').innerText = totalUsers;
-        document.getElementById('stat-today-users').innerText = todayUsers; // Add this ID to Part 2 HTML
-    });
-
-    // 2. Seller Growth Analytics
-    db.ref('sellers').once('value', snap => {
-        let totalSellers = 0;
-        let todaySellers = 0;
-        snap.forEach(seller => {
-            totalSellers++;
-            if (seller.val().regDate === today) todaySellers++;
-        });
-        document.getElementById('stat-sellers').innerText = totalSellers;
-        document.getElementById('stat-today-sellers').innerText = todaySellers;
-    });
-
-    // 3. Sales & Revenue Calculation (8.9)
-    db.ref('orders').once('value', snap => {
-        let totalSales = 0;
-        let totalOrders = 0;
-        let sellerRevenue = 0;
-        
-        snap.forEach(order => {
-            const data = order.val();
-            if (data.status === 'Delivered' || data.status === 'Shipped') {
-                totalOrders++;
-                totalSales += parseFloat(data.price);
-                sellerRevenue += (parseFloat(data.price) - parseFloat(data.commission || 0));
-            }
-        });
-        
-        document.getElementById('stat-sales').innerText = "₹" + totalSales.toLocaleString();
-        // Update Global Dashboard (8.6)
-        document.getElementById('glob-total-orders').innerText = totalOrders;
-        document.getElementById('glob-total-rev').innerText = totalSales.toFixed(2);
-    });
-}
-
-/**
- * 8.21: GitHub Code Checker (Internal Logic)
- * This simulates a 7-day automated check that fetches file structures.
- */
-async function runScheduledCodeCheck() {
-    const logBox = document.getElementById('code-errors-list');
-    const repoPath = "https://api.github.com/repos/SRP-SHOPPING/platform-core/contents/";
-    
-    logBox.innerHTML += `<div class="text-blue-300">[7-DAY CYCLE]: Initiating automated file integrity check...</div>`;
-    
-    try {
-        // Example check for critical files existence and size
-        const criticalFiles = ['firebase-config.js', 'security-rules.json', 'admin-auth.js'];
-        
-        for (const file of criticalFiles) {
-            logBox.innerHTML += `<div>> Validating ${file} integrity...</div>`;
-            // In a real environment, you'd use: const res = await fetch(repoPath + file);
-            await new Promise(r => setTimeout(r, 600)); 
+        // --- 8.2 Order Management Logic ---
+        async function loadOrders() {
+            const tbody = document.getElementById('order-table-body');
+            const snapshot = await db.collection('orders').get();
+            tbody.innerHTML = '';
             
-            // Logic to check for "Problems" as per 8.21
-            const mockErrorChance = Math.random();
-            if (mockErrorChance > 0.85) {
-                logBox.innerHTML += `<div class="text-red-500 underline">  !! CRITICAL: Syntax anomaly detected in ${file}. Manual review required.</div>`;
-            } else {
-                logBox.innerHTML += `<div class="text-green-500">  OK: ${file} matches master branch checksum.</div>`;
-            }
-        }
-        
-        logBox.innerHTML += `<div class="mt-2 text-white bg-blue-900 p-1">SCAN RESULT: System operational. All files synced.</div>`;
-        
-        // Update last check date (8.21)
-        db.ref('system/lastCheckDate').set(new Date().toDateString());
-        
-    } catch (error) {
-        logBox.innerHTML += `<div class="text-red-600 font-bold">GITHUB API ERROR: Could not reach repository. Check Internet/Token.</div>`;
-    }
-}
-
-/**
- * 8.18: Refund Processing Logic
- */
-function processRefund(orderId, userId, amount, action) {
-    if (action === 'approve') {
-        // Refund to Wallet logic (8.18)
-        db.ref('users/' + userId + '/wallet').transaction(current => (current || 0) + amount)
-        .then(() => {
-            db.ref('orders/' + orderId).update({ status: 'Refunded' });
-            sendOrderNotification(userId, "Refund Approved", `₹${amount} has been added to your wallet.`, orderId);
-            alert("Refund processed to user wallet.");
-            logAdminAction(`Approved refund of ₹${amount} for Order ${orderId}`);
-        });
-    } else {
-        db.ref('orders/' + orderId).update({ status: 'Refund Rejected' });
-        sendOrderNotification(userId, "Refund Rejected", "Your refund request was declined. Contact support.", orderId);
-        logAdminAction(`Rejected refund for Order ${orderId}`);
-    }
-}
-
-/**
- * 8.13: Banner Linking System
- */
-function syncBannerToProduct(bannerId, productId) {
-    db.ref('banners/' + bannerId).update({ linkedProduct: productId })
-    .then(() => {
-        alert("Banner linked to product successfully!");
-        logAdminAction(`Linked Banner ${bannerId} to Product ${productId}`);
-    });
-}
-
-/**
- * FINAL SEQUENCAL INITIALIZATION
- * This connects all parts (1-5) and starts the platform services.
- */
-function initAdminPlatform() {
-    console.log("SRP SHOPPING ADMIN PLATFORM INITIALIZING...");
-    
-    // Check Auth Status
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            // Load all sections
-            runPlatformAnalytics();
-            refreshFinancials(); // From Part 4
-            checkLastScan();      // From Part 3
-            
-            // Set Platform Name (8.20)
-            db.ref('settings/siteName').on('value', snap => {
-                const name = snap.val() || "SRP SHOPPING";
-                document.title = name + " | Admin Panel";
-                document.getElementById('site-name-set').value = name;
+            snapshot.forEach(doc => {
+                const o = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${o.orderId || doc.id}</td>
+                        <td>
+                            <strong>${o.userName}</strong><br>
+                            <small>${o.phone}</small>
+                        </td>
+                        <td>₹${o.totalAmount}</td>
+                        <td><span class="status-pill" style="background:var(--accent-purple)">${o.status}</span></td>
+                        <td>${o.date || 'N/A'}</td>
+                        <td>
+                            <button onclick="viewOrder('${doc.id}')" class="btn btn-primary" style="padding:5px 10px">Manage</button>
+                        </td>
+                    </tr>
+                `;
             });
-
-        } else {
-            console.log("Unauthorized Access. Redirecting...");
-            // Optional: window.location.href = "login.html";
         }
-    });
-}
 
-// Start Platform
-initAdminPlatform();
-/* --- PART 6: THE SECURITY & VALIDATION OVERRIDE --- */
-
-/**
- * 8.7 Admin Security: 2FA & Password Update
- * Handles the logic for Two-Factor Authentication and Password synchronization.
- */
-function changeAdminPassword() {
-    const newPass = document.getElementById('new-admin-pass').value;
-    const user = firebase.auth().currentUser;
-
-    if (!newPass || newPass.length < 8) {
-        alert("Password must be at least 8 characters.");
-        return;
-    }
-
-    user.updatePassword(newPass).then(() => {
-        alert("Admin Password Updated Successfully!");
-        logAdminAction("Admin Password Changed");
-        document.getElementById('new-admin-pass').value = "";
-    }).catch(error => {
-        alert("Error: " + error.message + ". Please re-login to change password.");
-    });
-}
-
-function toggle2FA() {
-    const isEnabled = document.getElementById('2fa-toggle').checked;
-    db.ref('admin/settings/twoFactorEnabled').set(isEnabled)
-    .then(() => {
-        alert(`2FA is now ${isEnabled ? 'Enabled' : 'Disabled'}`);
-        logAdminAction(`Toggled 2FA to ${isEnabled}`);
-    });
-}
-
-/**
- * 8.12 Coupon Management: Creation & Usage Limits
- * Logic to ensure coupons respect expiry and usage limits per user.
- */
-function createCoupon() {
-    const code = document.getElementById('cpn-code').value.toUpperCase();
-    const percent = document.getElementById('cpn-perc').value;
-    const expiry = document.getElementById('cpn-expiry').value;
-    const limit = document.getElementById('cpn-limit').value;
-
-    if (!code || !percent || !expiry) return alert("Fill all coupon details");
-
-    const couponData = {
-        code: code,
-        discount: parseInt(percent),
-        expiryDate: expiry,
-        usageLimit: parseInt(limit),
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        active: true
-    };
-
-    db.ref('coupons/' + code).set(couponData).then(() => {
-        alert("Coupon " + code + " is now LIVE.");
-        logAdminAction("Created Coupon: " + code);
-        loadCoupons();
-    });
-}
-
-function loadCoupons() {
-    const container = document.getElementById('active-coupons');
-    db.ref('coupons').on('value', snap => {
-        container.innerHTML = "";
-        snap.forEach(child => {
-            const c = child.val();
-            container.innerHTML += `
-                <div class="p-2 border-b flex justify-between items-center dark:bg-gray-700 mt-1">
+        async function viewOrder(id) {
+            const doc = await db.collection('orders').doc(id).get();
+            const o = doc.data();
+            const detailDiv = document.getElementById('order-detail-view');
+            
+            detailDiv.innerHTML = `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                     <div>
-                        <b class="text-green-500">${c.code}</b> (${c.discount}%)
-                        <p class="text-[10px]">Expires: ${c.expiryDate}</p>
+                        <p><strong>Customer:</strong> ${o.userName}</p>
+                        <p><strong>Email:</strong> ${o.email}</p>
+                        <p><strong>Address:</strong> ${o.address}, ${o.pincode}</p>
                     </div>
-                    <button onclick="deleteCoupon('${c.code}')" class="text-red-500">Delete</button>
+                    <div>
+                        <p><strong>Order ID:</strong> ${o.orderId}</p>
+                        <p><strong>Tracking:</strong> ${o.trackingId || 'Not Assigned'}</p>
+                        <p><strong>Payment:</strong> ${o.paymentStatus}</p>
+                    </div>
+                </div>
+                <div style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.3); border-radius:10px;">
+                   <img src="${o.productImage}" width="80" style="float:left; margin-right:15px; border-radius:5px;">
+                   <p><strong>Product:</strong> ${o.productName}</p>
+                   <p><strong>ID:</strong> ${o.productId}</p>
                 </div>
             `;
-        });
-    });
-}
-
-function deleteCoupon(code) {
-    if(confirm("Delete " + code + "?")) {
-        db.ref('coupons/' + code).remove();
-        logAdminAction("Deleted Coupon: " + code);
-    }
-}
-
-/**
- * 8.14 Review Moderation Logic
- * Allows admin to scrub fake reviews and approve valid ones.
- */
-function loadReviews() {
-    db.ref('reviews').on('value', snap => {
-        const body = document.getElementById('reviews-body');
-        body.innerHTML = "";
-        snap.forEach(child => {
-            const r = child.val();
-            body.innerHTML += `
-                <tr>
-                    <td>${r.userName} <br><small>${r.productId}</small></td>
-                    <td>${'⭐'.repeat(r.rating)}</td>
-                    <td><p class="text-xs italic">"${r.comment}"</p></td>
-                    <td>
-                        <button onclick="deleteReview('${child.key}')" class="bg-red-500 p-1 text-xs">Delete</button>
-                    </td>
-                </tr>
-            `;
-        });
-    });
-}
-
-function deleteReview(id) {
-    if(confirm("Mark as fake and delete?")) {
-        db.ref('reviews/' + id).remove();
-        logAdminAction("Deleted/Moderated Review ID: " + id);
-    }
-}
-
-/**
- * 8.21 Detailed Code Checker: GitHub API 7-Day Logic
- * This implementation simulates a "File Diff" to find errors.
- */
-async function performGitHubAudit() {
-    const logBox = document.getElementById('code-errors-list');
-    logBox.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Accessing GitHub Repository Contents...</div>`;
-    
-    // Simulate Fetching File List
-    const filesToAudit = ['firebase-config.js', 'product-logic.js', 'auth-gate.js', 'seller-api.php'];
-    
-    for(let file of filesToAudit) {
-        await new Promise(res => setTimeout(res, 800)); // Latency simulation
-        logBox.innerHTML += `<div>> Auditing: ${file}... <span class="text-blue-400">WAIT</span></div>`;
-        
-        // Error Detection Algorithm
-        let bugFound = Math.random() > 0.8; 
-        if(bugFound) {
-            logBox.innerHTML += `<div class="text-red-500">  [X] PROBLEM FOUND: Unsanitized input detected in ${file}.</div>`;
-            logAdminAction("Code Checker detected vulnerability in " + file);
-        } else {
-            logBox.innerHTML += `<div class="text-green-500">  [✓] PASSED: ${file} is clean.</div>`;
-        }
-    }
-    
-    // 7-Day Logic Check (8.21)
-    const nextCheck = new Date();
-    nextCheck.setDate(nextCheck.getDate() + 7);
-    document.getElementById('check-status').innerText = "Next scheduled check: " + nextCheck.toDateString();
-    
-    logBox.innerHTML += `<div class="mt-2 font-bold text-purple-500 border-t border-purple-500 pt-2">AUDIT COMPLETE. No critical blockers.</div>`;
-}
-
-/**
- * 8.20 Platform Control: Overall Website Switch
- */
-function updateSiteSettings() {
-    const siteName = document.getElementById('site-name-set').value;
-    db.ref('settings').update({
-        siteName: siteName,
-        lastUpdated: firebase.database.ServerValue.TIMESTAMP,
-        updatedBy: "Admin_Main"
-    }).then(() => {
-        alert("Global platform settings updated.");
-        logAdminAction("Updated Website Global Settings");
-    });
-}
-
-/**
- * FINAL SEQUENTIAL EXECUTION 
- * Ensures all functions are registered and listeners active.
- */
-function startPlatformServices() {
-    // 8.12
-    loadCoupons();
-    // 8.14
-    loadReviews();
-    // 8.19
-    filterLogs('admin');
-    
-    // Attach Global Event Listeners
-    document.getElementById('theme-toggler').addEventListener('click', () => {
-        const theme = document.body.classList.contains('dark-theme-variables') ? 'dark' : 'light';
-        logAdminAction(`Changed theme to ${theme}`);
-    });
-
-    console.log("SRP SHOPPING Part 6 Integrated Successfully.");
-}
-
-// Kickstart services
-startPlatformServices();
-/* --- PART 7: THE MASTER SYNCHRONIZATION & ANALYTICS OVERRIDE --- */
-
-/**
- * 8.9 & 8.8: Advanced Sales Analytics Engine
- * Generates detailed reports for Total Sales, Orders, and Commission.
- */
-function updateSalesAnalytics() {
-    console.log("8.9: Calculating Sales Analytics...");
-    let totalSales = 0;
-    let totalOrders = 0;
-    let totalCommission = 0;
-    let sellerRevenue = 0;
-
-    db.ref('orders').once('value', (snapshot) => {
-        snapshot.forEach((child) => {
-            const order = child.val();
-            totalOrders++;
-            totalSales += parseFloat(order.price || 0);
             
-            // 8.9: Commission Calculation Logic
-            // Default 10% commission if not specified
-            const comm = order.commission ? parseFloat(order.commission) : (parseFloat(order.price) * 0.10);
-            totalCommission += comm;
-            sellerRevenue += (parseFloat(order.price) - comm);
-        });
-
-        // Inject into DOM
-        const salesEl = document.getElementById('stat-sales');
-        const ordersEl = document.getElementById('stat-orders');
-        const commEl = document.getElementById('income-comm');
-        const revEl = document.getElementById('seller-rev-total');
-
-        if(salesEl) salesEl.innerText = "₹" + totalSales.toLocaleString();
-        if(ordersEl) ordersEl.innerText = totalOrders;
-        if(commEl) commEl.innerText = totalCommission.toFixed(2);
-        if(revEl) revEl.innerText = "₹" + sellerRevenue.toFixed(2);
-
-        console.log("8.9 Analytics Sync Complete.");
-    });
-}
-
-/**
- * 8.21: Automated Code Checker - Deep File Scanner
- * This simulates a recursive scan of GitHub repositories every 7 days.
- */
-async function triggerGitHubDeepScan() {
-    const logOutput = document.getElementById('code-errors-list');
-    const githubBtn = document.querySelector('[onclick="runCodeCheck()"]');
-    
-    if(githubBtn) githubBtn.disabled = true;
-    logOutput.innerHTML += `<div class="text-blue-400 font-bold mt-2">>>> [7-DAY CYCLE START]: RECURSIVE REPO SCANNING...</div>`;
-
-    const repoFiles = [
-        { name: 'app/core/auth.js', lines: 1420 },
-        { name: 'app/ui/product_view.js', lines: 890 },
-        { name: 'server/api/payments.php', lines: 2100 },
-        { name: 'database/schema.sql', lines: 500 },
-        { name: 'admin/panel_v2.js', lines: 3500 }
-    ];
-
-    for (const file of repoFiles) {
-        logOutput.innerHTML += `<div>Scanning ${file.name} (${file.lines} lines)...</div>`;
-        await new Promise(r => setTimeout(r, 700)); // Network delay simulation
-
-        // Logic to "Show problems if there are any" (8.21)
-        if (file.name.includes('payments')) {
-            logOutput.innerHTML += `<div class="text-red-500 font-mono">  [!] CRITICAL ERROR: Unsigned SSL request found in ${file.name}</div>`;
-            logOutput.innerHTML += `<div class="text-red-400 ml-4">  >> Recommendation: Wrap in try-catch and validate header.</div>`;
-        } else if (file.lines > 3000) {
-            logOutput.innerHTML += `<div class="text-yellow-500 font-mono">  [?] WARNING: ${file.name} is too large. Potential performance bottleneck.</div>`;
-        } else {
-            logOutput.innerHTML += `<div class="text-green-500 ml-2">  [PASS] No syntax errors found.</div>`;
+            document.getElementById('update-tracking-id').value = o.trackingId || '';
+            document.getElementById('orderModal').style.display = 'flex';
+            window.currentOrderId = id;
         }
-    }
 
-    logOutput.innerHTML += `<div class="text-white bg-green-700 p-1 mt-2 text-center">SCAN COMPLETE: 1 Error, 1 Warning found.</div>`;
-    if(githubBtn) githubBtn.disabled = false;
-    
-    // Update last check in Firebase
-    db.ref('system/lastCodeCheck').set(Date.now());
-}
+        // Logic for Theme Toggle (8.7 - day/night)
+        function toggleTheme() {
+            const icon = document.getElementById('theme-toggle');
+            if(document.body.style.backgroundColor === 'white') {
+                document.body.style.backgroundColor = 'var(--primary-bg)';
+                document.body.style.color = 'white';
+                icon.className = "fas fa-moon";
+            } else {
+                document.body.style.backgroundColor = 'white';
+                document.body.style.color = '#0f172a';
+                icon.className = "fas fa-sun";
+            }
+        }
 
-/**
- * 8.20: Platform Settings - Global Website Controller
- * Controls maintenance, branding, and global toggles.
- */
-function saveGlobalSettings() {
-    const siteName = document.getElementById('site-name-set').value;
-    const isMaintenance = document.getElementById('maint-btn').innerText.includes("Disable");
-    
-    const settings = {
-        platformName: siteName,
-        maintenanceMode: isMaintenance,
-        lastConfigUpdate: firebase.database.ServerValue.TIMESTAMP,
-        adminSignature: "SRP_MASTER_ADMIN"
-    };
-
-    db.ref('settings/global').update(settings).then(() => {
-        alert("Section 8.20: All Platform Settings Synchronized Successfully.");
-        logAdminAction("Global Platform Settings Updated");
-    });
-}
-
-/**
- * 8.16: Detailed Seller Management - Data Fetcher
- * Displays all details: Aadhar, PAN, GST, etc.
- */
-function fetchAllSellerData() {
-    const container = document.getElementById('seller-cards-container');
-    db.ref('sellers').on('value', (snap) => {
-        container.innerHTML = "";
-        snap.forEach((sellerSnap) => {
-            const s = sellerSnap.val();
-            container.innerHTML += `
-                <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg border-l-4 border-blue-500 mb-4">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-xl font-bold">${s.storeName || 'Unnamed Store'}</h3>
-                            <p class="text-sm text-gray-500">${s.name} | ${s.email}</p>
-                        </div>
-                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">${s.status || 'Pending'}</span>
-                    </div>
-                    <hr class="my-3 opacity-20">
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <p><b>Mobile:</b> ${s.mobile}</p>
-                        <p><b>GST:</b> ${s.gst || 'N/A'}</p>
-                        <p><b>PAN:</b> ${s.pan}</p>
-                        <p><b>Aadhar:</b> ${s.aadhar}</p>
-                        <p class="col-span-2"><b>Address:</b> ${s.address}, ${s.pincode}</p>
-                    </div>
-                    <div class="mt-4 flex gap-2">
-                        <button onclick="updateSellerStatus('${sellerSnap.key}', 'Approved')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs">Approve Seller</button>
-                        <button onclick="updateSellerStatus('${sellerSnap.key}', 'Suspended')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">Suspend</button>
-                    </div>
-                </div>
-            `;
-        });
-    });
-}
-
-/**
- * 8.19: System Logs - Sub-section Partitioning
- * Distributes logs into Admin, Seller, and Order buckets.
- */
-function initializeLogs() {
-    const logsRef = db.ref('logs');
-    // Listen for new admin actions
-    logsRef.child('admin').limitToLast(10).on('child_added', (snap) => {
-        console.log("New Admin Activity:", snap.val().action);
-    });
-}
-
-/**
- * 8.11: Category Icon Assignment Logic
- */
-function renderCategoryList() {
-    const display = document.getElementById('category-display');
-    db.ref('categories').on('value', snap => {
-        display.innerHTML = "";
-        snap.forEach(cat => {
-            const data = cat.val();
-            display.innerHTML += `
-                <div class="flex flex-col items-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                    <span class="material-icons-sharp text-3xl mb-2 text-blue-500">${data.icon || 'category'}</span>
-                    <span class="font-semibold">${data.name}</span>
-                    <button onclick="deleteCategory('${cat.key}')" class="text-red-500 text-[10px] mt-2 underline">Remove</button>
-                </div>
-            `;
-        });
-    });
-}
-
-function deleteCategory(id) {
-    if(confirm("8.11: Delete this category?")) {
-        db.ref('categories/' + id).remove();
-        logAdminAction("Deleted Category ID: " + id);
-    }
-}
-
-/**
- * THE FINAL BOOTSTRAP
- * Connects all event listeners and triggers initial data loads.
- */
-function bootstrapAdminPanel() {
-    console.log("SRP SHOPPING ENGINE: BOOTING...");
-    
-    // Core Initializers
-    updateSalesAnalytics();   // 8.9
-    fetchAllSellerData();     // 8.16
-    renderCategoryList();     // 8.11
-    initializeLogs();         // 8.19
-    
-    // Set 7-day Check logic
-    const lastCheck = localStorage.getItem('lastGithubCheck');
-    const now = Date.now();
-    const weekInMs = 7 * 24 * 60 * 60 * 1000;
-
-    if (!lastCheck || (now - lastCheck) > weekInMs) {
-        console.log("8.21: Automated 7-Day Cycle Triggered.");
-        triggerGitHubDeepScan();
-        localStorage.setItem('lastGithubCheck', now);
-    }
-
-    console.log("SRP SHOPPING: SYSTEM READY.");
-}
-
-// Start the platform
-bootstrapAdminPanel();
+        // Init
+        window.onload = () => {
+            showSection('dashboard');
+        };
 
     </script>
 </body>
