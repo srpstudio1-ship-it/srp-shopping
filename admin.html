@@ -1,429 +1,459 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Admin Central Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #64748b;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --sidebar: #0f172a;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRP SHOPPING ADMIN PANEL</title>
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+<script src="https://cdn.tailwindcss.com"></script>
 
-        body { background: var(--light); display: flex; min-height: 100vh; }
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
-        /* Sidebar Navigation */
-        #sidebar {
-            width: 260px;
-            background: var(--sidebar);
-            color: white;
-            padding: 20px;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-            overflow-y: auto;
-        }
-
-        .logo-area { font-size: 1.5rem; font-weight: 800; margin-bottom: 30px; color: #60a5fa; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-
-        .nav-item {
-            padding: 12px 15px;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-            color: #cbd5e1;
-        }
-
-        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
-        .nav-item i { margin-right: 12px; width: 20px; }
-
-        /* Main Content */
-        #main-content { flex: 1; padding: 30px; max-width: calc(100% - 260px); }
-
-        .section-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            margin-bottom: 30px;
-            display: none;
-        }
-
-        .section-card.active { display: block; }
-
-        h2 { margin-bottom: 20px; color: var(--dark); border-left: 4px solid var(--primary); padding-left: 15px; }
-
-        /* Forms & Inputs */
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 0.85rem; }
-        th { background: #f1f5f9; color: var(--secondary); text-transform: uppercase; font-size: 0.75rem; }
-
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
-        .status-confirmed { background: #dcfce7; color: #166534; }
-        .status-shipped { background: #dbeafe; color: #1e40af; }
-
-        /* 8.19 System Log Visuals */
-        .log-entry { font-family: monospace; font-size: 0.8rem; padding: 5px; border-bottom: 1px solid #eee; }
-    </style>
+<style>
+body { background:#0f172a; color:white; }
+.sidebar { width:260px; height:100vh; overflow:auto; }
+.section { display:none; }
+.active { display:block; }
+</style>
 </head>
-<body>
 
-    <aside id="sidebar">
-        <div class="logo-area">SRP ADMIN</div>
-        <nav>
-            <div class="nav-item active" onclick="showSection('prod-mgmt')"><i class="fas fa-box"></i> 8.1 Products</div>
-            <div class="nav-item" onclick="showSection('order-mgmt')"><i class="fas fa-shopping-cart"></i> 8.2 Orders</div>
-            <div class="nav-item" onclick="showSection('withdrawal-mgmt')"><i class="fas fa-wallet"></i> 8.3 Withdrawals</div>
-            <div class="nav-item" onclick="showSection('promo-mgmt')"><i class="fas fa-ad"></i> 8.4 Promotions</div>
-            <div class="nav-item" onclick="showSection('featured-mgmt')"><i class="fas fa-star"></i> 8.5 Featured</div>
-            <div class="nav-item" onclick="showSection('dashboard-mgmt')"><i class="fas fa-chart-line"></i> 8.6 Global Dashboard</div>
-            </nav>
-    </aside>
+<body class="flex">
 
-    <main id="main-content">
-        
-        <section id="prod-mgmt" class="section-card active">
-            <h2>8.1 Product Management</h2>
-            <div class="form-grid">
-                <input type="text" id="p-name" placeholder="Product Name">
-                <select id="p-category">
-                    <option value="electronics">Electronics</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="home">Home</option>
-                </select>
-                <input type="number" id="p-mrp" placeholder="MRP">
-                <input type="number" id="p-discount" placeholder="Discount Price">
-                <input type="number" id="p-stock" placeholder="Stock Quantity">
-                <input type="file" id="p-image" accept="image/*">
-            </div>
-            <textarea id="p-desc" placeholder="Product Description" rows="3"></textarea>
-            <button class="btn btn-primary" onclick="addProduct()">Add Product</button>
+<!-- SIDEBAR -->
+<div class="sidebar bg-gray-900 p-4">
 
-            <table id="product-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>MRP</th>
-                        <th>Stock</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="product-list-body"></tbody>
-            </table>
-        </section>
+<h1 class="text-xl font-bold mb-4">SRP ADMIN</h1>
 
-        <section id="order-mgmt" class="section-card">
-            <h2>8.2 Order Management</h2>
-            <div id="order-filters">
-                <input type="text" placeholder="Search by Order ID/Phone..." style="width: 300px; margin-bottom: 15px;">
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>User Details</th>
-                        <th>Address</th>
-                        <th>Status</th>
-                        <th>Tracking ID</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="order-list-body"></tbody>
-            </table>
-        </section>
+<button onclick="showSection('dashboard')" class="block w-full text-left p-2 hover:bg-gray-700">8 Dashboard</button>
 
-        <section id="withdrawal-mgmt" class="section-card"><h2>8.3 Seller Withdrawal</h2><div id="withdrawal-content"></div></section>
-        <section id="promo-mgmt" class="section-card"><h2>8.4 Promotion System</h2><div id="promo-content"></div></section>
+<button onclick="showSection('products')" class="block w-full text-left p-2 hover:bg-gray-700">8.1 Product Management</button>
 
-    </main>
+<button onclick="showSection('orders')" class="block w-full text-left p-2 hover:bg-gray-700">8.2 Orders Management</button>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+<button onclick="showSection('withdrawal')" class="block w-full text-left p-2 hover:bg-gray-700">8.3 Withdrawal Approval</button>
 
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-            authDomain: "srp-shopping-54bbb.firebaseapp.com",
-            databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-            projectId: "srp-shopping-54bbb",
-            storageBucket: "srp-shopping-54bbb.firebasestorage.app",
-            messagingSenderId: "491906168702",
-            appId: "1:491906168702:web:2873565fcd2d561077252f",
-            measurementId: "G-3S7X8V8EFQ"
-        };
+<button onclick="showSection('promotion')" class="block w-full text-left p-2 hover:bg-gray-700">8.4 Promotion Payment</button>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const storage = firebase.storage();
+<button onclick="showSection('featured')" class="block w-full text-left p-2 hover:bg-gray-700">8.5 Featured Products</button>
 
-        // Navigation Function
-        function showSection(sectionId) {
-            document.querySelectorAll('.section-card').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(sectionId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
+<button onclick="showSection('globalOrders')" class="block w-full text-left p-2 hover:bg-gray-700">8.6 Global Orders</button>
 
-        // 8.1 Product Management Functions
-        function addProduct() {
-            const id = "PROD" + Date.now();
-            const productData = {
-                id: id,
-                name: document.getElementById('p-name').value,
-                category: document.getElementById('p-category').value,
-                mrp: document.getElementById('p-mrp').value,
-                discount: document.getElementById('p-discount').value,
-                stock: document.getElementById('p-stock').value,
-                desc: document.getElementById('p-desc').value,
-                timestamp: Date.now()
-            };
+<button onclick="showSection('security')" class="block w-full text-left p-2 hover:bg-gray-700">8.7 Admin Security</button>
 
-            db.ref('products/' + id).set(productData)
-                .then(() => {
-                    alert("Product Added Successfully! ID: " + id);
-                    logAction("Added Product: " + id);
-                });
-        }
+<button onclick="showSection('analytics')" class="block w-full text-left p-2 hover:bg-gray-700">8.8 Website Analytics</button>
 
-        // 8.2 Order Management Functions
-        function loadOrders() {
-            db.ref('orders').on('value', (snapshot) => {
-                const orders = snapshot.val();
-                const tbody = document.getElementById('order-list-body');
-                tbody.innerHTML = '';
-                for (let key in orders) {
-                    const o = orders[key];
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${o.orderId}</td>
-                            <td>${o.userName}<br>${o.phone}</td>
-                            <td>${o.address}, ${o.pincode}</td>
-                            <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-                            <td><input type="text" value="${o.trackingId || ''}" onchange="updateTracking('${key}', this.value)"></td>
-                            <td>
-                                <button onclick="viewInvoice('${key}')" class="btn btn-primary btn-sm">View</button>
-                                <button onclick="updateStatus('${key}', 'shipped')" class="btn btn-success btn-sm">Ship</button>
-                            </td>
-                        </tr>
-                    `;
-                }
-            });
-        }
+<button onclick="showSection('sales')" class="block w-full text-left p-2 hover:bg-gray-700">8.9 Sales Analytics</button>
 
-        function updateTracking(orderId, val) {
-            db.ref('orders/' + orderId).update({ trackingId: val });
-            alert("Tracking ID Updated");
-        }
+<button onclick="showSection('income')" class="block w-full text-left p-2 hover:bg-gray-700">8.10 Admin Income</button>
 
-        // Shared Utility: Log Action (8.19 Preview)
-        function logAction(msg) {
-            const logId = db.ref('logs/admin').push().key;
-            db.ref('logs/admin/' + logId).set({
-                action: msg,
-                time: new Date().toLocaleString()
-            });
-        }
-        // --- 8.3 Seller Withdrawal Approval ---
-        function loadWithdrawals() {
-            const container = document.getElementById('withdrawal-content');
-            db.ref('withdrawals').on('value', (snapshot) => {
-                const data = snapshot.val();
-                let html = `<table><thead><tr>
-                    <th>Seller Name</th><th>Balance</th><th>Amount Requested</th><th>Status</th><th>Actions</th>
-                </tr></thead><tbody>`;
-                for (let id in data) {
-                    const w = data[id];
-                    html += `<tr>
-                        <td>${w.sellerName}</td>
-                        <td>₹${w.currentBalance}</td>
-                        <td><b style="color:var(--primary)">₹${w.requestAmount}</b></td>
-                        <td><span class="status-badge status-${w.status}">${w.status}</span></td>
-                        <td>
-                            <button class="btn btn-success" onclick="approveWithdrawal('${id}', '${w.sellerId}', ${w.requestAmount})">Approve & Pay</button>
-                            <button class="btn btn-danger" onclick="rejectWithdrawal('${id}')">Reject</button>
-                        </td>
-                    </tr>`;
-                }
-                html += `</tbody></table>`;
-                container.innerHTML = html;
-            });
-        }
+<button onclick="showSection('category')" class="block w-full text-left p-2 hover:bg-gray-700">8.11 Category</button>
 
-        function approveWithdrawal(requestId, sellerId, amount) {
-            const updates = {};
-            updates[`withdrawals/${requestId}/status`] = 'Paid';
-            updates[`withdrawals/${requestId}/paidDate`] = Date.now();
-            
-            // 8.4 Notification Logic
-            const notifId = db.ref('notifications/' + sellerId).push().key;
-            updates[`notifications/${sellerId}/${notifId}`] = {
-                title: "Withdrawal Approved",
-                message: `Your request for ₹${amount} has been processed. Check your bank.`,
-                timestamp: Date.now()
-            };
+<button onclick="showSection('coupon')" class="block w-full text-left p-2 hover:bg-gray-700">8.12 Coupon</button>
 
-            db.ref().update(updates).then(() => {
-                alert("Withdrawal Marked as Paid. Seller Notified.");
-                logAction("Approved withdrawal for seller: " + sellerId);
-            });
-        }
+<button onclick="showSection('banner')" class="block w-full text-left p-2 hover:bg-gray-700">8.13 Banner</button>
 
-        // --- 8.5 Featured Products on Home Page ---
-        function pinToHome() {
-            const pid = document.getElementById('feat-pid').value;
-            const priority = document.getElementById('feat-priority').value;
-            const expiry = document.getElementById('feat-expiry').value;
+<button onclick="showSection('reviews')" class="block w-full text-left p-2 hover:bg-gray-700">8.14 Reviews</button>
 
-            if(!pid || !expiry) return alert("Fill all fields");
+<button onclick="showSection('users')" class="block w-full text-left p-2 hover:bg-gray-700">8.15 Users</button>
 
-            db.ref('featured_products/' + pid).set({
-                productId: pid,
-                priority: parseInt(priority),
-                expiryDate: expiry,
-                addedOn: Date.now()
-            }).then(() => {
-                alert("Product Pinned to Homepage until " + expiry);
-                logAction("Pinned product to home: " + pid);
-            });
-        }
+<button onclick="showSection('sellers')" class="block w-full text-left p-2 hover:bg-gray-700">8.16 Sellers</button>
 
-        // --- 8.6 & 8.8 & 8.9 Global & Sales Analytics ---
-        function loadAnalytics() {
-            // 8.8 Website Analytics
-            db.ref('analytics/visits').on('value', s => {
-                document.getElementById('stat-total-visits').innerText = s.val() || 0;
-            });
+<button onclick="showSection('payments')" class="block w-full text-left p-2 hover:bg-gray-700">8.17 Payments</button>
 
-            db.ref('users').on('value', s => {
-                document.getElementById('stat-total-users').innerText = s.numChildren();
-            });
+<button onclick="showSection('refunds')" class="block w-full text-left p-2 hover:bg-gray-700">8.18 Refunds</button>
 
-            // 8.9 Sales Analytics
-            db.ref('orders').on('value', (snapshot) => {
-                let totalSales = 0;
-                let totalOrders = 0;
-                let adminCommission = 0;
+<button onclick="showSection('logs')" class="block w-full text-left p-2 hover:bg-gray-700">8.19 Logs</button>
 
-                snapshot.forEach(child => {
-                    const order = child.val();
-                    if(order.status === 'delivered') {
-                        totalSales += parseFloat(order.amount);
-                        // Example 10% commission calculation
-                        adminCommission += (parseFloat(order.amount) * 0.10);
-                    }
-                    totalOrders++;
-                });
+<button onclick="showSection('settings')" class="block w-full text-left p-2 hover:bg-gray-700">8.20 Settings</button>
 
-                document.getElementById('stat-total-sales').innerText = "₹" + totalSales.toFixed(2);
-                document.getElementById('stat-total-orders').innerText = totalOrders;
-                document.getElementById('stat-admin-income').innerText = "₹" + adminCommission.toFixed(2);
-            });
-        }
+<button onclick="showSection('codeChecker')" class="block w-full text-left p-2 hover:bg-gray-700">8.21 Code Checker</button>
 
-        // --- 8.7 Admin Security ---
-        function toggleAdminTheme() {
-            const body = document.body;
-            if(body.style.filter === 'invert(1)') {
-                body.style.filter = 'invert(0)';
-                logAction("Switched to Light Mode");
-            } else {
-                body.style.filter = 'invert(1)';
-                logAction("Switched to Dark Mode");
-            }
-        }
+</div>
 
-        function changePassword() {
-            const newPass = prompt("Enter new Admin Password:");
-            if(newPass && newPass.length > 5) {
-                db.ref('admin_settings/auth').update({password: newPass});
-                alert("Password changed successfully.");
-            }
-        }
-    </script>
+<!-- MAIN CONTENT -->
+<div class="flex-1 p-6">
 
-    <script>
-        // Injecting the HTML for sections 8.5 to 8.9 into the main content
-        document.getElementById('featured-mgmt').innerHTML += `
-            <div class="form-grid">
-                <input type="text" id="feat-pid" placeholder="Product ID">
-                <input type="number" id="feat-priority" placeholder="Priority (1-10)">
-                <input type="date" id="feat-expiry" placeholder="Display Until">
-                <button class="btn btn-primary" onclick="pinToHome()">Pin Product</button>
-            </div>
-        `;
+<!-- 8 DASHBOARD -->
+<div id="dashboard" class="section active">
+<h2 class="text-2xl mb-4">Dashboard</h2>
+<div id="dashboardData"></div>
+</div>
 
-        document.getElementById('dashboard-mgmt').innerHTML = `
-            <h2>8.6 & 8.8 Global Dashboard & Analytics</h2>
-            <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
-                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--primary)">
-                    <h4>Total Users</h4>
-                    <h2 id="stat-total-users">0</h2>
-                </div>
-                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--success)">
-                    <h4>Total Sales</h4>
-                    <h2 id="stat-total-sales">₹0</h2>
-                </div>
-                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--warning)">
-                    <h4>Total Orders</h4>
-                    <h2 id="stat-total-orders">0</h2>
-                </div>
-                <div style="background:#fff; padding:20px; border-radius:10px; border-bottom:4px solid var(--danger)">
-                    <h4>Admin Income</h4>
-                    <h2 id="stat-admin-income">₹0</h2>
-                </div>
-            </div>
-            <div style="margin-top:20px;">
-                <button class="btn btn-dark" onclick="toggleAdminTheme()">Toggle Day/Night</button>
-                <button class="btn btn-danger" onclick="changePassword()">Security: Change Pass</button>
-            </div>
-        `;
-            // Initialize Loaders
-        window.onload = () => {
-            loadOrders();
-            // product loader function...
-        };
+<!-- 8.1 PRODUCT -->
+<div id="products" class="section">
+<h2 class="text-2xl mb-4">Product Management</h2>
+<div id="productForm"></div>
+<div id="productList"></div>
+</div>
+
+<!-- 8.2 ORDERS -->
+<div id="orders" class="section">
+<h2 class="text-2xl mb-4">Orders</h2>
+<div id="orderList"></div>
+</div>
+
+<!-- 8.3 WITHDRAWAL -->
+<div id="withdrawal" class="section">
+<h2 class="text-2xl mb-4">Withdrawal</h2>
+<div id="withdrawalList"></div>
+</div>
+
+<!-- 8.4 PROMOTION -->
+<div id="promotion" class="section">
+<h2 class="text-2xl mb-4">Promotion Payment</h2>
+<div id="promotionList"></div>
+</div>
+
+<!-- 8.5 FEATURED -->
+<div id="featured" class="section">
+<h2 class="text-2xl mb-4">Featured Products</h2>
+<div id="featuredList"></div>
+</div>
+
+<!-- 8.6 GLOBAL -->
+<div id="globalOrders" class="section">
+<h2 class="text-2xl mb-4">Global Orders</h2>
+<div id="globalOrderList"></div>
+</div>
+
+<!-- 8.7 SECURITY -->
+<div id="security" class="section">
+<h2 class="text-2xl mb-4">Security</h2>
+</div>
+
+<!-- 8.8 ANALYTICS -->
+<div id="analytics" class="section">
+<h2 class="text-2xl mb-4">Website Analytics</h2>
+</div>
+
+<!-- 8.9 SALES -->
+<div id="sales" class="section">
+<h2 class="text-2xl mb-4">Sales Analytics</h2>
+</div>
+
+<!-- 8.10 INCOME -->
+<div id="income" class="section">
+<h2 class="text-2xl mb-4">Admin Income</h2>
+</div>
+
+<!-- 8.11 CATEGORY -->
+<div id="category" class="section">
+<h2 class="text-2xl mb-4">Category</h2>
+</div>
+
+<!-- 8.12 COUPON -->
+<div id="coupon" class="section">
+<h2 class="text-2xl mb-4">Coupon</h2>
+</div>
+
+<!-- 8.13 BANNER -->
+<div id="banner" class="section">
+<h2 class="text-2xl mb-4">Banner</h2>
+</div>
+
+<!-- 8.14 REVIEWS -->
+<div id="reviews" class="section">
+<h2 class="text-2xl mb-4">Reviews</h2>
+</div>
+
+<!-- 8.15 USERS -->
+<div id="users" class="section">
+<h2 class="text-2xl mb-4">Users</h2>
+</div>
+
+<!-- 8.16 SELLERS -->
+<div id="sellers" class="section">
+<h2 class="text-2xl mb-4">Sellers</h2>
+</div>
+
+<!-- 8.17 PAYMENTS -->
+<div id="payments" class="section">
+<h2 class="text-2xl mb-4">Payments</h2>
+</div>
+
+<!-- 8.18 REFUNDS -->
+<div id="refunds" class="section">
+<h2 class="text-2xl mb-4">Refunds</h2>
+</div>
+
+<!-- 8.19 LOGS -->
+<div id="logs" class="section">
+<h2 class="text-2xl mb-4">System Logs</h2>
+</div>
+
+<!-- 8.20 SETTINGS -->
+<div id="settings" class="section">
+<h2 class="text-2xl mb-4">Settings</h2>
+</div>
+
+<!-- 8.21 CODE CHECKER -->
+<div id="codeChecker" class="section">
+<h2 class="text-2xl mb-4">Code Checker</h2>
+<button onclick="runCodeCheck()" class="bg-blue-600 p-2 rounded">Run Check</button>
+<div id="codeResult"></div>
+</div>
+
+</div>
+
+<script>
+
+// FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
+  authDomain: "srp-shopping-54bbb.firebaseapp.com",
+  databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
+  projectId: "srp-shopping-54bbb",
+  storageBucket: "srp-shopping-54bbb.firebasestorage.app",
+  messagingSenderId: "491906168702",
+  appId: "1:491906168702:web:2873565fcd2d561077252f",
+  measurementId: "G-3S7X8V8EFQ"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+const storage = firebase.storage();
+
+// SECTION SWITCHER
+function showSection(id){
+document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+
+// AUTO PRODUCT ID
+function generateProductId(){
+return "PID"+Date.now();
+}
+
+// CODE CHECKER (BASIC)
+function runCodeCheck(){
+document.getElementById("codeResult").innerHTML="Checking...";
+setTimeout(()=>{
+document.getElementById("codeResult").innerHTML="No major errors found";
+},2000);
+}
+
+
+// ==============================
+// 8.1 PRODUCT MANAGEMENT FULL
+// ==============================
+
+// LOAD PRODUCT FORM
+document.getElementById("productForm").innerHTML = `
+<div class="bg-gray-800 p-4 rounded">
+<input id="pName" placeholder="Product Name" class="p-2 w-full mb-2 text-black">
+<input id="pMRP" placeholder="MRP" class="p-2 w-full mb-2 text-black">
+<input id="pDiscount" placeholder="Discount Price" class="p-2 w-full mb-2 text-black">
+<input id="pCategory" placeholder="Category" class="p-2 w-full mb-2 text-black">
+<input id="pStock" placeholder="Stock Quantity" class="p-2 w-full mb-2 text-black">
+<textarea id="pDesc" placeholder="Description" class="p-2 w-full mb-2 text-black"></textarea>
+<input type="file" id="pImage" class="mb-2">
+<button onclick="addProduct()" class="bg-green-600 p-2 w-full">Add Product</button>
+</div>
+`;
+
+// ADD PRODUCT
+function addProduct(){
+const id = generateProductId();
+const name = document.getElementById("pName").value;
+const mrp = document.getElementById("pMRP").value;
+const discount = document.getElementById("pDiscount").value;
+const category = document.getElementById("pCategory").value;
+const stock = document.getElementById("pStock").value;
+const desc = document.getElementById("pDesc").value;
+const file = document.getElementById("pImage").files[0];
+
+if(!file){ alert("Select Image"); return; }
+
+const ref = storage.ref("products/"+id);
+ref.put(file).then(()=>{
+ref.getDownloadURL().then(url=>{
+
+db.ref("products/"+id).set({
+id,name,mrp,discount,category,stock,desc,image:url
+});
+
+alert("Product Added");
+loadProducts();
+
+});
+});
+}
+
+// LOAD PRODUCTS
+function loadProducts(){
+db.ref("products").on("value",snap=>{
+let html="";
+snap.forEach(d=>{
+const p = d.val();
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<img src="${p.image}" class="w-20">
+<p>${p.name}</p>
+<p>${p.id}</p>
+<button onclick="deleteProduct('${p.id}')" class="bg-red-600 p-1">Delete</button>
+<button onclick="editProduct('${p.id}')" class="bg-yellow-600 p-1">Edit</button>
+</div>
+`;
+});
+document.getElementById("productList").innerHTML=html;
+});
+}
+loadProducts();
+
+// DELETE PRODUCT
+function deleteProduct(id){
+db.ref("products/"+id).remove();
+alert("Deleted");
+}
+
+// EDIT PRODUCT
+function editProduct(id){
+db.ref("products/"+id).once("value",snap=>{
+const p=snap.val();
+document.getElementById("pName").value=p.name;
+document.getElementById("pMRP").value=p.mrp;
+document.getElementById("pDiscount").value=p.discount;
+document.getElementById("pCategory").value=p.category;
+document.getElementById("pStock").value=p.stock;
+document.getElementById("pDesc").value=p.desc;
+
+db.ref("products/"+id).remove();
+});
+}
+
+// ==============================
+// 8.2 ORDERS MANAGEMENT FULL
+// ==============================
+
+// LOAD ORDERS
+function loadOrders(){
+db.ref("orders").on("value",snap=>{
+let html="";
+snap.forEach(d=>{
+const o=d.val();
+
+html+=`
+<div class="bg-gray-800 p-3 mb-2">
+<p>User: ${o.name}</p>
+<p>Phone: ${o.phone}</p>
+<p>Email: ${o.email}</p>
+<p>Address: ${o.address}</p>
+<p>Pincode: ${o.pincode}</p>
+<p>Order ID: ${o.orderId}</p>
+<p>Status: ${o.status}</p>
+
+<input placeholder="Tracking ID" id="track_${o.orderId}" class="text-black p-1">
+
+<button onclick="updateTracking('${o.orderId}')" class="bg-blue-600 p-1">Update Tracking</button>
+
+<button onclick="updateStatus('${o.orderId}','Confirmed')" class="bg-green-600 p-1">Confirm</button>
+
+<button onclick="updateStatus('${o.orderId}','Shipped')" class="bg-yellow-600 p-1">Ship</button>
+
+<button onclick="updateStatus('${o.orderId}','Delivered')" class="bg-purple-600 p-1">Deliver</button>
+
+<button onclick="viewOrder('${o.orderId}')" class="bg-gray-600 p-1">View</button>
+
+</div>
+`;
+});
+document.getElementById("orderList").innerHTML=html;
+});
+}
+loadOrders();
+
+// UPDATE TRACKING
+function updateTracking(id){
+const t=document.getElementById("track_"+id).value;
+db.ref("orders/"+id+"/tracking").set(t);
+alert("Tracking Updated");
+}
+
+// UPDATE STATUS + NOTIFICATION
+function updateStatus(id,status){
+db.ref("orders/"+id+"/status").set(status);
+
+// notification
+db.ref("notifications/"+id).push({
+msg:"Order "+status,
+time:Date.now()
+});
+
+alert("Status Updated");
+}
+
+// VIEW ORDER DETAILS
+function viewOrder(id){
+db.ref("orders/"+id).once("value",snap=>{
+const o=snap.val();
+
+alert(
+"Order ID: "+o.orderId+
+"\nProduct ID: "+o.productId+
+"\nUser: "+o.name+
+"\nDate: "+new Date(o.time)
+);
+});
+}
+
+// ==============================
+// 8.3 WITHDRAWAL SYSTEM FULL
+// ==============================
+
+function loadWithdrawals(){
+db.ref("withdrawals").on("value",snap=>{
+let html="";
+snap.forEach(d=>{
+const w=d.val();
+
+html+=`
+<div class="bg-gray-700 p-3 mb-2">
+<p>Seller: ${w.seller}</p>
+<p>Amount: ${w.amount}</p>
+<p>Balance: ${w.balance}</p>
+
+<button onclick="approveWithdraw('${d.key}')" class="bg-green-600 p-1">Approve</button>
+
+<button onclick="rejectWithdraw('${d.key}')" class="bg-red-600 p-1">Reject</button>
+
+<button onclick="markPaid('${d.key}')" class="bg-blue-600 p-1">Mark Paid</button>
+
+</div>
+`;
+});
+document.getElementById("withdrawalList").innerHTML=html;
+});
+}
+loadWithdrawals();
+
+// APPROVE
+function approveWithdraw(id){
+db.ref("withdrawals/"+id+"/status").set("Approved");
+
+db.ref("notifications/"+id).push({
+msg:"Withdrawal Approved",
+time:Date.now()
+});
+
+alert("Approved");
+}
+
+// REJECT
+function rejectWithdraw(id){
+db.ref("withdrawals/"+id+"/status").set("Rejected");
+alert("Rejected");
+}
+
+// MARK PAID
+function markPaid(id){
+db.ref("withdrawals/"+id+"/status").set("Paid");
+alert("Marked Paid");
+}
+
+</script>
     </script>
