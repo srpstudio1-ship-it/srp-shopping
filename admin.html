@@ -1264,52 +1264,171 @@ alert("Website Active: "+val);
 });
 }
 
+
 // ==============================
-// 8.21 ADVANCED CODE CHECKER
+// 8.21 REAL CODE CHECKER (ADVANCED)
+// ==============================
+
+// FILES TO CHECK (ADD MORE IF NEEDED)
+const filesToCheck = [
+"admin.html",
+"index.html"
+];
+
+// MAIN CHECK FUNCTION
+async function runCodeCheck(){
+
+document.getElementById("codeResult").innerHTML="Scanning files...";
+
+let finalReport = "";
+
+for(let file of filesToCheck){
+
+try{
+
+const res = await fetch(file);
+const text = await res.text();
+
+let lines = text.split("\n");
+
+let fileReport = `<h3 class='text-xl mt-4'>File: ${file}</h3>`;
+
+// ==============================
+// CHECK 1: MISSING ALT TAG
+// ==============================
+lines.forEach((line,i)=>{
+if(line.includes("<img") && !line.includes("alt=")){
+fileReport += `
+<div class="bg-red-700 p-2 mt-1">
+❌ Missing ALT tag<br>
+Line: ${i+1}<br>
+Code: ${line.trim()}<br>
+Solution: Add alt="description"
+</div>
+`;
+}
+});
+
+// ==============================
+// CHECK 2: EMPTY ATTRIBUTES
+// ==============================
+lines.forEach((line,i)=>{
+if(line.includes('=""')){
+fileReport += `
+<div class="bg-yellow-700 p-2 mt-1">
+⚠ Empty attribute<br>
+Line: ${i+1}<br>
+Code: ${line.trim()}<br>
+Solution: Remove or fill attribute
+</div>
+`;
+}
+});
+
+// ==============================
+// CHECK 3: UNUSED VARIABLES (BASIC)
+// ==============================
+let vars = [];
+lines.forEach((line)=>{
+let match = line.match(/const\s+(\w+)/);
+if(match){ vars.push(match[1]); }
+});
+
+vars.forEach(v=>{
+let usage = text.split(v).length - 1;
+if(usage <= 1){
+fileReport += `
+<div class="bg-yellow-600 p-2 mt-1">
+⚠ Possibly unused variable: ${v}<br>
+Solution: Remove or use variable
+</div>
+`;
+}
+});
+
+// ==============================
+// CHECK 4: CONSOLE LOGS (PRODUCTION WARNING)
+// ==============================
+lines.forEach((line,i)=>{
+if(line.includes("console.log")){
+fileReport += `
+<div class="bg-blue-700 p-2 mt-1">
+ℹ Console log found<br>
+Line: ${i+1}<br>
+Solution: Remove in production
+</div>
+`;
+}
+});
+
+// ==============================
+// CHECK 5: INLINE STYLES WARNING
+// ==============================
+lines.forEach((line,i)=>{
+if(line.includes("style=")){
+fileReport += `
+<div class="bg-purple-700 p-2 mt-1">
+⚠ Inline CSS used<br>
+Line: ${i+1}<br>
+Solution: Move to CSS file
+</div>
+`;
+}
+});
+
+// IF CLEAN
+if(fileReport === `<h3 class='text-xl mt-4'>File: ${file}</h3>`){
+fileReport += `
+<div class="bg-green-700 p-2 mt-2">
+✔ No major issues found
+</div>
+`;
+}
+
+finalReport += fileReport;
+
+}catch(err){
+finalReport += `
+<div class="bg-red-800 p-2 mt-2">
+❌ Error loading file: ${file}<br>
+Make sure file exists in same directory
+</div>
+`;
+}
+
+}
+
+// SHOW RESULT
+document.getElementById("codeResult").innerHTML = finalReport;
+
+// SAVE LOG
+db.ref("logs/admin").push({
+msg:"Real Code check executed",
+time:Date.now()
+});
+
+}
+
+// ==============================
+// AUTO CHECK EVERY 7 DAYS
 // ==============================
 
 let autoCheckInterval=null;
 
-// RUN MANUAL CHECK
-function runCodeCheck(){
-
-document.getElementById("codeResult").innerHTML="Scanning GitHub files...";
-
-setTimeout(()=>{
-
-let result=`
-✔ HTML: OK<br>
-✔ CSS: OK<br>
-✔ JS: Minor warnings<br>
-⚠ Missing alt tags in images<br>
-⚠ Unused variables in JS<br>
-✔ Firebase Rules: OK
-`;
-
-document.getElementById("codeResult").innerHTML=result;
-
-// SAVE LOG
-db.ref("logs/admin").push({
-msg:"Code check executed",
-time:Date.now()
-});
-
-},3000);
-}
-
-// AUTO CHECK EVERY 7 DAYS (SIMULATION)
 function startAutoCodeCheck(){
 
 if(autoCheckInterval) return;
 
 autoCheckInterval=setInterval(()=>{
 runCodeCheck();
-},604800000); // 7 days
+},604800000);
 
 }
 
-// START AUTO CHECK ON LOAD
 startAutoCodeCheck();
+
+
+
 
 </script>
 </body>
