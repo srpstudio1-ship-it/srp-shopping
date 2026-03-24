@@ -376,4 +376,273 @@
             });
             alert("Withdrawal " + status);
         };
+                // --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
+        onValue(ref(db, 'promotions'), (snapshot) => {
+            const container = document.getElementById('sec-8.4');
+            let html = `
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-bold mb-4 italic text-indigo-600">8.4 Seller Promotion Payment Records</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="p-3">Seller & Documents</th>
+                                <th class="p-3">Product ID</th>
+                                <th class="p-3">Contact</th>
+                                <th class="p-3">Payment Recv.</th>
+                                <th class="p-3">Reference</th>
+                            </tr>`;
+            
+            snapshot.forEach(child => {
+                const p = child.val();
+                html += `
+                    <tr class="border-b">
+                        <td class="p-3">
+                            <div class="font-bold text-indigo-800">${p.sellerName}</div>
+                            <div class="text-[10px] text-gray-500 uppercase">
+                                Aadhar: ${p.aadhar} | PAN: ${p.pan} | GST: ${p.gst}
+                            </div>
+                        </td>
+                        <td class="p-3 font-mono text-xs">${p.productId}</td>
+                        <td class="p-3">${p.mobile}</td>
+                        <td class="p-3 font-bold text-green-600">₹${p.amount}</td>
+                        <td class="p-3 text-gray-500">${p.reference || 'N/A'}</td>
+                    </tr>`;
+            });
+            html += `</table></div></div>`;
+            container.innerHTML = html;
+        });
+
+        // --- 8.5 FEATURED PRODUCTS (HOME PAGE PINNING) ---
+        window.pinToHome = () => {
+            const pid = document.getElementById('feat-pid').value;
+            const sid = document.getElementById('feat-sid').value;
+            const priority = document.getElementById('feat-priority').value;
+            const expiry = document.getElementById('feat-expiry').value;
+
+            if(!pid || !expiry) return alert("Product ID and Expiry Date are required");
+
+            set(ref(db, 'featured/' + pid), {
+                productId: pid,
+                sellerProductId: sid,
+                priority: parseInt(priority),
+                expiryDate: expiry,
+                timestamp: Date.now()
+            });
+            alert("Product Pinned to Homepage Top until " + expiry);
+        };
+
+        onValue(ref(db, 'featured'), (snapshot) => {
+            const container = document.getElementById('sec-8.5');
+            let listHtml = "";
+            snapshot.forEach(child => {
+                const f = child.val();
+                listHtml += `
+                    <div class="flex items-center justify-between p-3 border rounded-lg mb-2 bg-indigo-50">
+                        <div>
+                            <span class="font-bold">ID: ${f.productId}</span> 
+                            <span class="text-xs ml-2 text-gray-500">Expires: ${f.expiryDate}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-xs">Priority: ${f.priority}</span>
+                            <button onclick="removeFeatured('${child.key}')" class="text-red-500"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-bold mb-4">8.5 Pin Product to Homepage</h3>
+                        <input type="text" id="feat-pid" placeholder="Product ID (SRP-XXXX)">
+                        <input type="text" id="feat-sid" placeholder="Seller Product ID">
+                        <input type="number" id="feat-priority" placeholder="Display Priority (1-100)">
+                        <label class="text-xs font-bold text-gray-500">Display Until Date:</label>
+                        <input type="date" id="feat-expiry">
+                        <button onclick="pinToHome()" class="btn-primary w-full">Apply Pin Priority</button>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-bold mb-4">Active Featured Products</h3>
+                        <div id="featured-list-items">${listHtml}</div>
+                    </div>
+                </div>`;
+        });
+
+        window.removeFeatured = (key) => {
+            remove(ref(db, 'featured/' + key));
+        };
+
+        // --- 8.6 GLOBAL ORDER DASHBOARD ---
+        onValue(ref(db, 'orders'), (snapshot) => {
+            const container = document.getElementById('sec-8.6');
+            let totalComm = 0;
+            let orderRows = "";
+            
+            snapshot.forEach(child => {
+                const o = child.val();
+                const comm = (parseFloat(o.totalAmount) * 0.10); // Example 10% commission
+                totalComm += comm;
+                orderRows += `
+                    <tr class="border-b text-xs">
+                        <td class="p-3 font-bold">${o.orderId}</td>
+                        <td class="p-3">${o.userName}<br><span class="text-gray-400">${o.email}</span></td>
+                        <td class="p-3">${o.sellerName || 'Direct'}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded">${o.paymentStatus || 'Paid'}</span></td>
+                        <td class="p-3 font-bold">₹${o.totalAmount}</td>
+                        <td class="p-3 text-blue-600 font-bold">₹${comm.toFixed(2)}</td>
+                    </tr>`;
+            });
+
+            container.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold">8.6 Global Order Analytics</h3>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Total Platform Commission</p>
+                            <p class="text-2xl font-black text-blue-600">₹${totalComm.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-3">Order ID</th>
+                                <th class="p-3">User</th>
+                                <th class="p-3">Seller</th>
+                                <th class="p-3">Payment</th>
+                                <th class="p-3">Amount</th>
+                                <th class="p-3">Comm. (10%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${orderRows}</tbody>
+                    </table>
+                </div>`;
+        });
+
+        // --- 8.7 ADMIN SECURITY & THEME ---
+        window.updateAdminPassword = () => {
+            const newPass = document.getElementById('admin-new-pass').value;
+            if(newPass.length < 6) return alert("Password too weak!");
+            update(ref(db, 'admin/settings'), { password: newPass });
+            alert("Security Credentials Updated");
+        };
+
+        window.toggle2FA = (status) => {
+            update(ref(db, 'admin/settings'), { twoFactor: status });
+            alert("2FA Login " + (status ? "Enabled" : "Disabled"));
+        };
+
+        const sec87 = document.getElementById('sec-8.7');
+        sec87.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-bold mb-4 text-red-600"><i class="fas fa-lock mr-2"></i> 8.7 Admin Security</h3>
+                    <label class="text-sm font-bold">Change Admin Password</label>
+                    <input type="password" id="admin-new-pass" placeholder="Enter new strong password">
+                    <button onclick="updateAdminPassword()" class="bg-red-600 text-white w-full py-2 rounded-lg mb-6">Update Password</button>
+                    
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-bold">Enable 2FA Login</p>
+                            <p class="text-xs text-gray-500">Adds extra layer of security</p>
+                        </div>
+                        <button onclick="toggle2FA(true)" class="text-green-600 font-bold">Enable</button>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-bold mb-4"><i class="fas fa-adjust mr-2"></i> Appearance Control</h3>
+                    <p class="text-sm text-gray-500 mb-4">Switch between Day and Night mode manually.</p>
+                    <div class="flex gap-4">
+                        <button onclick="setTheme('day')" class="flex-1 py-3 rounded-lg border-2 border-yellow-400 text-yellow-600 font-bold">
+                            <i class="fas fa-sun mr-2"></i> Day Mode
+                        </button>
+                        <button onclick="setTheme('night')" class="flex-1 py-3 rounded-lg bg-gray-900 text-white font-bold">
+                            <i class="fas fa-moon mr-2"></i> Night Mode
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+
+        window.setTheme = (mode) => {
+            const body = document.getElementById('adminBody');
+            if(mode === 'night') body.classList.add('dark-mode');
+            else body.classList.remove('dark-mode');
+        };
+
+        // --- 8.8, 8.9, 8.10 ANALYTICS ENGINE ---
+        function runAnalytics() {
+            onValue(ref(db, 'stats'), (snap) => {
+                const s = snap.val() || {};
+                const sec88 = document.getElementById('sec-8.8');
+                
+                // Income Calculation (8.10)
+                const totalCommission = s.totalCommission || 0;
+                const promotionFees = s.promotionFees || 0;
+                const totalAdminIncome = totalCommission + promotionFees;
+
+                sec88.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                                <p class="text-xs text-gray-400 uppercase">Total Users</p>
+                                <p class="text-xl font-bold">${s.totalUsers || 0}</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                                <p class="text-xs text-gray-400 uppercase">Total Sellers</p>
+                                <p class="text-xl font-bold">${s.totalSellers || 0}</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm text-center border-b-4 border-green-500">
+                                <p class="text-xs text-gray-400 uppercase">Today Users</p>
+                                <p class="text-xl font-bold">${s.todayUsers || 0}</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm text-center border-b-4 border-indigo-500">
+                                <p class="text-xs text-gray-400 uppercase">Today Sellers</p>
+                                <p class="text-xl font-bold">${s.todaySellers || 0}</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                                <p class="text-xs text-gray-400 uppercase">Site Visits</p>
+                                <p class="text-xl font-bold">${s.totalVisits || 0}</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm text-center border-b-4 border-red-500">
+                                <p class="text-xs text-gray-400 uppercase">Today Visits</p>
+                                <p class="text-xl font-bold">${s.todayVisits || 0}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-indigo-900 text-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-indigo-200 font-bold mb-4">8.9 Sales & Revenue</h3>
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <p class="text-xs opacity-70">Gross Sales Volume</p>
+                                        <p class="text-3xl font-black">₹${s.totalSales || 0}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs opacity-70">Total Orders</p>
+                                        <p class="text-xl font-bold">${s.totalOrders || 0}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-green-600 text-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-green-100 font-bold mb-4">8.10 Total Admin Income</h3>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span>Earned Commission:</span>
+                                        <span class="font-bold">₹${totalCommission.toFixed(2)}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span>Promotion Payments:</span>
+                                        <span class="font-bold">₹${promotionFees.toFixed(2)}</span>
+                                    </div>
+                                    <hr class="opacity-20">
+                                    <div class="flex justify-between text-xl font-black">
+                                        <span>NET INCOME:</span>
+                                        <span>₹${totalAdminIncome.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+        runAnalytics();
+
 </script>
