@@ -1265,89 +1265,101 @@ alert("Website Active: "+val);
 }
 
 
+
 // ==============================
-// 8.21 REAL CODE CHECKER (ADVANCED)
+// 8.21 PRO GITHUB CODE CHECKER
 // ==============================
 
-// FILES TO CHECK (ADD MORE IF NEEDED)
-const filesToCheck = [
-"admin.html",
-"index.html"
-];
+const GITHUB_USER = "your-username";
+const GITHUB_REPO = "your-repo";
 
-// MAIN CHECK FUNCTION
 async function runCodeCheck(){
 
-document.getElementById("codeResult").innerHTML="Scanning files...";
+document.getElementById("codeResult").innerHTML="Scanning GitHub repository...";
 
-let finalReport = "";
-
-for(let file of filesToCheck){
+let report="";
 
 try{
 
-const res = await fetch(file);
-const text = await res.text();
+// GET ALL FILES FROM REPO
+const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/git/trees/main?recursive=1`);
+const data = await res.json();
 
-let lines = text.split("\n");
+const files = data.tree.filter(f =>
+f.path.endsWith(".html") || f.path.endsWith(".js")
+);
 
-let fileReport = `<h3 class='text-xl mt-4'>File: ${file}</h3>`;
+for(let file of files){
+
+const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${file.path}`;
+
+try{
+
+const fileRes = await fetch(fileUrl);
+const text = await fileRes.text();
+
+const lines = text.split("\n");
+
+let fileReport = `<h3 class="text-xl mt-4">📄 File: ${file.path}</h3>`;
 
 // ==============================
-// CHECK 1: MISSING ALT TAG
+// CHECK 1: MISSING ALT (REAL)
 // ==============================
 lines.forEach((line,i)=>{
-if(line.includes("<img") && !line.includes("alt=")){
+if(line.includes("<img")){
+if(!/alt\s*=/.test(line)){
 fileReport += `
 <div class="bg-red-700 p-2 mt-1">
 ❌ Missing ALT tag<br>
 Line: ${i+1}<br>
 Code: ${line.trim()}<br>
-Solution: Add alt="description"
-</div>
-`;
+Fix: Add alt="description"
+</div>`;
+}
 }
 });
 
 // ==============================
-// CHECK 2: EMPTY ATTRIBUTES
+// CHECK 2: EMPTY HTML ATTRIBUTES ONLY
 // ==============================
 lines.forEach((line,i)=>{
-if(line.includes('=""')){
+if(line.includes("<") && line.includes(">")){
+let matches = line.match(/\s\w+=""/g);
+if(matches){
 fileReport += `
 <div class="bg-yellow-700 p-2 mt-1">
-⚠ Empty attribute<br>
+⚠ Empty HTML attribute<br>
 Line: ${i+1}<br>
 Code: ${line.trim()}<br>
-Solution: Remove or fill attribute
-</div>
-`;
+Fix: Fill or remove attribute
+</div>`;
+}
 }
 });
 
 // ==============================
-// CHECK 3: UNUSED VARIABLES (BASIC)
+// CHECK 3: UNUSED VARIABLES (SMART)
 // ==============================
 let vars = [];
-lines.forEach((line)=>{
-let match = line.match(/const\s+(\w+)/);
-if(match){ vars.push(match[1]); }
+lines.forEach(line=>{
+let m = line.match(/const\s+(\w+)/);
+if(m){ vars.push(m[1]); }
 });
 
 vars.forEach(v=>{
-let usage = text.split(v).length - 1;
-if(usage <= 1){
+let regex = new RegExp("\\b"+v+"\\b","g");
+let usage = text.match(regex);
+if(usage && usage.length <= 1){
 fileReport += `
 <div class="bg-yellow-600 p-2 mt-1">
-⚠ Possibly unused variable: ${v}<br>
-Solution: Remove or use variable
-</div>
-`;
+⚠ Unused variable: ${v}<br>
+Fix: Remove or use variable
+</div>`;
 }
 });
 
 // ==============================
-// CHECK 4: CONSOLE LOGS (PRODUCTION WARNING)
+// CHECK 4: CONSOLE LOG
 // ==============================
 lines.forEach((line,i)=>{
 if(line.includes("console.log")){
@@ -1355,74 +1367,71 @@ fileReport += `
 <div class="bg-blue-700 p-2 mt-1">
 ℹ Console log found<br>
 Line: ${i+1}<br>
-Solution: Remove in production
-</div>
-`;
+Fix: Remove in production
+</div>`;
 }
 });
 
 // ==============================
-// CHECK 5: INLINE STYLES WARNING
+// CHECK 5: INLINE STYLE
 // ==============================
 lines.forEach((line,i)=>{
-if(line.includes("style=")){
+if(/style\s*=/.test(line)){
 fileReport += `
 <div class="bg-purple-700 p-2 mt-1">
 ⚠ Inline CSS used<br>
 Line: ${i+1}<br>
-Solution: Move to CSS file
-</div>
-`;
+Fix: Move to CSS class
+</div>`;
 }
 });
 
-// IF CLEAN
-if(fileReport === `<h3 class='text-xl mt-4'>File: ${file}</h3>`){
+// ==============================
+// CLEAN FILE CASE
+// ==============================
+if(fileReport === `<h3 class="text-xl mt-4">📄 File: ${file.path}</h3>`){
 fileReport += `
 <div class="bg-green-700 p-2 mt-2">
-✔ No major issues found
-</div>
-`;
+✔ No issues found
+</div>`;
 }
 
-finalReport += fileReport;
+report += fileReport;
 
 }catch(err){
-finalReport += `
+report += `
 <div class="bg-red-800 p-2 mt-2">
-❌ Error loading file: ${file}<br>
-Make sure file exists in same directory
-</div>
-`;
+❌ Failed to read file: ${file.path}
+</div>`;
 }
 
 }
 
 // SHOW RESULT
-document.getElementById("codeResult").innerHTML = finalReport;
+document.getElementById("codeResult").innerHTML = report;
 
 // SAVE LOG
 db.ref("logs/admin").push({
-msg:"Real Code check executed",
+msg:"GitHub full scan executed",
 time:Date.now()
 });
 
+}catch(err){
+document.getElementById("codeResult").innerHTML = `
+<div class="bg-red-800 p-2">
+❌ Failed to fetch repository<br>
+Check repo name / branch (main)
+</div>`;
 }
 
-// ==============================
-// AUTO CHECK EVERY 7 DAYS
-// ==============================
+}
 
+// AUTO CHECK EVERY 7 DAYS
 let autoCheckInterval=null;
 
 function startAutoCodeCheck(){
-
 if(autoCheckInterval) return;
-
-autoCheckInterval=setInterval(()=>{
-runCodeCheck();
-},604800000);
-
+autoCheckInterval=setInterval(runCodeCheck,604800000);
 }
 
 startAutoCodeCheck();
