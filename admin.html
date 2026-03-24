@@ -470,4 +470,452 @@
                 document.getElementById('stat-total-sellers').innerText = data.totalSellers || 0;
             });
         }
+                // Continuation of script from Part 1...
+        function initCharts() {
+            const visitCtx = document.getElementById('visitChart').getContext('2d');
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+
+            const gradient = visitCtx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+            gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+            window.visitChartObj = new Chart(visitCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Site Visits (8.8)',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#6366f1',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+
+            window.salesChartObj = new Chart(salesCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Electronics', 'Fashion', 'Home', 'Beauty', 'Toys'],
+                    datasets: [{
+                        label: 'Revenue (8.9)',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: '#a855f7'
+                    }]
+                },
+                options: { responsive: true }
+            });
+            
+            // Sync charts with real-time data
+            db.ref('analytics/dailyVisits').on('value', snap => {
+                const vals = snap.val() || [120, 450, 300, 900, 560, 1100, 800];
+                window.visitChartObj.data.datasets[0].data = vals;
+                window.visitChartObj.update();
+            });
+        }
+
+        // 8.2 ADMIN ORDERS MANAGEMENT LOGIC
+        function loadOrders() {
+            const container = document.getElementById('order-list-container');
+            db.ref('orders').on('value', (snapshot) => {
+                container.innerHTML = '';
+                snapshot.forEach((child) => {
+                    const order = child.val();
+                    const orderDate = new Date(order.timestamp).toLocaleString();
+                    
+                    const card = `
+                        <div class="glass-card p-6 flex flex-wrap lg:flex-nowrap gap-6 items-center hover:border-indigo-500/50 transition duration-300">
+                            <div class="flex-shrink-0 cursor-pointer" onclick="viewOrderDetails('${child.key}')">
+                                <img src="${order.productImage}" class="w-20 h-20 rounded-lg object-cover border border-white/10">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-lg">Order ID: ${order.orderId}</h4>
+                                    <span class="status-badge ${getStatusColor(order.status)}">${order.status}</span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-400">
+                                    <p><i class="fas fa-user mr-2"></i>${order.userName}</p>
+                                    <p><i class="fas fa-phone mr-2"></i>${order.phone}</p>
+                                    <p><i class="fas fa-barcode mr-2"></i>PID: ${order.productId}</p>
+                                    <p><i class="fas fa-calendar mr-2"></i>${orderDate}</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2 w-full lg:w-48">
+                                <input type="text" placeholder="Tracking ID" value="${order.trackingId || ''}" 
+                                    onchange="updateTracking('${child.key}', this.value)" 
+                                    class="form-input text-xs">
+                                <select onchange="updateOrderStatus('${child.key}', this.value)" class="form-input text-xs bg-slate-800">
+                                    <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                                    <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                    <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            });
+        }
+
+        async function updateOrderStatus(orderKey, status) {
+            await db.ref(`orders/${orderKey}`).update({ status: status });
+            // 8.2 Real Notification Trigger
+            sendNotification(orderKey, `Order ${status}`, `Your order #${orderKey} status has been updated to ${status}.`);
+            if(status === 'Delivered') {
+                calculateAdminCommission(orderKey);
+            }
+        }
+
+        async function updateTracking(orderKey, tid) {
+            await db.ref(`orders/${orderKey}`).update({ trackingId: tid });
+            alert("Tracking ID Updated for " + orderKey);
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'Confirmed': return 'bg-blue-500/20 text-blue-400';
+                case 'Shipped': return 'bg-amber-500/20 text-amber-400';
+                case 'Delivered': return 'bg-emerald-500/20 text-emerald-400';
+                default: return 'bg-slate-500/20 text-slate-400';
+            }
+        }
+
+        // 8.3 & 8.4 SELLER PAYOUTS & PROMOTIONS LOGIC
+        function loadSellerPayouts() {
+            const wList = document.getElementById('withdrawal-list');
+            const pList = document.getElementById('promotion-list');
+
+            // 8.3 Withdrawals
+            db.ref('withdrawals').on('value', snap => {
+                wList.innerHTML = '';
+                snap.forEach(child => {
+                    const data = child.val();
+                    const item = `
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold">${data.sellerName}</span>
+                                <span class="text-emerald-400 font-bold">₹${data.amount}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mb-3">
+                                Pending Balance: ₹${data.pendingAmount} | Date: ${data.date}
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="approveWithdrawal('${child.key}', '${data.sellerId}', ${data.amount})" 
+                                    class="flex-1 py-1 text-xs bg-emerald-600 rounded-md hover:bg-emerald-700">Approve & Pay</button>
+                                <button onclick="rejectWithdrawal('${child.key}')" 
+                                    class="flex-1 py-1 text-xs bg-red-600 rounded-md hover:bg-red-700">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                    wList.innerHTML += item;
+                });
+            });
+
+            // 8.4 Promotions
+            db.ref('sellerPromotions').on('value', snap => {
+                pList.innerHTML = '';
+                snap.forEach(child => {
+                    const data = child.val();
+                    const item = `
+                        <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-sm font-bold text-indigo-400">${data.sellerName}</span>
+                                <span class="text-xs bg-indigo-500/20 px-2 py-0.5 rounded">PID: ${data.productId}</span>
+                            </div>
+                            <div class="grid grid-cols-2 text-[10px] text-slate-500">
+                                <p>Aadhar: ${data.aadhar}</p>
+                                <p>PAN: ${data.pan}</p>
+                                <p>GST: ${data.gst}</p>
+                                <p>Mob: ${data.mobile}</p>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 mt-2 border-t border-white/5">
+                                <span class="text-xs">Payment Received:</span>
+                                <span class="text-sm font-bold text-emerald-400">₹${data.paymentAmount}</span>
+                            </div>
+                        </div>
+                    `;
+                    pList.innerHTML += item;
+                });
+            });
+        }
+
+        async function approveWithdrawal(key, sellerId, amount) {
+            if(!confirm("Are you sure you want to mark this as PAID?")) return;
+            
+            // Mark as Paid in DB
+            await db.ref(`withdrawals/${key}`).remove(); // Move to history logic
+            await db.ref(`sellers/${sellerId}/wallet`).transaction(current => (current || 0) - amount);
+            
+            // 8.3 Automatic Notification
+            sendNotificationToSeller(sellerId, "Withdrawal Approved", `Your request for ₹${amount} has been approved and paid.`);
+            alert("Payment processed successfully.");
+        }
+
+        // 8.5 FEATURED PRODUCTS LOGIC
+        function loadFeaturedMgmt() {
+            const container = document.getElementById('featured-mgmt');
+            container.innerHTML = `
+                <h2 class="text-2xl font-bold mb-6">Home Page Featured Management (8.5)</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="glass-card p-6 h-fit">
+                        <h3 class="font-bold mb-4">Pin New Product</h3>
+                        <div class="space-y-4">
+                            <input type="text" id="feat-pid" placeholder="Product ID (PID)" class="form-input">
+                            <input type="text" id="feat-spid" placeholder="Seller Product ID" class="form-input">
+                            <input type="number" id="feat-priority" placeholder="Display Priority (1-10)" class="form-input">
+                            <div>
+                                <label class="text-xs text-slate-400">Display Until Date</label>
+                                <input type="date" id="feat-expiry" class="form-input">
+                            </div>
+                            <button onclick="pinToHome()" class="btn-action btn-primary w-full">PIN TO TOP</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 glass-card p-6">
+                        <h3 class="font-bold mb-4">Currently Featured Products</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="border-b border-white/10 text-slate-400">
+                                    <tr>
+                                        <th class="pb-3">PID</th>
+                                        <th class="pb-3">Priority</th>
+                                        <th class="pb-3">Expires</th>
+                                        <th class="pb-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="featured-list-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            syncFeaturedTable();
+        }
+
+        async function pinToHome() {
+            const pid = document.getElementById('feat-pid').value;
+            const spid = document.getElementById('feat-spid').value;
+            const priority = document.getElementById('feat-priority').value;
+            const expiry = document.getElementById('feat-expiry').value;
+
+            if(!pid || !expiry) return alert("Please fill details");
+
+            await db.ref('featured_products/' + pid).set({
+                pid: pid,
+                spid: spid,
+                priority: parseInt(priority),
+                expiryDate: expiry,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            alert("Product Pinned to Home Page!");
+            document.getElementById('feat-pid').value = '';
+        }
+
+        function syncFeaturedTable() {
+            db.ref('featured_products').on('value', snap => {
+                const tbody = document.getElementById('featured-list-body');
+                tbody.innerHTML = '';
+                snap.forEach(child => {
+                    const d = child.val();
+                    tbody.innerHTML += `
+                        <tr class="border-b border-white/5">
+                            <td class="py-3">${d.pid}</td>
+                            <td class="py-3">${d.priority}</td>
+                            <td class="py-3">${d.expiryDate}</td>
+                            <td class="py-3">
+                                <button onclick="removeFeatured('${d.pid}')" class="text-red-400 hover:text-red-200">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        async function removeFeatured(pid) {
+            if(confirm("Remove this product from home featured?")) {
+                await db.ref('featured_products/' + pid).remove();
+            }
+        }
+
+        // 8.6 GLOBAL ORDER DASHBOARD
+        function loadGlobalDashboard() {
+            const container = document.getElementById('global-dash');
+            container.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Global Sales Ledger (8.6)</h2>
+                    <button onclick="exportToExcel()" class="btn-action bg-slate-700 text-white text-xs">
+                        <i class="fas fa-download mr-2"></i> EXPORT LOGS
+                    </button>
+                </div>
+                <div class="glass-card overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-indigo-600/20 border-b border-white/10">
+                            <tr>
+                                <th class="p-4">User Details</th>
+                                <th class="p-4">Seller Details</th>
+                                <th class="p-4">Amount</th>
+                                <th class="p-4">Commission</th>
+                                <th class="p-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="global-ledger-body"></tbody>
+                    </table>
+                </div>
+            `;
+            
+            db.ref('orders').on('value', snap => {
+                const tbody = document.getElementById('global-ledger-body');
+                tbody.innerHTML = '';
+                snap.forEach(child => {
+                    const o = child.val();
+                    const comm = (parseFloat(o.totalPrice) * 0.05).toFixed(2); // 5% platform fee
+                    tbody.innerHTML += `
+                        <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                            <td class="p-4">
+                                <div class="font-bold">${o.userName}</div>
+                                <div class="text-[10px] text-slate-500">${o.email} | ${o.pincode}</div>
+                            </td>
+                            <td class="p-4">
+                                <div class="text-indigo-300 font-semibold">${o.sellerName || 'Direct SRP'}</div>
+                                <div class="text-[10px] text-slate-500">ID: ${o.sellerId || 'SRP001'}</div>
+                            </td>
+                            <td class="p-4 font-bold">₹${o.totalPrice}</td>
+                            <td class="p-4 text-emerald-400">₹${comm}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded text-[10px] bg-white/10">${o.paymentStatus || 'Paid'}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        // 8.7 ADMIN SECURITY & SETTINGS
+        function loadSystemSettings() {
+            const container = document.getElementById('system-settings');
+            container.innerHTML = `
+                <h2 class="text-2xl font-bold mb-6">Platform Core Control (8.7, 8.19, 8.20)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="glass-card p-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <i class="fas fa-shield-alt text-2xl text-indigo-400"></i>
+                            <h3 class="font-bold">Security & Auth</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-slate-400">Change Admin Password</label>
+                                <input type="password" id="new-admin-pass" class="form-input mt-1" placeholder="Enter New Password">
+                                <button onclick="updateAdminPass()" class="btn-action btn-primary w-full mt-2 text-xs">Update Password</button>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                                <span class="text-sm">Enable 2FA Login</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="2fa-toggle" class="sr-only peer" onchange="toggle2FA()">
+                                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                                <span class="text-sm">Day/Night Mode</span>
+                                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-slate-800"><i class="fas fa-moon"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 lg:col-span-2">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-history text-2xl text-amber-400"></i>
+                                <h3 class="font-bold">Live Activity Logs (8.19)</h3>
+                            </div>
+                            <select id="log-filter" class="bg-transparent border border-white/10 text-xs rounded p-1">
+                                <option>All Activity</option>
+                                <option>Admin Actions</option>
+                                <option>Order Updates</option>
+                                <option>Seller Actions</option>
+                            </select>
+                        </div>
+                        <div id="logs-container" class="h-64 overflow-y-auto space-y-2 text-[11px] font-mono">
+                            </div>
+                    </div>
+
+                    <div class="glass-card p-6 lg:col-span-3">
+                        <h3 class="font-bold mb-4">Whole Website Master Override (8.20)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
+                                <p class="text-xs mb-2">Maintenance Mode</p>
+                                <button onclick="toggleMaintenance()" class="btn-action bg-red-600 text-[10px]">DISABLE WEBSITE</button>
+                            </div>
+                            <div class="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-center">
+                                <p class="text-xs mb-2">Platform Fee (%)</p>
+                                <input type="number" value="5" class="w-full bg-black/40 border border-white/10 rounded px-2 text-center">
+                            </div>
+                            <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
+                                <p class="text-xs mb-2">Min Withdrawal</p>
+                                <input type="number" value="500" class="w-full bg-black/40 border border-white/10 rounded px-2 text-center">
+                            </div>
+                             <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl text-center">
+                                <p class="text-xs mb-2">Support Contact</p>
+                                <input type="text" value="+91 XXXXXXXXXX" class="w-full bg-black/40 border border-white/10 rounded px-2 text-[10px] text-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            initSystemLogs();
+        }
+
+        function initSystemLogs() {
+            db.ref('system_logs').limitToLast(20).on('value', snap => {
+                const logBox = document.getElementById('logs-container');
+                logBox.innerHTML = '';
+                snap.forEach(child => {
+                    const l = child.val();
+                    logBox.innerHTML = `
+                        <div class="p-2 border-b border-white/5 flex gap-4">
+                            <span class="text-indigo-400">[${l.time}]</span>
+                            <span class="text-amber-300 font-bold uppercase">${l.type}:</span>
+                            <span class="text-slate-300">${l.message}</span>
+                        </div>
+                    ` + logBox.innerHTML;
+                });
+            });
+        }
+
+        async function updateAdminPass() {
+            const pass = document.getElementById('new-admin-pass').value;
+            if(pass.length < 6) return alert("Password too weak");
+            const user = firebase.auth().currentUser;
+            try {
+                await user.updatePassword(pass);
+                logActivity("Admin Action", "Password changed successfully");
+                alert("Security updated!");
+            } catch(e) { alert(e.message); }
+        }
+
+        function logActivity(type, message) {
+            db.ref('system_logs').push({
+                type: type,
+                message: message,
+                time: new Date().toLocaleTimeString(),
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+
+        // Utility to help Section Switching Load Correct Data
+        const originalShowSection = showSection;
+        window.showSection = (id, el) => {
+            originalShowSection(id, el);
+            if(id === 'order-mgmt') loadOrders();
+            if(id === 'seller-payouts') loadSellerPayouts();
+            if(id === 'featured-mgmt') loadFeaturedMgmt();
+            if(id === 'global-dash') loadGlobalDashboard();
+            if(id === 'system-settings') loadSystemSettings();
+        };
+
+        // ... Continued in Part 3
+
 </script>
