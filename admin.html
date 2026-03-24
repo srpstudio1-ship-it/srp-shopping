@@ -357,6 +357,335 @@
         setInterval(() => {
             console.log("Running scheduled 7-day code check...");
         }, 7 * 24 * 60 * 60 * 1000);
+            <div id="orders-section" class="section-container">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700">
+                        <h3 class="font-bold text-lg">Global Orders Dashboard</h3>
+                        <div class="space-x-2">
+                            <input type="text" id="search-order" placeholder="Search Order ID..." class="p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="p-3 border-b dark:border-gray-600">Order ID</th>
+                                    <th class="p-3 border-b dark:border-gray-600">User / Seller Info</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Product</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Financials</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Status / Tracking</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="invoice-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6 relative">
+                    <button onclick="closeInvoiceModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times text-xl"></i></button>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">Order Invoice</h2>
+                    <div class="grid grid-cols-2 gap-4 mb-4 text-sm" id="invoice-content">
+                        </div>
+                </div>
+            </div>
+
+            <div id="tracking-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 relative">
+                    <button onclick="closeTrackingModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 dark:hover:text-white"><i class="fas fa-times"></i></button>
+                    <h2 class="text-xl font-bold mb-4">Update Order Status</h2>
+                    <input type="hidden" id="update-order-id">
+                    <input type="hidden" id="update-user-id">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Status</label>
+                        <select id="update-status" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Tracking ID</label>
+                        <input type="text" id="update-tracking-id" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600" placeholder="Enter Carrier Tracking ID">
+                    </div>
+                    <button onclick="saveTrackingInfo()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Send Notification & Update</button>
+                </div>
+            </div>
+
+            <div id="withdrawals-section" class="section-container">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2 dark:border-gray-700">Seller Withdrawal Requests</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="p-3 border-b dark:border-gray-600">Date</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Seller Details</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Balances</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Request Amt</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Status</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawal-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="promotions-section" class="section-container">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2 dark:border-gray-700">Promotion Payments</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="p-3 border-b dark:border-gray-600">Seller Name / Mobile</th>
+                                    <th class="p-3 border-b dark:border-gray-600">KYC Details</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Product ID</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Order Ref</th>
+                                    <th class="p-3 border-b dark:border-gray-600">Promo Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="promotions-list-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        // ==========================================
+        // ADD THIS JAVASCRIPT TO THE BOTTOM OF PART 1
+        // ==========================================
+
+        // 6. ORDERS MANAGEMENT (8.2 & 8.6)
+        function loadOrders() {
+            const tbody = document.getElementById('orders-list-body');
+            db.ref('orders').on('value', (snapshot) => {
+                tbody.innerHTML = '';
+                let totalSales = 0, totalCommission = 0, totalSellerRevenue = 0, orderCount = 0;
+
+                snapshot.forEach((childSnapshot) => {
+                    const order = childSnapshot.val();
+                    orderCount++;
+                    const comm = order.amount * 0.10; // Assuming 10% commission
+                    totalSales += order.amount;
+                    totalCommission += comm;
+                    totalSellerRevenue += (order.amount - comm);
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800";
+                    tr.innerHTML = `
+                        <td class="p-3 font-mono text-xs">${order.orderId}</td>
+                        <td class="p-3">
+                            <div class="font-bold text-blue-500">U: ${order.userName}</div>
+                            <div class="text-xs">${order.phone} | ${order.email}</div>
+                            <div class="text-xs text-gray-500">${order.address}, ${order.pincode}</div>
+                            <div class="font-bold text-green-500 mt-1">S: ${order.sellerName}</div>
+                        </td>
+                        <td class="p-3 cursor-pointer text-blue-600 hover:underline" onclick='openInvoiceModal(${JSON.stringify(order)})'>
+                            <img src="${order.productImage || 'https://via.placeholder.com/40'}" class="w-10 h-10 object-cover inline-block mr-2 rounded">
+                            ${order.productId}
+                        </td>
+                        <td class="p-3">
+                            <div>Total: ₹${order.amount}</div>
+                            <div class="text-xs text-green-600">Comm: ₹${comm.toFixed(2)}</div>
+                            <span class="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-600">${order.paymentStatus}</span>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-bold">${order.status}</div>
+                            <div class="text-xs font-mono text-gray-500">TRK: ${order.trackingId || 'N/A'}</div>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="openTrackingModal('${order.orderId}', '${order.userId}', '${order.status}', '${order.trackingId || ''}')" class="bg-indigo-500 text-white px-3 py-1 rounded text-xs hover:bg-indigo-600">Update & Notify</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Update 8.9 Sales Analytics Dashboard automatically
+                document.getElementById('stat-total-orders').innerText = orderCount;
+                document.getElementById('stat-total-sales').innerText = '₹' + totalSales.toFixed(2);
+                document.getElementById('stat-seller-revenue').innerText = '₹' + totalSellerRevenue.toFixed(2);
+                document.getElementById('stat-commission').innerText = '₹' + totalCommission.toFixed(2);
+                document.getElementById('stat-total-income').innerText = '₹' + totalCommission.toFixed(2); // Can add promo income later
+            });
+        }
+
+        // Invoice View Logic
+        function openInvoiceModal(order) {
+            const dateStr = new Date(order.timestamp).toLocaleString();
+            document.getElementById('invoice-content').innerHTML = `
+                <div class="col-span-2 flex items-center mb-4">
+                    <img src="${order.productImage || 'https://via.placeholder.com/80'}" class="w-20 h-20 rounded object-cover mr-4">
+                    <div>
+                        <h3 class="font-bold text-lg">${order.productName || 'Product Name Missing'}</h3>
+                        <p class="text-sm font-mono text-gray-500">PID: ${order.productId}</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-500 border-b mb-2">Customer Details</h4>
+                    <p><strong>Name:</strong> ${order.userName}</p>
+                    <p><strong>Email:</strong> ${order.email}</p>
+                    <p><strong>Phone:</strong> ${order.phone}</p>
+                    <p><strong>Address:</strong> ${order.address}, ${order.pincode}</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-500 border-b mb-2">Order Details</h4>
+                    <p><strong>Order ID:</strong> <span class="font-mono">${order.orderId}</span></p>
+                    <p><strong>Date/Time:</strong> ${dateStr}</p>
+                    <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+                    <p class="text-xl font-bold mt-2">Total Paid: ₹${order.amount}</p>
+                </div>
+            `;
+            document.getElementById('invoice-modal').classList.remove('hidden');
+        }
+        function closeInvoiceModal() { document.getElementById('invoice-modal').classList.add('hidden'); }
+
+        // Tracking Update Logic
+        function openTrackingModal(orderId, userId, currentStatus, currentTracking) {
+            document.getElementById('update-order-id').value = orderId;
+            document.getElementById('update-user-id').value = userId;
+            document.getElementById('update-status').value = currentStatus || 'Confirmed';
+            document.getElementById('update-tracking-id').value = currentTracking;
+            document.getElementById('tracking-modal').classList.remove('hidden');
+        }
+        function closeTrackingModal() { document.getElementById('tracking-modal').classList.add('hidden'); }
+
+        async function saveTrackingInfo() {
+            const orderId = document.getElementById('update-order-id').value;
+            const userId = document.getElementById('update-user-id').value;
+            const status = document.getElementById('update-status').value;
+            const trackingId = document.getElementById('update-tracking-id').value;
+
+            try {
+                await db.ref(`orders/${orderId}`).update({
+                    status: status,
+                    trackingId: trackingId
+                });
+                
+                // Simulate Sending Real Notification to User
+                await db.ref(`notifications/${userId}`).push({
+                    title: `Order ${status}`,
+                    message: `Your order ${orderId} has been ${status}. Tracking: ${trackingId || 'N/A'}`,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    read: false
+                });
+
+                alert(`Order updated to ${status} and notification sent to user!`);
+                closeTrackingModal();
+            } catch (error) {
+                alert("Error updating tracking: " + error.message);
+            }
+        }
+
+        // 7. SELLER WITHDRAWALS (8.3)
+        function loadWithdrawals() {
+            const tbody = document.getElementById('withdrawal-list-body');
+            db.ref('withdrawals').on('value', (snapshot) => {
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const req = childSnapshot.val();
+                    const reqId = childSnapshot.key;
+                    const dateStr = new Date(req.timestamp || Date.now()).toLocaleDateString();
+                    
+                    let statusColor = 'text-yellow-500';
+                    if(req.status === 'Approved') statusColor = 'text-green-500';
+                    if(req.status === 'Paid') statusColor = 'text-blue-500';
+                    if(req.status === 'Rejected') statusColor = 'text-red-500';
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800";
+                    tr.innerHTML = `
+                        <td class="p-3">${dateStr}</td>
+                        <td class="p-3 font-medium">${req.sellerName}<br><span class="text-xs text-gray-500">${req.sellerId}</span></td>
+                        <td class="p-3 text-xs">
+                            Wallet: ₹${req.sellerBalance}<br>
+                            Pending: ₹${req.pendingBalance}
+                        </td>
+                        <td class="p-3 font-bold text-lg">₹${req.requestAmount}</td>
+                        <td class="p-3 font-bold ${statusColor}">${req.status}</td>
+                        <td class="p-3 space-x-1">
+                            ${req.status === 'Pending' ? `
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', 'Approved', ${req.requestAmount})" class="bg-green-500 text-white px-2 py-1 rounded text-xs">Approve</button>
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', 'Rejected', ${req.requestAmount})" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Reject</button>
+                            ` : ''}
+                            ${req.status === 'Approved' ? `
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', 'Paid', ${req.requestAmount})" class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Mark Paid</button>
+                            ` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        async function processWithdrawal(reqId, sellerId, action, amount) {
+            if(!confirm(`Are you sure you want to mark this request as ${action}?`)) return;
+
+            try {
+                // Update withdrawal status
+                await db.ref(`withdrawals/${reqId}`).update({ status: action });
+
+                // If approved or paid, send automatic notification to seller showing details
+                if (action === 'Approved' || action === 'Paid') {
+                    // Fetch current balance to include in notification
+                    const sellerSnap = await db.ref(`sellers/${sellerId}`).once('value');
+                    const pendingAmount = sellerSnap.val().pendingBalance || 0;
+
+                    await db.ref(`notifications/${sellerId}`).push({
+                        title: `Withdrawal ${action}`,
+                        message: `Your withdrawal request of ₹${amount} has been ${action}. Current pending balance: ₹${pendingAmount}`,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                alert(`Withdrawal marked as ${action} and seller notified.`);
+            } catch(e) {
+                alert("Error processing withdrawal: " + e.message);
+            }
+        }
+
+        // 8. PROMOTION PAYMENTS (8.4)
+        function loadPromotions() {
+            const tbody = document.getElementById('promotions-list-body');
+            db.ref('promotions').on('value', (snapshot) => {
+                tbody.innerHTML = '';
+                let totalPromoIncome = 0;
+                snapshot.forEach((childSnapshot) => {
+                    const promo = childSnapshot.val();
+                    totalPromoIncome += promo.amountPaid;
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800";
+                    tr.innerHTML = `
+                        <td class="p-3"><strong>${promo.sellerName}</strong><br><span class="text-xs">${promo.mobile}</span></td>
+                        <td class="p-3 text-xs">
+                            Aadhar: ${promo.aadhar}<br>
+                            PAN: ${promo.pan}<br>
+                            GST: ${promo.gst}
+                        </td>
+                        <td class="p-3 font-mono text-sm">${promo.productId}</td>
+                        <td class="p-3 font-mono text-xs text-gray-500">${promo.orderRef}</td>
+                        <td class="p-3 font-bold text-green-500">₹${promo.amountPaid}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                // Update Admin dashboard promo stat
+                document.getElementById('stat-promo-payments').innerText = '₹' + totalPromoIncome.toFixed(2);
+                
+                // Recalculate Total Income
+                const currentComm = parseFloat(document.getElementById('stat-commission').innerText.replace('₹','')) || 0;
+                document.getElementById('stat-total-income').innerText = '₹' + (currentComm + totalPromoIncome).toFixed(2);
+            });
+        }
+
+        // Initialize Part 2 Listeners
+        loadOrders();
+        loadWithdrawals();
+        loadPromotions();
+
 
 
 
