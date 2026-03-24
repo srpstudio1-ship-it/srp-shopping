@@ -3,191 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Admin Control Center</title>
+    <title>SRP SHOPPING | Elite Admin Command</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        :root { --sidebar-width: 280px; }
-        body { font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; }
-        .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; left: 0; top: 0; overflow-y: auto; z-index: 50; }
-        .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
-        .section-card { display: none; }
-        .section-card.active { display: block; }
-        .dark-mode { background-color: #0f172a; color: #f8fafc; }
-        .dark-mode .bg-white { background-color: #1e293b !important; color: #f8fafc; }
-        .dark-mode .text-gray-700 { color: #cbd5e1 !important; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        input, select, textarea { border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; width: 100%; margin-bottom: 10px; color: #1e293b; }
-        .btn-primary { background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; }
-        .btn-primary:hover { background: #4338ca; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #09090b; 
+            color: #fafafa;
+            overflow-x: hidden;
+        }
+        
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+        }
+
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: #121214;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 50;
+        }
+
+        .main-view {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 1rem;
+            border-radius: 12px;
+            color: #a1a1aa;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(79, 70, 229, 0.1);
+            color: #818cf8;
+        }
+
+        .nav-item i { width: 24px; font-size: 1.1rem; }
+
+        .section-content { display: none; animation: fadeIn 0.4s ease-out; }
+        .section-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Inputs */
+        input, select, textarea {
+            background: #18181b !important;
+            border: 1px solid #27272a !important;
+            color: white !important;
+            padding: 0.75rem !important;
+            border-radius: 10px !important;
+            outline: none !important;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        input:focus { border-color: #6366f1 !important; ring: 1px solid #6366f1; }
+
+        .btn-action {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-action:hover { transform: scale(1.02); opacity: 0.9; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-gray-50" id="adminBody">
+<body>
 
-    <aside class="sidebar bg-indigo-900 text-white p-4 shadow-xl">
-        <div class="flex items-center gap-3 mb-8 px-2">
-            <div class="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center text-indigo-900 font-bold text-xl">S</div>
-            <h1 class="text-xl font-bold tracking-tight">SRP ADMIN</h1>
+    <aside class="sidebar">
+        <div class="p-8">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-black">S</div>
+                <span class="text-xl font-bold tracking-tight">SRP SHOPPING</span>
+            </div>
         </div>
 
-        <nav class="space-y-1">
-            <p class="text-xs font-semibold text-indigo-300 uppercase px-3 mb-2">Core Control</p>
-            <button onclick="showSection('8.1')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-box-open w-5"></i> 8.1 Product Management
-            </button>
-            <button onclick="showSection('8.2')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-shopping-bag w-5"></i> 8.2 Order Management
-            </button>
-            <button onclick="showSection('8.3')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-hand-holding-usd w-5"></i> 8.3 Withdrawal Approval
-            </button>
-            <button onclick="showSection('8.4')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-ad w-5"></i> 8.4 Promotion Payments
-            </button>
-            
-            <p class="text-xs font-semibold text-indigo-300 uppercase px-3 mt-6 mb-2">Platform Strategy</p>
-            <button onclick="showSection('8.5')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-star w-5"></i> 8.5 Featured Products
-            </button>
-            <button onclick="showSection('8.6')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-globe w-5"></i> 8.6 Global Dashboard
-            </button>
-            <button onclick="showSection('8.8')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-chart-pie w-5"></i> 8.8 Website Analytics
-            </button>
-            
-            <p class="text-xs font-semibold text-indigo-300 uppercase px-3 mt-6 mb-2">Security & Settings</p>
-            <button onclick="showSection('8.7')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-indigo-800 transition">
-                <i class="fas fa-shield-alt w-5"></i> 8.7 Admin Security
-            </button>
-            <button onclick="showSection('8.21')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 mt-4 transition">
-                <i class="fas fa-code w-5"></i> 8.21 Code Checker
-            </button>
+        <nav class="flex flex-col gap-1">
+            <p class="px-8 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Management</p>
+            <a href="#" onclick="switchTab('8.1')" class="nav-item active" id="btn-8.1">
+                <i class="fa-solid fa-layer-group"></i> 8.1 Products
+            </a>
+            <a href="#" onclick="switchTab('8.2')" class="nav-item" id="btn-8.2">
+                <i class="fa-solid fa-truck-fast"></i> 8.2 Orders
+            </a>
+            <a href="#" onclick="switchTab('8.3')" class="nav-item" id="btn-8.3">
+                <i class="fa-solid fa-wallet"></i> 8.3 Withdrawals
+            </a>
+            <a href="#" onclick="switchTab('8.4')" class="nav-item" id="btn-8.4">
+                <i class="fa-solid fa-rectangle-ad"></i> 8.4 Promotions
+            </a>
+
+            <p class="px-8 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-6 mb-2">Platform Control</p>
+            <a href="#" onclick="switchTab('8.5')" class="nav-item" id="btn-8.5">
+                <i class="fa-solid fa-star"></i> 8.5 Featured
+            </a>
+            <a href="#" onclick="switchTab('8.6')" class="nav-item" id="btn-8.6">
+                <i class="fa-solid fa-chart-line"></i> 8.6 Global Dashboard
+            </a>
+            <a href="#" onclick="switchTab('8.8')" class="nav-item" id="btn-8.8">
+                <i class="fa-solid fa-microchip"></i> 8.8 Analytics
+            </a>
+            <a href="#" onclick="switchTab('8.21')" class="nav-item text-red-400" id="btn-8.21">
+                <i class="fa-solid fa-code-commit"></i> 8.21 Code Checker
+            </a>
         </nav>
     </aside>
 
-    <div class="main-content">
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-40">
-            <h2 id="current-section-title" class="text-xl font-bold text-gray-800">Product Management</h2>
-            <div class="flex items-center gap-4">
-                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-100"><i class="fas fa-moon"></i></button>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium text-gray-600">Admin Mode</span>
-                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                </div>
+    <main class="main-view">
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h2 class="text-3xl font-extrabold" id="tab-title">Product Control</h2>
+                <p class="text-zinc-400 text-sm">Welcome back, Super Admin</p>
             </div>
-        </header>
+            <div class="flex gap-4">
+                <div class="glass-panel px-4 py-2 flex items-center gap-3">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-xs font-medium">Server Online</span>
+                </div>
+                <button onclick="toggleDayNight()" class="glass-panel p-2 w-10 h-10 flex items-center justify-center">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
 
-        <div class="p-6">
-            
-            <section id="sec-8.1" class="section-card active">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">Add / Edit Product</h3>
-                        <input type="hidden" id="p-key">
-                        <label class="text-sm font-bold">Product Image</label>
-                        <input type="file" id="p-image" accept="image/*" class="mb-4">
-                        <input type="text" id="p-name" placeholder="Product Name">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="number" id="p-mrp" placeholder="MRP (₹)">
-                            <input type="number" id="p-discount" placeholder="Discount Price (₹)">
+        <section id="sec-8.1" class="section-content active">
+            <div class="grid grid-cols-12 gap-8">
+                <div class="col-span-12 lg:col-span-4">
+                    <div class="glass-panel p-6 sticky top-8">
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-indigo-500"></i> Manage Product
+                        </h3>
+                        <input type="hidden" id="p_db_key">
+                        
+                        <label class="text-[10px] uppercase font-bold text-zinc-500 ml-1">Product Media</label>
+                        <div class="relative group cursor-pointer border-2 border-dashed border-zinc-800 rounded-xl p-4 text-center hover:border-indigo-500 transition mb-4">
+                            <input type="file" id="p_file" class="absolute inset-0 opacity-0 cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl mb-2 text-zinc-600"></i>
+                            <p class="text-xs text-zinc-500">Upload from Gallery</p>
                         </div>
-                        <select id="p-category">
-                            <option value="">Select Category</option>
+
+                        <input type="text" id="p_name" placeholder="Full Product Title">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" id="p_mrp" placeholder="MRP (₹)">
+                            <input type="number" id="p_discount" placeholder="Discount Price (₹)">
+                        </div>
+                        <select id="p_cat">
+                            <option value="">Choose Category</option>
                             <option value="Electronics">Electronics</option>
                             <option value="Fashion">Fashion</option>
-                            <option value="Grocery">Grocery</option>
+                            <option value="Home">Home & Kitchen</option>
                         </select>
-                        <input type="number" id="p-stock" placeholder="Stock Quantity">
-                        <textarea id="p-desc" rows="4" placeholder="Product Description"></textarea>
-                        <button onclick="saveProduct()" class="btn-primary w-full mt-2">Save Product</button>
+                        <input type="number" id="p_stock" placeholder="Inventory Quantity">
+                        <textarea id="p_desc" rows="4" placeholder="Detailed Product Description..."></textarea>
+                        
+                        <button onclick="handleProductUpload()" class="btn-action w-full mt-2">
+                            Synchronize Product
+                        </button>
                     </div>
-                    
-                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm overflow-x-auto">
-                        <div class="flex justify-between mb-4">
-                            <h3 class="text-lg font-bold">Inventory List</h3>
-                            <span class="text-xs text-gray-400">Unique IDs are auto-generated</span>
-                        </div>
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b text-gray-500 text-sm">
-                                    <th class="py-3">ID / Image</th>
-                                    <th>Details</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Action</th>
+                </div>
+
+                <div class="col-span-12 lg:col-span-8">
+                    <div class="glass-panel overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-zinc-900/50 border-b border-zinc-800">
+                                <tr class="text-[10px] uppercase tracking-widest text-zinc-500">
+                                    <th class="px-6 py-4">Identity</th>
+                                    <th class="px-6 py-4">Product Details</th>
+                                    <th class="px-6 py-4 text-right">Pricing & Stock</th>
+                                    <th class="px-6 py-4 text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="product-list-table">
+                            <tbody id="product-shelf" class="divide-y divide-zinc-800">
                                 </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="sec-8.2" class="section-card">
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-bold mb-6">Global Order Control</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-600">
-                                    <th class="p-3">Order ID</th>
-                                    <th class="p-3">User Details</th>
-                                    <th class="p-3">Address</th>
-                                    <th class="p-3">Tracking</th>
-                                    <th class="p-3">Status</th>
-                                    <th class="p-3">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="order-master-list">
-                                </tbody>
-                        </table>
-                    </div>
+        <section id="sec-8.2" class="section-content">
+            <div class="glass-panel overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-zinc-900/50 border-b border-zinc-800 text-[10px] uppercase text-zinc-500">
+                        <tr>
+                            <th class="px-6 py-4">Order ID</th>
+                            <th class="px-6 py-4">Customer Info</th>
+                            <th class="px-6 py-4">Shipping Address</th>
+                            <th class="px-6 py-4">Logistics (Tracking)</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Management</th>
+                        </tr>
+                    </thead>
+                    <tbody id="master-order-shelf" class="divide-y divide-zinc-800">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="sec-8.3" class="section-content">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="glass-panel p-6 bg-gradient-to-br from-zinc-900 to-indigo-950/30">
+                    <p class="text-zinc-500 text-xs uppercase font-bold">Pending Approvals</p>
+                    <h2 class="text-3xl font-black mt-1" id="withdraw-pending-badge">0</h2>
                 </div>
-            </section>
+            </div>
+            <div class="glass-panel">
+                <table class="w-full text-left">
+                    <thead class="border-b border-zinc-800 text-[10px] uppercase text-zinc-500">
+                        <tr>
+                            <th class="px-6 py-4">Seller Identity</th>
+                            <th class="px-6 py-4">Current Balance</th>
+                            <th class="px-6 py-4">Requested Amount</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Operations</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawal-shelf" class="divide-y divide-zinc-800 text-sm">
+                        </tbody>
+                </table>
+            </div>
+        </section>
 
-            <section id="sec-8.3" class="section-card">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                        <p class="text-gray-500 text-sm">Pending Requests</p>
-                        <h2 class="text-2xl font-bold" id="pending-withdraw-count">0</h2>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-bold mb-4">Withdrawal Requests</h3>
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="py-3">Seller Name</th>
-                                <th>Balance</th>
-                                <th>Requested Amount</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="withdrawal-table-body">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
+        <section id="sec-8.4" class="section-content"></section>
+        <section id="sec-8.5" class="section-content"></section>
+        <section id="sec-8.6" class="section-content"></section>
+        <section id="sec-8.8" class="section-content"></section>
+        <section id="sec-8.21" class="section-content"></section>
 
-            <section id="sec-8.4" class="section-card"></section>
-            <section id="sec-8.5" class="section-card"></section>
-            <section id="sec-8.6" class="section-card"></section>
-            <section id="sec-8.7" class="section-card"></section>
-            <section id="sec-8.8" class="section-card"></section>
-
-        </div>
-    </div>
+    </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
         import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
-        // CONFIG PROVIDED BY USER
+        // Firebase Config (User's Credentials)
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -203,91 +281,91 @@
         const db = getDatabase(app);
         const storage = getStorage(app);
 
-        // --- GLOBAL UI FUNCTIONS ---
-        window.showSection = (sec) => {
-            document.querySelectorAll('.section-card').forEach(s => s.classList.remove('active'));
-            const target = document.getElementById('sec-' + sec);
-            if(target) target.classList.add('active');
-            document.getElementById('current-section-title').innerText = "Section " + sec;
+        // --- GLOBAL NAVIGATION ENGINE ---
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById('sec-' + tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active');
+            document.getElementById('tab-title').innerText = "Section " + tabId;
         };
 
-        window.toggleTheme = () => {
-            document.getElementById('adminBody').classList.toggle('dark-mode');
+        window.toggleDayNight = () => {
+            document.body.classList.toggle('light-mode');
+            // Custom toggle logic for Day/Night requirement 8.7
         };
 
         // --- 8.1 PRODUCT MANAGEMENT LOGIC ---
-        window.saveProduct = async () => {
-            const file = document.getElementById('p-image').files[0];
-            const name = document.getElementById('p-name').value;
-            const mrp = document.getElementById('p-mrp').value;
-            const discount = document.getElementById('p-discount').value;
-            const cat = document.getElementById('p-category').value;
-            const stock = document.getElementById('p-stock').value;
-            const desc = document.getElementById('p-desc').value;
-            const key = document.getElementById('p-key').value;
+        window.handleProductUpload = async () => {
+            const file = document.getElementById('p_file').files[0];
+            const name = document.getElementById('p_name').value;
+            const mrp = document.getElementById('p_mrp').value;
+            const disc = document.getElementById('p_discount').value;
+            const cat = document.getElementById('p_cat').value;
+            const stk = document.getElementById('p_stock').value;
+            const desc = document.getElementById('p_desc').value;
+            const key = document.getElementById('p_db_key').value;
 
-            if(!name || !mrp) return alert("Fill required fields");
+            if(!name || !mrp) return alert("Required fields missing");
 
-            let imgUrl = "";
+            let url = "";
             if(file) {
-                const storageRef = sRef(storage, 'products/' + Date.now());
-                const snapshot = await uploadBytes(storageRef, file);
-                imgUrl = await getDownloadURL(snapshot.ref);
+                const imgRef = sRef(storage, `products/${Date.now()}_${file.name}`);
+                const snap = await uploadBytes(imgRef, file);
+                url = await getDownloadURL(snap.ref);
             }
 
-            const productId = "SRP-" + Math.floor(1000 + Math.random() * 9000); // 8.1 Automatic Unique ID
+            const uniqueID = "SRP-PRD-" + Math.floor(100000 + Math.random() * 900000);
 
-            const productData = {
-                productId: productId,
-                name: name,
-                mrp: mrp,
-                discountPrice: discount,
-                category: cat,
-                stock: stock,
-                description: desc,
-                timestamp: Date.now()
+            const data = {
+                productId: uniqueID,
+                name, mrp, discountPrice: disc,
+                category: cat, stock: stk, description: desc,
+                updatedAt: Date.now()
             };
-            if(imgUrl) productData.image = imgUrl;
+            if(url) data.image = url;
 
             if(key) {
-                update(ref(db, 'products/' + key), productData);
+                update(ref(db, 'products/' + key), data);
             } else {
-                push(ref(db, 'products'), productData);
+                push(ref(db, 'products'), data);
             }
-            alert("Product Synchronized Successfully");
-            resetProductForm();
+            alert("Platform Inventory Updated");
+            resetForm();
         };
 
-        function resetProductForm() {
-            document.getElementById('p-key').value = "";
-            document.getElementById('p-name').value = "";
-            document.getElementById('p-mrp').value = "";
-            document.getElementById('p-image').value = "";
+        function resetForm() {
+            document.getElementById('p_db_key').value = "";
+            document.getElementById('p_name').value = "";
+            document.getElementById('p_file').value = "";
         }
 
-        onValue(ref(db, 'products'), (snapshot) => {
-            const list = document.getElementById('product-list-table');
-            list.innerHTML = "";
-            snapshot.forEach(child => {
+        onValue(ref(db, 'products'), (snap) => {
+            const shelf = document.getElementById('product-shelf');
+            shelf.innerHTML = "";
+            snap.forEach(child => {
                 const p = child.val();
-                list.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50 text-sm">
-                        <td class="py-3">
-                            <img src="${p.image || ''}" class="w-10 h-10 object-cover rounded mb-1">
-                            <span class="text-xs font-mono text-indigo-600">${p.productId}</span>
+                shelf.innerHTML += `
+                    <tr class="hover:bg-white/[0.02] transition group">
+                        <td class="px-6 py-4">
+                            <span class="text-[10px] font-mono bg-zinc-800 text-zinc-400 px-2 py-1 rounded">${p.productId}</span>
                         </td>
-                        <td>
-                            <div class="font-bold">${p.name}</div>
-                            <div class="text-xs text-gray-400">${p.category}</div>
+                        <td class="px-6 py-4 flex items-center gap-4">
+                            <img src="${p.image || ''}" class="w-12 h-12 rounded-lg object-cover ring-1 ring-zinc-800">
+                            <div>
+                                <p class="font-bold text-sm">${p.name}</p>
+                                <p class="text-[10px] text-zinc-500">${p.category}</p>
+                            </div>
                         </td>
-                        <td>
-                            <div class="text-red-500 line-through text-xs">₹${p.mrp}</div>
-                            <div class="font-bold text-green-600">₹${p.discountPrice}</div>
+                        <td class="px-6 py-4 text-right">
+                            <div class="text-xs text-red-500 line-through">₹${p.mrp}</div>
+                            <div class="font-bold text-indigo-400">₹${p.discountPrice}</div>
+                            <div class="text-[10px] text-zinc-500 mt-1">Stock: ${p.stock} units</div>
                         </td>
-                        <td><span class="px-2 py-1 bg-gray-100 rounded">${p.stock}</span></td>
-                        <td>
-                            <button onclick="editProduct('${child.key}')" class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteProduct('${child.key}')" class="text-red-500"><i class="fas fa-trash"></i></button>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="editP('${child.key}')" class="text-zinc-500 hover:text-white mx-2"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteP('${child.key}')" class="text-zinc-500 hover:text-red-500 mx-2"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -295,354 +373,96 @@
         });
 
         // --- 8.2 ORDER MANAGEMENT LOGIC ---
-        onValue(ref(db, 'orders'), (snapshot) => {
-            const table = document.getElementById('order-master-list');
-            table.innerHTML = "";
-            snapshot.forEach(child => {
+        onValue(ref(db, 'orders'), (snap) => {
+            const shelf = document.getElementById('master-order-shelf');
+            shelf.innerHTML = "";
+            snap.forEach(child => {
                 const o = child.val();
-                table.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 font-mono font-bold">${o.orderId || child.key}</td>
-                        <td class="p-3">
-                            <div class="font-bold">${o.userName}</div>
-                            <div class="text-xs text-gray-500">${o.phone} | ${o.email}</div>
+                shelf.innerHTML += `
+                    <tr class="text-sm">
+                        <td class="px-6 py-4 font-mono font-bold text-indigo-400">${o.orderId || child.key}</td>
+                        <td class="px-6 py-4">
+                            <p class="font-bold">${o.userName}</p>
+                            <p class="text-[10px] text-zinc-500">${o.email}<br>${o.phone}</p>
                         </td>
-                        <td class="p-3 text-xs">${o.address}, ${o.pincode}</td>
-                        <td class="p-3">
+                        <td class="px-6 py-4 text-xs text-zinc-400">
+                            ${o.address}, ${o.pincode}
+                        </td>
+                        <td class="px-6 py-4">
                             <input type="text" value="${o.trackingId || ''}" 
-                                onchange="updateTracking('${child.key}', this.value)" 
-                                class="text-xs w-24 mb-0" placeholder="Set Track ID">
+                                onchange="setLogistics('${child.key}', this.value)"
+                                class="text-[10px] !m-0 !py-1 !px-2 bg-zinc-900 border-zinc-800" placeholder="Tracking ID">
                         </td>
-                        <td class="p-3">
-                            <select onchange="updateOrderStatus('${child.key}', this.value)" class="text-xs mb-0">
-                                <option value="Pending" ${o.status=='Pending'?'selected':''}>Pending</option>
-                                <option value="Confirmed" ${o.status=='Confirmed'?'selected':''}>Confirmed</option>
-                                <option value="Shipped" ${o.status=='Shipped'?'selected':''}>Shipped</option>
-                                <option value="Delivered" ${o.status=='Delivered'?'selected':''}>Delivered</option>
+                        <td class="px-6 py-4">
+                            <select onchange="updateStep('${child.key}', this.value)" class="text-[10px] !m-0 !py-1 !px-2 bg-zinc-900 border-zinc-800">
+                                <option ${o.status=='Confirmed'?'selected':''}>Confirmed</option>
+                                <option ${o.status=='Shipped'?'selected':''}>Shipped</option>
+                                <option ${o.status=='Delivered'?'selected':''}>Delivered</option>
                             </select>
                         </td>
-                        <td class="p-3">
-                            <button onclick="viewInvoice('${child.key}')" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-xs">View Items</button>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="inspectOrder('${child.key}')" class="text-indigo-400 font-bold text-xs uppercase hover:underline">View Invoice</button>
                         </td>
                     </tr>
                 `;
             });
         });
 
-        window.updateTracking = (key, val) => {
+        window.setLogistics = (key, val) => {
             update(ref(db, 'orders/' + key), { trackingId: val });
-            alert("Tracking ID Updated");
+            alert("Logistics Updated: " + val);
         };
 
-        window.updateOrderStatus = (key, val) => {
+        window.updateStep = (key, val) => {
             update(ref(db, 'orders/' + key), { status: val });
-            // 8.2 Real notification simulation logic would go here
-            alert("Status changed to " + val + ". Notification sent to user.");
+            // 8.2 Notify User logic
+            push(ref(db, `user_notifications/${key}`), {
+                msg: `Order ${val} successfully.`,
+                time: Date.now()
+            });
+            alert(`Real notification sent: Order ${val}`);
         };
 
-        // --- 8.3 SELLER WITHDRAWAL LOGIC ---
-        onValue(ref(db, 'withdrawals'), (snapshot) => {
-            const table = document.getElementById('withdrawal-table-body');
-            table.innerHTML = "";
-            let pendingCount = 0;
-            snapshot.forEach(child => {
+        // --- 8.3 WITHDRAWAL APPROVAL LOGIC ---
+        onValue(ref(db, 'withdrawals'), (snap) => {
+            const shelf = document.getElementById('withdrawal-shelf');
+            shelf.innerHTML = "";
+            let pCount = 0;
+            snap.forEach(child => {
                 const w = child.val();
-                if(w.status === 'Pending') pendingCount++;
-                table.innerHTML += `
-                    <tr class="border-b">
-                        <td class="py-4 font-bold">${w.sellerName}</td>
-                        <td class="text-gray-600">₹${w.totalBalance}</td>
-                        <td class="font-bold text-indigo-600">₹${w.requestAmount}</td>
-                        <td><span class="px-2 py-1 rounded text-xs ${w.status=='Pending'?'bg-yellow-100 text-yellow-700':'bg-green-100 text-green-700'}">${w.status}</span></td>
-                        <td>
+                if(w.status === 'Pending') pCount++;
+                shelf.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-4 font-bold text-zinc-200">${w.sellerName}</td>
+                        <td class="px-6 py-4 text-zinc-500">₹${w.totalBalance}</td>
+                        <td class="px-6 py-4 font-bold text-indigo-400">₹${w.requestAmount}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] ${w.status=='Pending'?'bg-amber-500/10 text-amber-500':'bg-emerald-500/10 text-emerald-500'}">
+                                ${w.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
                             ${w.status === 'Pending' ? `
-                                <button onclick="handleWithdraw('${child.key}', '${w.sellerId}', 'Approved')" class="text-green-500 font-bold mr-3">Approve</button>
-                                <button onclick="handleWithdraw('${child.key}', '${w.sellerId}', 'Rejected')" class="text-red-400">Reject</button>
-                            ` : `<span class="text-gray-400">Marked as Paid</span>`}
+                                <button onclick="approveW('${child.key}', '${w.sellerId}', '${w.requestAmount}', '${w.totalBalance}')" class="text-emerald-500 font-bold mr-4">Approve</button>
+                                <button onclick="rejectW('${child.key}')" class="text-zinc-600 hover:text-red-500">Reject</button>
+                            ` : `<i class="fa-solid fa-check-double text-zinc-700 ml-4"></i>`}
                         </td>
                     </tr>
                 `;
             });
-            document.getElementById('pending-withdraw-count').innerText = pendingCount;
+            document.getElementById('withdraw-pending-badge').innerText = pCount;
         });
 
-        window.handleWithdraw = (key, sellerId, status) => {
-            update(ref(db, 'withdrawals/' + key), { status: status });
-            // Notification logic (8.4 requirements) is handled by triggering a notification node
-            push(ref(db, 'notifications/' + sellerId), {
-                title: "Withdrawal Update",
-                body: "Your request has been " + status,
-                timestamp: Date.now()
-            });
-            alert("Withdrawal " + status);
-        };
-                // --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
-        onValue(ref(db, 'promotions'), (snapshot) => {
-            const container = document.getElementById('sec-8.4');
-            let html = `
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-bold mb-4 italic text-indigo-600">8.4 Seller Promotion Payment Records</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <tr class="bg-gray-100 text-gray-700">
-                                <th class="p-3">Seller & Documents</th>
-                                <th class="p-3">Product ID</th>
-                                <th class="p-3">Contact</th>
-                                <th class="p-3">Payment Recv.</th>
-                                <th class="p-3">Reference</th>
-                            </tr>`;
+        window.approveW = (key, sId, amt, bal) => {
+            const pending = parseFloat(bal) - parseFloat(amt);
+            update(ref(db, 'withdrawals/' + key), { status: 'Paid' });
             
-            snapshot.forEach(child => {
-                const p = child.val();
-                html += `
-                    <tr class="border-b">
-                        <td class="p-3">
-                            <div class="font-bold text-indigo-800">${p.sellerName}</div>
-                            <div class="text-[10px] text-gray-500 uppercase">
-                                Aadhar: ${p.aadhar} | PAN: ${p.pan} | GST: ${p.gst}
-                            </div>
-                        </td>
-                        <td class="p-3 font-mono text-xs">${p.productId}</td>
-                        <td class="p-3">${p.mobile}</td>
-                        <td class="p-3 font-bold text-green-600">₹${p.amount}</td>
-                        <td class="p-3 text-gray-500">${p.reference || 'N/A'}</td>
-                    </tr>`;
+            // 8.4 Auto-notify requirement
+            push(ref(db, `seller_notifications/${sId}`), {
+                title: "Withdrawal Approved",
+                details: `Amount: ₹${amt} | Pending Balance: ₹${pending}`,
+                time: Date.now()
             });
-            html += `</table></div></div>`;
-            container.innerHTML = html;
-        });
-
-        // --- 8.5 FEATURED PRODUCTS (HOME PAGE PINNING) ---
-        window.pinToHome = () => {
-            const pid = document.getElementById('feat-pid').value;
-            const sid = document.getElementById('feat-sid').value;
-            const priority = document.getElementById('feat-priority').value;
-            const expiry = document.getElementById('feat-expiry').value;
-
-            if(!pid || !expiry) return alert("Product ID and Expiry Date are required");
-
-            set(ref(db, 'featured/' + pid), {
-                productId: pid,
-                sellerProductId: sid,
-                priority: parseInt(priority),
-                expiryDate: expiry,
-                timestamp: Date.now()
-            });
-            alert("Product Pinned to Homepage Top until " + expiry);
+            alert(`Payment marked as Paid. Seller notified with balance: ₹${pending}`);
         };
-
-        onValue(ref(db, 'featured'), (snapshot) => {
-            const container = document.getElementById('sec-8.5');
-            let listHtml = "";
-            snapshot.forEach(child => {
-                const f = child.val();
-                listHtml += `
-                    <div class="flex items-center justify-between p-3 border rounded-lg mb-2 bg-indigo-50">
-                        <div>
-                            <span class="font-bold">ID: ${f.productId}</span> 
-                            <span class="text-xs ml-2 text-gray-500">Expires: ${f.expiryDate}</span>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span class="bg-indigo-600 text-white px-2 py-0.5 rounded text-xs">Priority: ${f.priority}</span>
-                            <button onclick="removeFeatured('${child.key}')" class="text-red-500"><i class="fas fa-times-circle"></i></button>
-                        </div>
-                    </div>`;
-            });
-
-            container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">8.5 Pin Product to Homepage</h3>
-                        <input type="text" id="feat-pid" placeholder="Product ID (SRP-XXXX)">
-                        <input type="text" id="feat-sid" placeholder="Seller Product ID">
-                        <input type="number" id="feat-priority" placeholder="Display Priority (1-100)">
-                        <label class="text-xs font-bold text-gray-500">Display Until Date:</label>
-                        <input type="date" id="feat-expiry">
-                        <button onclick="pinToHome()" class="btn-primary w-full">Apply Pin Priority</button>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">Active Featured Products</h3>
-                        <div id="featured-list-items">${listHtml}</div>
-                    </div>
-                </div>`;
-        });
-
-        window.removeFeatured = (key) => {
-            remove(ref(db, 'featured/' + key));
-        };
-
-        // --- 8.6 GLOBAL ORDER DASHBOARD ---
-        onValue(ref(db, 'orders'), (snapshot) => {
-            const container = document.getElementById('sec-8.6');
-            let totalComm = 0;
-            let orderRows = "";
-            
-            snapshot.forEach(child => {
-                const o = child.val();
-                const comm = (parseFloat(o.totalAmount) * 0.10); // Example 10% commission
-                totalComm += comm;
-                orderRows += `
-                    <tr class="border-b text-xs">
-                        <td class="p-3 font-bold">${o.orderId}</td>
-                        <td class="p-3">${o.userName}<br><span class="text-gray-400">${o.email}</span></td>
-                        <td class="p-3">${o.sellerName || 'Direct'}</td>
-                        <td class="p-3"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded">${o.paymentStatus || 'Paid'}</span></td>
-                        <td class="p-3 font-bold">₹${o.totalAmount}</td>
-                        <td class="p-3 text-blue-600 font-bold">₹${comm.toFixed(2)}</td>
-                    </tr>`;
-            });
-
-            container.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-bold">8.6 Global Order Analytics</h3>
-                        <div class="text-right">
-                            <p class="text-xs text-gray-500">Total Platform Commission</p>
-                            <p class="text-2xl font-black text-blue-600">₹${totalComm.toFixed(2)}</p>
-                        </div>
-                    </div>
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="p-3">Order ID</th>
-                                <th class="p-3">User</th>
-                                <th class="p-3">Seller</th>
-                                <th class="p-3">Payment</th>
-                                <th class="p-3">Amount</th>
-                                <th class="p-3">Comm. (10%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>${orderRows}</tbody>
-                    </table>
-                </div>`;
-        });
-
-        // --- 8.7 ADMIN SECURITY & THEME ---
-        window.updateAdminPassword = () => {
-            const newPass = document.getElementById('admin-new-pass').value;
-            if(newPass.length < 6) return alert("Password too weak!");
-            update(ref(db, 'admin/settings'), { password: newPass });
-            alert("Security Credentials Updated");
-        };
-
-        window.toggle2FA = (status) => {
-            update(ref(db, 'admin/settings'), { twoFactor: status });
-            alert("2FA Login " + (status ? "Enabled" : "Disabled"));
-        };
-
-        const sec87 = document.getElementById('sec-8.7');
-        sec87.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-bold mb-4 text-red-600"><i class="fas fa-lock mr-2"></i> 8.7 Admin Security</h3>
-                    <label class="text-sm font-bold">Change Admin Password</label>
-                    <input type="password" id="admin-new-pass" placeholder="Enter new strong password">
-                    <button onclick="updateAdminPassword()" class="bg-red-600 text-white w-full py-2 rounded-lg mb-6">Update Password</button>
-                    
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                            <p class="font-bold">Enable 2FA Login</p>
-                            <p class="text-xs text-gray-500">Adds extra layer of security</p>
-                        </div>
-                        <button onclick="toggle2FA(true)" class="text-green-600 font-bold">Enable</button>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="text-lg font-bold mb-4"><i class="fas fa-adjust mr-2"></i> Appearance Control</h3>
-                    <p class="text-sm text-gray-500 mb-4">Switch between Day and Night mode manually.</p>
-                    <div class="flex gap-4">
-                        <button onclick="setTheme('day')" class="flex-1 py-3 rounded-lg border-2 border-yellow-400 text-yellow-600 font-bold">
-                            <i class="fas fa-sun mr-2"></i> Day Mode
-                        </button>
-                        <button onclick="setTheme('night')" class="flex-1 py-3 rounded-lg bg-gray-900 text-white font-bold">
-                            <i class="fas fa-moon mr-2"></i> Night Mode
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-
-        window.setTheme = (mode) => {
-            const body = document.getElementById('adminBody');
-            if(mode === 'night') body.classList.add('dark-mode');
-            else body.classList.remove('dark-mode');
-        };
-
-        // --- 8.8, 8.9, 8.10 ANALYTICS ENGINE ---
-        function runAnalytics() {
-            onValue(ref(db, 'stats'), (snap) => {
-                const s = snap.val() || {};
-                const sec88 = document.getElementById('sec-8.8');
-                
-                // Income Calculation (8.10)
-                const totalCommission = s.totalCommission || 0;
-                const promotionFees = s.promotionFees || 0;
-                const totalAdminIncome = totalCommission + promotionFees;
-
-                sec88.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
-                                <p class="text-xs text-gray-400 uppercase">Total Users</p>
-                                <p class="text-xl font-bold">${s.totalUsers || 0}</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
-                                <p class="text-xs text-gray-400 uppercase">Total Sellers</p>
-                                <p class="text-xl font-bold">${s.totalSellers || 0}</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg shadow-sm text-center border-b-4 border-green-500">
-                                <p class="text-xs text-gray-400 uppercase">Today Users</p>
-                                <p class="text-xl font-bold">${s.todayUsers || 0}</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg shadow-sm text-center border-b-4 border-indigo-500">
-                                <p class="text-xs text-gray-400 uppercase">Today Sellers</p>
-                                <p class="text-xl font-bold">${s.todaySellers || 0}</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
-                                <p class="text-xs text-gray-400 uppercase">Site Visits</p>
-                                <p class="text-xl font-bold">${s.totalVisits || 0}</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg shadow-sm text-center border-b-4 border-red-500">
-                                <p class="text-xs text-gray-400 uppercase">Today Visits</p>
-                                <p class="text-xl font-bold">${s.todayVisits || 0}</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-indigo-900 text-white p-6 rounded-xl shadow-lg">
-                                <h3 class="text-indigo-200 font-bold mb-4">8.9 Sales & Revenue</h3>
-                                <div class="flex justify-between items-end">
-                                    <div>
-                                        <p class="text-xs opacity-70">Gross Sales Volume</p>
-                                        <p class="text-3xl font-black">₹${s.totalSales || 0}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-xs opacity-70">Total Orders</p>
-                                        <p class="text-xl font-bold">${s.totalOrders || 0}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-green-600 text-white p-6 rounded-xl shadow-lg">
-                                <h3 class="text-green-100 font-bold mb-4">8.10 Total Admin Income</h3>
-                                <div class="space-y-2">
-                                    <div class="flex justify-between text-sm">
-                                        <span>Earned Commission:</span>
-                                        <span class="font-bold">₹${totalCommission.toFixed(2)}</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span>Promotion Payments:</span>
-                                        <span class="font-bold">₹${promotionFees.toFixed(2)}</span>
-                                    </div>
-                                    <hr class="opacity-20">
-                                    <div class="flex justify-between text-xl font-black">
-                                        <span>NET INCOME:</span>
-                                        <span>₹${totalAdminIncome.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-        }
-        runAnalytics();
-
 </script>
