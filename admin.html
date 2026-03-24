@@ -326,7 +326,42 @@
                 </div>
             </div>
         </div>
-        
+                <div id="featured-mgmt" class="admin-section">
+            </div>
+
+        <div id="global-dash" class="admin-section">
+            </div>
+
+        <div id="category-mgmt" class="admin-section">
+            </div>
+
+        <div id="coupon-mgmt" class="admin-section">
+            </div>
+
+        <div id="review-mgmt" class="admin-section">
+            </div>
+
+        <div id="user-mgmt" class="admin-section">
+            </div>
+
+        <div id="system-settings" class="admin-section">
+            </div>
+
+        <div id="ai-code-checker" class="admin-section">
+            </div>
+
+        <div id="live-chat-support" class="admin-section">
+            </div>
+
+        <div id="push-notifications" class="admin-section">
+            </div>
+
+        <div id="seo-tools" class="admin-section">
+            </div>
+
+        <div id="loyalty-engine" class="admin-section">
+            </div>
+
         </main>
 
     <div id="addProductModal" class="fixed inset-0 bg-black/80 hidden z-[100] flex items-center justify-center p-4">
@@ -369,6 +404,19 @@
                 </div>
                 <button type="submit" class="w-full btn-action btn-primary py-3">SAVE PRODUCT & GENERATE ID</button>
             </form>
+        </div>
+    </div>
+    <div id="addCategoryModal" class="fixed inset-0 bg-black/80 hidden z-[100] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">New Category</h3>
+                <button onclick="closeModal('addCategoryModal')" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="cat-name" placeholder="Category Name (e.g. Mobile)" class="form-input">
+                <input type="text" id="cat-icon" placeholder="FontAwesome Icon (e.g. fas fa-mobile)" class="form-input">
+                <button onclick="saveCategory(); closeModal('addCategoryModal');" class="w-full btn-action btn-primary py-3">SAVE CATEGORY</button>
+            </div>
         </div>
     </div>
 
