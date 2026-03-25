@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Ultimate Admin Panel</title>
+    <title>SRP SHOPPING | Command Center v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -11,150 +11,268 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
-        .sidebar { transition: all 0.3s ease; width: 280px; }
-        .sidebar.collapsed { width: 0; overflow: hidden; }
-        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(229, 231, 235, 1); }
-        .dark .glass-card { background: rgba(31, 41, 55, 0.95); border-color: rgba(75, 85, 99, 1); }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 10px; }
-        .loader { border-top-color: #6366f1; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --accent: #10b981;
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        /* Glassmorphism Sidebar */
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 100%);
+            border-left-color: var(--primary);
+            color: white;
+        }
+
+        .stat-card {
+            background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .hidden { display: none !important; }
+        .active-section { display: block !important; animation: fadeIn 0.4s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        input, select, textarea {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: white !important;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
+<body>
 
-<div id="admin-app" class="flex min-h-screen">
-    
-    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 bg-indigo-900 text-white shadow-2xl flex flex-col">
-        <div class="p-6 flex items-center justify-between border-b border-indigo-800">
-            <h1 class="text-xl font-bold tracking-wider">SRP ADMIN</h1>
-            <button onclick="toggleSidebar()" class="lg:hidden"><i class="fas fa-times"></i></button>
+<div class="flex min-h-screen">
+    <aside id="sidebar" class="glass-sidebar fixed inset-y-0 left-0 z-50 w-72 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="fas fa-shopping-bag text-white"></i>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight">SRP <span class="text-indigo-500">SHOP</span></span>
+            </div>
+            <button onclick="toggleSidebar()" class="lg:hidden text-gray-400"><i class="fas fa-times"></i></button>
         </div>
-        
-        <nav class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
-            <a href="#" onclick="showSection('8.1')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-box w-6"></i> 8.1 Product Management</a>
-            <a href="#" onclick="showSection('8.2')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-shopping-cart w-6"></i> 8.2 Order Management</a>
-            <a href="#" onclick="showSection('8.3')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-hand-holding-usd w-6"></i> 8.3 Withdrawal Approval</a>
-            <a href="#" onclick="showSection('8.4')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-ad w-6"></i> 8.4 Seller Promotions</a>
-            <a href="#" onclick="showSection('8.5')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-home w-6"></i> 8.5 Featured Products</a>
-            <a href="#" onclick="showSection('8.6')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-globe w-6"></i> 8.6 Global Dashboard</a>
-            <a href="#" onclick="showSection('8.7')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-shield-alt w-6"></i> 8.7 Admin Security</a>
-            <a href="#" onclick="showSection('8.8')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-chart-line w-6"></i> 8.8 Website Analytics</a>
-            <a href="#" onclick="showSection('8.9')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-chart-pie w-6"></i> 8.9 Sales Analytics</a>
-            <a href="#" onclick="showSection('8.10')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-wallet w-6"></i> 8.10 Admin Income</a>
-            <a href="#" onclick="showSection('8.11')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-tags w-6"></i> 8.11 Category Manage</a>
-            <a href="#" onclick="showSection('8.12')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-percentage w-6"></i> 8.12 Coupon Manage</a>
-            <a href="#" onclick="showSection('8.13')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-image w-6"></i> 8.13 Banner Manage</a>
-            <a href="#" onclick="showSection('8.14')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-star w-6"></i> 8.14 Review Moderation</a>
-            <a href="#" onclick="showSection('8.15')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-users w-6"></i> 8.15 User Management</a>
-            <a href="#" onclick="showSection('8.16')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-store w-6"></i> 8.16 Seller Management</a>
-            <a href="#" onclick="showSection('8.17')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-history w-6"></i> 8.17 Payment History</a>
-            <a href="#" onclick="showSection('8.18')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-undo w-6"></i> 8.18 Refund System</a>
-            <a href="#" onclick="showSection('8.19')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-list-alt w-6"></i> 8.19 System Logs</a>
-            <a href="#" onclick="showSection('8.20')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-cogs w-6"></i> 8.20 Platform Settings</a>
-            <a href="#" onclick="showSection('8.21')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fab fa-github w-6"></i> 8.21 Code Checker</a>
-            <a href="#" onclick="showSection('8.22')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-robot w-6"></i> 8.22 AI Fixer</a>
+
+        <nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 ml-2">Main Controls</p>
+            <a href="javascript:void(0)" onclick="loadSec('8.1')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 group">
+                <i class="fas fa-cubes group-hover:text-indigo-400"></i> <span>8.1 Product Manage</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.2')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 group">
+                <i class="fas fa-receipt group-hover:text-indigo-400"></i> <span>8.2 Order Tracking</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.3')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 group">
+                <i class="fas fa-wallet group-hover:text-indigo-400"></i> <span>8.3 Seller Payouts</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.4')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 group">
+                <i class="fas fa-bullhorn group-hover:text-indigo-400"></i> <span>8.4 Ad Payments</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.5')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 group">
+                <i class="fas fa-star group-hover:text-indigo-400"></i> <span>8.5 Featured Setup</span>
+            </a>
+            
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-6 mb-2 ml-2">Analytics & Finance</p>
+            <a href="javascript:void(0)" onclick="loadSec('8.6')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400">
+                <i class="fas fa-chart-line"></i> <span>8.6 Global Dashboard</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.8')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400">
+                <i class="fas fa-globe"></i> <span>8.8 Site Analytics</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.10')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400">
+                <i class="fas fa-sack-dollar"></i> <span>8.10 Admin Income</span>
+            </a>
+
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-6 mb-2 ml-2">Users & Security</p>
+            <a href="javascript:void(0)" onclick="loadSec('8.15')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400">
+                <i class="fas fa-user-shield"></i> <span>8.15 User Database</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.16')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400">
+                <i class="fas fa-store-alt"></i> <span>8.16 Seller Control</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.7')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400">
+                <i class="fas fa-key"></i> <span>8.7 Security Hub</span>
+            </a>
+
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-6 mb-2 ml-2">System Tools</p>
+            <a href="javascript:void(0)" onclick="loadSec('8.21')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 text-red-400">
+                <i class="fab fa-github"></i> <span>8.21 Github Checker</span>
+            </a>
+            <a href="javascript:void(0)" onclick="loadSec('8.22')" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 text-blue-400">
+                <i class="fas fa-robot"></i> <span>8.22 AI Code Fixer</span>
+            </a>
         </nav>
 
-        <div class="p-4 border-t border-indigo-800">
-            <button onclick="window.location.href='home.html'" class="w-full bg-red-500 hover:bg-red-600 p-2 rounded flex items-center justify-center gap-2">
-                <i class="fas fa-arrow-left"></i> BACK TO HOME
+        <div class="p-4 bg-slate-900/50">
+            <button onclick="window.location.href='home.html'" class="w-full py-3 px-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl flex items-center justify-center gap-2 font-bold transition-all border border-red-500/20">
+                <i class="fas fa-home"></i> RETURN TO SHOP
             </button>
         </div>
     </aside>
 
-    <main class="flex-1 ml-0 lg:ml-64 p-4 lg:p-8">
-        <header class="flex justify-between items-center mb-8 glass-card p-4 rounded-xl shadow-sm">
-            <button onclick="toggleSidebar()" class="text-2xl text-indigo-900"><i class="fas fa-bars"></i></button>
+    <main class="flex-1 lg:ml-72 min-h-screen flex flex-col">
+        
+        <header class="h-20 flex items-center justify-between px-8 bg-slate-900/30 border-b border-white/5 sticky top-0 z-40 backdrop-blur-md">
             <div class="flex items-center gap-4">
-                <button onclick="toggleDarkMode()" id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200"><i class="fas fa-moon"></i></button>
-                <div class="text-right">
-                    <p class="font-bold text-sm">Super Admin</p>
-                    <p class="text-xs text-gray-500">Online</p>
+                <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fas fa-bars"></i></button>
+                <h2 id="current-section-title" class="text-lg font-semibold text-gray-300">Dashboard Overview</h2>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="hidden md:flex flex-col text-right">
+                    <span class="text-sm font-bold">Main Admin</span>
+                    <span class="text-[10px] text-green-500 flex items-center justify-end gap-1"><i class="fas fa-circle text-[6px]"></i> Live System</span>
                 </div>
-                <img src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff" class="w-10 h-10 rounded-full">
+                <div class="relative group">
+                    <img src="https://ui-avatars.com/api/?name=SRP&background=6366f1&color=fff" class="w-10 h-10 rounded-xl border-2 border-indigo-500/50 cursor-pointer">
+                    <div class="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-white/10">
+                        <a href="#" class="block p-2 text-sm hover:bg-indigo-600 rounded">Settings</a>
+                        <a href="#" class="block p-2 text-sm text-red-400 hover:bg-red-600/10 rounded">Logout</a>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <div id="content-area">
-
-            <section id="sec-8.1" class="hidden animate-fade-in">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Product Management</h2>
-                    <button onclick="openProductModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                        <i class="fas fa-plus"></i> Add New Product
+        <div class="p-8">
+            
+            <section id="sec-8.1" class="hidden active-section">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                    <div>
+                        <h1 class="text-3xl font-extrabold">Inventory Master</h1>
+                        <p class="text-gray-400">Add, manage and track all SRP Shopping products.</p>
+                    </div>
+                    <button onclick="openProductModal()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-600/20 font-bold flex items-center gap-2 transition-all">
+                        <i class="fas fa-plus-circle"></i> ADD PRODUCT
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <input type="text" id="prod-search" placeholder="Search Product ID or Name..." class="p-2 border rounded shadow-sm">
-                    <select id="prod-cat-filter" class="p-2 border rounded shadow-sm">
-                        <option value="">All Categories</option>
-                    </select>
-                    <div class="bg-white p-2 border rounded flex justify-around">
-                        <span class="text-green-600 font-bold">Active: <span id="active-count">0</span></span>
-                        <span class="text-red-600 font-bold">Low Stock: <span id="stock-count">0</span></span>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card p-6 rounded-2xl">
+                        <p class="text-gray-500 text-sm mb-1">Total SKU</p>
+                        <h3 id="stat-total-products" class="text-2xl font-black text-white">0</h3>
+                    </div>
+                    <div class="stat-card p-6 rounded-2xl">
+                        <p class="text-gray-500 text-sm mb-1">Out of Stock</p>
+                        <h3 id="stat-out-stock" class="text-2xl font-black text-red-400">0</h3>
+                    </div>
+                    <div class="stat-card p-6 rounded-2xl">
+                        <p class="text-gray-500 text-sm mb-1">Categories</p>
+                        <h3 id="stat-cats" class="text-2xl font-black text-indigo-400">0</h3>
+                    </div>
+                    <div class="stat-card p-6 rounded-2xl">
+                        <p class="text-gray-500 text-sm mb-1">Live Banners</p>
+                        <h3 id="stat-banners" class="text-2xl font-black text-emerald-400">0</h3>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
-                    <table class="w-full text-left">
-                        <thead class="bg-indigo-50 border-b">
-                            <tr>
-                                <th class="p-4">Image</th>
-                                <th class="p-4">Product ID</th>
-                                <th class="p-4">Name</th>
-                                <th class="p-4">Category</th>
-                                <th class="p-4">Price (MRP/Disc)</th>
-                                <th class="p-4">Stock</th>
-                                <th class="p-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="product-list-body">
-                            </tbody>
-                    </table>
+                <div class="bg-slate-800/50 rounded-2xl border border-white/5 overflow-hidden">
+                    <div class="p-4 border-b border-white/5 flex items-center gap-4">
+                        <i class="fas fa-search text-gray-500"></i>
+                        <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Search by Product ID, Name or Seller ID..." class="bg-transparent border-none outline-none w-full text-sm">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-gray-400 text-xs uppercase tracking-widest bg-slate-900/50">
+                                    <th class="p-5 font-semibold">Thumbnail</th>
+                                    <th class="p-5 font-semibold">ID / Reference</th>
+                                    <th class="p-5 font-semibold">Title</th>
+                                    <th class="p-5 font-semibold">Pricing</th>
+                                    <th class="p-5 font-semibold">Inventory</th>
+                                    <th class="p-5 font-semibold">Status</th>
+                                    <th class="p-5 font-semibold text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-tbody" class="divide-y divide-white/5">
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
             <section id="sec-8.2" class="hidden">
-                <h2 class="text-2xl font-bold mb-6">Master Order Dashboard</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-blue-500 text-white p-6 rounded-xl shadow-md">
-                        <p class="text-sm opacity-80">Total Orders</p>
-                        <h3 id="total-orders-count" class="text-3xl font-bold">0</h3>
-                    </div>
-                    <div class="bg-orange-500 text-white p-6 rounded-xl shadow-md">
-                        <p class="text-sm opacity-80">Pending Shipment</p>
-                        <h3 id="pending-ship-count" class="text-3xl font-bold">0</h3>
-                    </div>
-                    <div class="bg-green-500 text-white p-6 rounded-xl shadow-md">
-                        <p class="text-sm opacity-80">Successful Deliveries</p>
-                        <h3 id="success-order-count" class="text-3xl font-bold">0</h3>
-                    </div>
+                <div class="mb-8">
+                    <h1 class="text-3xl font-extrabold">Order Logistics</h1>
+                    <p class="text-gray-400">Track and fulfill orders across all vendors.</p>
                 </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-8 bg-slate-800/50 rounded-2xl border border-white/5 overflow-hidden">
+                        <div class="p-6 border-b border-white/5">
+                            <h3 class="font-bold flex items-center gap-2"><i class="fas fa-list text-indigo-500"></i> Recent Shipments</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900/50 text-xs text-gray-500">
+                                    <tr>
+                                        <th class="p-4">Customer/ID</th>
+                                        <th class="p-4">Tracking Info</th>
+                                        <th class="p-4">Total</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4">Manage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="order-tbody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <table class="w-full">
-                        <thead class="bg-gray-100">
-                            <tr class="text-left">
-                                <th class="p-4">Order ID</th>
-                                <th class="p-4">Customer</th>
-                                <th class="p-4">Tracking ID</th>
-                                <th class="p-4">Status</th>
-                                <th class="p-4">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="order-list-body">
-                            </tbody>
-                    </table>
+                    <div class="lg:col-span-4 space-y-6">
+                        <div id="order-snapshot" class="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 text-center">
+                            <i class="fas fa-box-open text-4xl text-indigo-500 mb-4"></i>
+                            <h4 class="font-bold">Select an order</h4>
+                            <p class="text-sm text-gray-400">Tap view to see full invoice, user details, and product image.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <section id="sec-8.3" class="hidden">
-                <h2 class="text-2xl font-bold mb-6">Withdrawal Requests</h2>
-                <div class="grid grid-cols-1 gap-4" id="withdrawal-list">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h1 class="text-3xl font-extrabold">Payout Requests</h1>
+                        <p class="text-gray-400">Review and approve vendor withdrawals.</p>
+                    </div>
+                </div>
+                <div id="withdrawal-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     </div>
             </section>
 
@@ -162,158 +280,225 @@
     </main>
 </div>
 
-<div id="product-modal" class="fixed inset-0 z-[60] hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl">
-        <div class="flex justify-between mb-6">
-            <h3 id="modal-title" class="text-xl font-bold">Add New Product</h3>
-            <button onclick="closeProductModal()" class="text-2xl">&times;</button>
+<div id="product-modal" class="fixed inset-0 z-[100] hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 w-full max-w-4xl rounded-3xl border border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-indigo-600/5">
+            <h3 class="text-xl font-black">Configure Product</h3>
+            <button onclick="closeProductModal()" class="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center">&times;</button>
         </div>
-        <form id="product-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-                <label class="block font-medium text-sm">Product Name</label>
-                <input type="text" id="p-name" required class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none">
-                
-                <div class="grid grid-cols-2 gap-4">
+        <div class="p-8 overflow-y-auto flex-1">
+            <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-6">
                     <div>
-                        <label class="block font-medium text-sm">MRP (₹)</label>
-                        <input type="number" id="p-mrp" required class="w-full p-3 border rounded-lg">
+                        <label class="text-xs uppercase font-bold text-gray-500 mb-2 block">Product Identity</label>
+                        <input type="text" id="p-name" placeholder="Enter full product name" required class="w-full px-4 py-3 rounded-xl">
                     </div>
-                    <div>
-                        <label class="block font-medium text-sm">Discount Price (₹)</label>
-                        <input type="number" id="p-discount" required class="w-full p-3 border rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 mb-2 block">MRP (₹)</label>
+                            <input type="number" id="p-mrp" placeholder="0.00" class="w-full px-4 py-3 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 mb-2 block">Our Price (₹)</label>
+                            <input type="number" id="p-discount" placeholder="0.00" class="w-full px-4 py-3 rounded-xl">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 mb-2 block">Category</label>
+                            <select id="p-category" class="w-full px-4 py-3 rounded-xl">
+                                <option>Electronics</option>
+                                <option>Fashion</option>
+                                <option>Home</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 mb-2 block">Initial Stock</label>
+                            <input type="number" id="p-stock" placeholder="100" class="w-full px-4 py-3 rounded-xl">
+                        </div>
                     </div>
                 </div>
 
-                <label class="block font-medium text-sm">Category</label>
-                <select id="p-category" required class="w-full p-3 border rounded-lg"></select>
-
-                <label class="block font-medium text-sm">Stock Quantity</label>
-                <input type="number" id="p-stock" required class="w-full p-3 border rounded-lg">
-            </div>
-
-            <div class="space-y-4">
-                <label class="block font-medium text-sm">Product Image</label>
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500" onclick="document.getElementById('p-image').click()">
-                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                    <p class="text-xs text-gray-500">Click to upload from gallery</p>
-                    <input type="file" id="p-image" class="hidden" accept="image/*" onchange="previewImage(this)">
+                <div class="space-y-6">
+                    <label class="text-xs uppercase font-bold text-gray-500 mb-2 block">Visual Assets</label>
+                    <div class="w-full h-48 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center bg-white/5 hover:bg-white/10 transition-all cursor-pointer overflow-hidden relative" onclick="document.getElementById('p-image').click()">
+                        <img id="previewImg" class="absolute inset-0 w-full h-full object-cover hidden">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-indigo-500 mb-2"></i>
+                        <span class="text-sm font-medium">Upload HD Image</span>
+                        <input type="file" id="p-image" class="hidden" accept="image/*" onchange="handleImagePreview(this)">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 mb-2 block">Description</label>
+                        <textarea id="p-desc" rows="4" placeholder="Features, warranty, etc." class="w-full px-4 py-3 rounded-xl resize-none"></textarea>
+                    </div>
                 </div>
-                <img id="img-preview" class="w-full h-32 object-contain hidden border rounded">
-
-                <label class="block font-medium text-sm">Description</label>
-                <textarea id="p-desc" rows="4" class="w-full p-3 border rounded-lg"></textarea>
-            </div>
-
-            <div class="md:col-span-2 flex justify-end gap-4 mt-6">
-                <button type="button" onclick="closeProductModal()" class="px-6 py-2 border rounded-lg">Cancel</button>
-                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Product</button>
-            </div>
-        </form>
+            </form>
+        </div>
+        <div class="p-6 border-t border-white/5 bg-slate-900/50 flex justify-end gap-4">
+            <button onclick="closeProductModal()" class="px-6 py-2 text-gray-400 hover:text-white font-bold">Discard</button>
+            <button onclick="saveProduct()" class="px-8 py-3 bg-indigo-600 rounded-xl font-black shadow-lg shadow-indigo-600/40 hover:scale-105 transition-transform">INITIALIZE PRODUCT</button>
+        </div>
     </div>
 </div>
 
 <script>
-// INITIALIZATION & CONFIG
+// --- FIREBASE INITIALIZATION ---
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
-const auth = firebase.auth();
 
-// SECTION HANDLER
-function showSection(sectionId) {
-    document.querySelectorAll('#content-area section').forEach(s => s.classList.add('hidden'));
-    const target = document.getElementById(`sec-${sectionId}`);
-    if(target) target.classList.remove('hidden');
-    
-    // Auto-load section specific data
-    if(sectionId === '8.1') loadProducts();
-    if(sectionId === '8.2') loadOrders();
-    if(sectionId === '8.3') loadWithdrawals();
+// --- STATE MANAGEMENT ---
+let currentSection = '8.1';
+
+// --- UI HELPERS ---
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
 }
 
-// 8.1 PRODUCT MANAGEMENT LOGIC
+function loadSec(id) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active-section'));
+    document.getElementById(`sec-${id}`).classList.add('active-section');
+    
+    // UI Updates
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('current-section-title').innerText = event.currentTarget.innerText;
+    
+    // Fetch Data for section
+    if(id === '8.1') loadProducts();
+    if(id === '8.2') loadOrders();
+    if(id === '8.3') loadWithdrawals();
+    
+    if(window.innerWidth < 1024) toggleSidebar();
+}
+
+// --- 8.1 PRODUCT MANAGEMENT LOGIC ---
 async function loadProducts() {
-    const list = document.getElementById('product-list-body');
-    list.innerHTML = '<tr><td colspan="7" class="text-center p-10"><div class="loader inline-block w-8 h-8 border-4 rounded-full"></div></td></tr>';
+    const tbody = document.getElementById('product-tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="p-20 text-center text-gray-500"><i class="fas fa-spinner fa-spin text-3xl"></i></td></tr>`;
     
-    const snapshot = await db.collection('products').get();
-    list.innerHTML = '';
-    snapshot.forEach(doc => {
-        const p = doc.data();
-        list.innerHTML += `
-            <tr class="border-b hover:bg-gray-50 transition">
-                <td class="p-4"><img src="${p.imageUrl}" class="w-12 h-12 rounded object-cover"></td>
-                <td class="p-4 font-mono text-xs font-bold text-indigo-600">${doc.id}</td>
-                <td class="p-4 font-semibold">${p.name}</td>
-                <td class="p-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs">${p.category}</span></td>
-                <td class="p-4">
-                    <span class="line-through text-gray-400 text-xs">₹${p.mrp}</span><br>
-                    <span class="text-green-600 font-bold">₹${p.discountPrice}</span>
-                </td>
-                <td class="p-4">
-                    <span class="${p.stock < 10 ? 'text-red-600 font-bold animate-pulse' : ''}">${p.stock} pcs</span>
-                </td>
-                <td class="p-4 space-x-2">
-                    <button onclick="editProduct('${doc.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button>
-                    <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `;
-    });
+    try {
+        const snap = await db.collection('products').orderBy('timestamp', 'desc').get();
+        tbody.innerHTML = '';
+        
+        document.getElementById('stat-total-products').innerText = snap.size;
+        let outOfStock = 0;
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            if(parseInt(data.stock) <= 0) outOfStock++;
+
+            tbody.innerHTML += `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="p-5"><img src="${data.imageUrl}" class="w-14 h-14 rounded-xl object-cover shadow-lg border border-white/10"></td>
+                    <td class="p-5 font-mono text-[10px] text-indigo-400 font-bold">${doc.id}</td>
+                    <td class="p-5">
+                        <div class="font-bold text-white">${data.name}</div>
+                        <div class="text-[10px] text-gray-500">${data.category}</div>
+                    </td>
+                    <td class="p-5">
+                        <div class="text-xs line-through text-gray-500">₹${data.mrp}</div>
+                        <div class="text-sm font-black text-emerald-400">₹${data.discountPrice}</div>
+                    </td>
+                    <td class="p-5">
+                        <div class="text-sm font-bold">${data.stock} <span class="text-[10px] text-gray-500">units</span></div>
+                    </td>
+                    <td class="p-5">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${data.stock > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}">
+                            ${data.stock > 0 ? 'Active' : 'Out of Stock'}
+                        </span>
+                    </td>
+                    <td class="p-5 text-right">
+                        <button onclick="editProduct('${doc.id}')" class="text-gray-400 hover:text-indigo-500 p-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteProduct('${doc.id}')" class="text-gray-400 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('stat-out-stock').innerText = outOfStock;
+    } catch (e) { console.error(e); }
 }
 
-// 8.2 ORDER MANAGEMENT LOGIC
+function openProductModal() { document.getElementById('product-modal').classList.remove('hidden'); }
+function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+function handleImagePreview(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('previewImg');
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function saveProduct() {
+    // Logic for adding product with Auto-ID and notification triggers
+    const name = document.getElementById('p-name').value;
+    const mrp = document.getElementById('p-mrp').value;
+    const disc = document.getElementById('p-discount').value;
+    const stock = document.getElementById('p-stock').value;
+    const cat = document.getElementById('p-category').value;
+    const desc = document.getElementById('p-desc').value;
+    const file = document.getElementById('p-image').files[0];
+
+    if(!name || !file) return alert("Fill all fields and upload image");
+
+    // Show loading
+    const btn = event.currentTarget;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> SYNCING...`;
+    
+    try {
+        const storageRef = storage.ref(`products/${Date.now()}`);
+        await storageRef.put(file);
+        const url = await storageRef.getDownloadURL();
+
+        await db.collection('products').add({
+            name, mrp, discountPrice: disc, stock, category: cat, description: desc,
+            imageUrl: url, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        closeProductModal();
+        loadProducts();
+    } catch (e) { alert(e.message); }
+}
+
+// --- 8.2 ORDER MANAGEMENT LOGIC ---
 async function loadOrders() {
-    const body = document.getElementById('order-list-body');
+    const tbody = document.getElementById('order-tbody');
+    tbody.innerHTML = '...';
+    
     const snap = await db.collection('orders').orderBy('timestamp', 'desc').get();
-    body.innerHTML = '';
+    tbody.innerHTML = '';
     
     snap.forEach(doc => {
         const order = doc.data();
-        body.innerHTML += `
-            <tr class="border-b">
-                <td class="p-4 font-bold text-sm">#${doc.id.substring(0,8)}</td>
+        tbody.innerHTML += `
+            <tr class="border-b border-white/5 hover:bg-white/5 cursor-pointer" onclick="viewOrder('${doc.id}')">
                 <td class="p-4">
-                    <div class="text-sm font-bold">${order.userName}</div>
-                    <div class="text-xs text-gray-500">${order.phone}</div>
+                    <div class="font-bold text-sm">${order.userName}</div>
+                    <div class="text-[10px] text-gray-500 font-mono">${doc.id.substring(0,10)}</div>
                 </td>
                 <td class="p-4">
                     <input type="text" value="${order.trackingId || ''}" 
                         onchange="updateTracking('${doc.id}', this.value)"
-                        class="text-xs border p-1 rounded w-32" placeholder="Enter ID">
+                        class="bg-slate-900 border-none text-[10px] rounded px-2 py-1 w-full" placeholder="No Tracking ID">
                 </td>
+                <td class="p-4 font-black text-indigo-400">₹${order.amount}</td>
                 <td class="p-4">
-                    <select onchange="updateOrderStatus('${doc.id}', this.value)" 
-                        class="text-xs border p-1 rounded ${getStatusColor(order.status)}">
-                        <option value="Confirmed" ${order.status=='Confirmed'?'selected':''}>Confirmed</option>
-                        <option value="Shipped" ${order.status=='Shipped'?'selected':''}>Shipped</option>
-                        <option value="Delivered" ${order.status=='Delivered'?'selected':''}>Delivered</option>
+                    <select onchange="updateOrderStatus('${doc.id}', this.value)" class="text-[10px] rounded bg-slate-900 border-none">
+                        <option ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                        <option ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                        <option ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
                     </select>
                 </td>
                 <td class="p-4">
-                    <button onclick="viewOrderDetails('${doc.id}')" class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold">VIEW INVOICE</button>
+                    <button class="p-2 hover:bg-indigo-500 rounded text-xs"><i class="fas fa-eye"></i></button>
                 </td>
             </tr>
         `;
     });
 }
-
-function getStatusColor(status) {
-    if(status === 'Delivered') return 'bg-green-100 text-green-700';
-    if(status === 'Shipped') return 'bg-blue-100 text-blue-700';
-    return 'bg-yellow-100 text-yellow-700';
-}
-
-// TOGGLE SIDEBAR
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
-}
-
-// THEME TOGGLE
-function toggleDarkMode() {
-    document.documentElement.classList.toggle('dark');
-}
-
-// Start on Dashboard
-window.onload = () => showSection('8.1');
 </script>
