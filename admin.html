@@ -383,6 +383,188 @@
                 db.ref('products/' + pid).remove();
             }
         }
+// --- 8.2 ADMIN ORDERS MANAGEMENT CORE LOGIC ---
+function loadOrdersManagement() {
+    const ordersContainer = document.getElementById('orders-container');
+    
+    // Real-time listener for all orders
+    db.ref('orders').on('value', snapshot => {
+        let html = "";
+        const orders = snapshot.val();
+        
+        if (!orders) {
+            ordersContainer.innerHTML = `<div class="p-10 text-center text-slate-400">No active orders found in system.</div>`;
+            return;
+        }
+
+        Object.keys(orders).forEach(orderId => {
+            const o = orders[orderId];
+            const statusClass = o.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
+            
+            html += `
+            <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md transition bg-white mb-4">
+                <div class="flex flex-wrap justify-between items-start gap-4">
+                    <div class="cursor-pointer" onclick="viewOrderInvoice('${orderId}')">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold px-2 py-1 rounded ${statusClass}">${o.status || 'Pending'}</span>
+                            <h4 class="font-bold text-slate-800">Order #${orderId}</h4>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1"><i class="fas fa-user mr-1"></i> ${o.userName} | <i class="fas fa-phone mr-1"></i> ${o.phone}</p>
+                        <p class="text-[11px] text-slate-400 mt-1 uppercase tracking-widest">Tap to view full invoice & product details</p>
+                    </div>
+                    
+                    <div class="flex-1 min-w-[250px] space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="track-${orderId}" value="${o.trackingId || ''}" placeholder="Enter Tracking ID" 
+                                class="text-xs p-2 border rounded-lg w-full bg-slate-50">
+                            <button onclick="updateOrderField('${orderId}', 'trackingId')" class="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs">Update</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="status-${orderId}" class="text-xs p-2 border rounded-lg w-full bg-slate-50">
+                                <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                                <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                            <button onclick="updateOrderStatus('${orderId}')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Set Status</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        ordersContainer.innerHTML = html;
+    });
+}
+
+// 8.2.1 Detailed Invoice View (Tap Logic)
+async function viewOrderInvoice(orderId) {
+    const snap = await db.ref('orders/' + orderId).once('value');
+    const o = snap.val();
+    
+    const invoiceHtml = `
+        <div class="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center p-4 overflow-y-auto" id="invoice-modal">
+            <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+                <button onclick="this.parentElement.parentElement.remove()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
+                
+                <h2 class="text-xl font-black border-b pb-4 mb-4">INVOICE DETAILS</h2>
+                
+                <div class="flex gap-4 mb-6 bg-slate-50 p-3 rounded-xl border">
+                    <img src="${o.productImage}" class="w-20 h-20 rounded-lg object-cover shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-blue-600">PRODUCT ID: ${o.productId}</p>
+                        <h3 class="font-bold text-slate-800">${o.productName}</h3>
+                        <p class="text-sm font-medium">Price: ₹${o.totalAmount}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-y-4 text-sm">
+                    <div><p class="text-[10px] font-bold text-slate-400">CUSTOMER</p><p class="font-semibold">${o.userName}</p></div>
+                    <div><p class="text-[10px] font-bold text-slate-400">PHONE</p><p class="font-semibold">${o.phone}</p></div>
+                    <div class="col-span-2"><p class="text-[10px] font-bold text-slate-400">SHIPPING ADDRESS</p><p class="font-medium">${o.address}, ${o.pincode}</p></div>
+                    <div><p class="text-[10px] font-bold text-slate-400">ORDER DATE</p><p class="font-semibold">${o.purchaseDate || 'N/A'} ${o.purchaseTime || ''}</p></div>
+                    <div><p class="text-[10px] font-bold text-slate-400">PAYMENT STATUS</p><span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-bold">PAID</span></div>
+                </div>
+
+                <button onclick="window.print()" class="w-full mt-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition">Print Full Invoice</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', invoiceHtml);
+}
+
+function updateOrderStatus(orderId) {
+    const newStatus = document.getElementById(`status-${orderId}`).value;
+    db.ref(`orders/${orderId}`).update({ status: newStatus }).then(() => {
+        // 8.2 Real Notification Logic (Mock implementation for professional feedback)
+        sendOrderNotification(orderId, newStatus);
+        alert(`Order ${orderId} marked as ${newStatus}`);
+    });
+}
+
+function updateOrderField(orderId, field) {
+    const val = document.getElementById(`track-${orderId}`).value;
+    db.ref(`orders/${orderId}`).update({ [field]: val }).then(() => {
+        alert("Record Updated Successfully");
+    });
+}
+
+// --- 8.3 SELLER WITHDRAWAL APPROVAL ---
+function loadWithdrawals() {
+    const list = document.getElementById('withdrawal-list');
+    db.ref('withdrawals').on('value', snapshot => {
+        let html = "";
+        snapshot.forEach(child => {
+            const w = child.val();
+            const wid = child.key;
+            
+            if (w.status === 'pending') {
+                html += `
+                <div class="admin-card flex flex-col md:flex-row justify-between items-center gap-4 border-l-4 border-orange-500">
+                    <div>
+                        <h4 class="font-bold text-lg">${w.sellerName}</h4>
+                        <p class="text-sm text-slate-500">Balance: <span class="font-bold text-slate-800">₹${w.totalBalance}</span> | Req: <span class="text-orange-600 font-bold">₹${w.amount}</span></p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="handleWithdrawal('${wid}', 'Approved')" class="bg-green-600 text-white px-5 py-2 rounded-lg font-bold text-sm">Approve & Pay</button>
+                        <button onclick="handleWithdrawal('${wid}', 'Rejected')" class="bg-red-500 text-white px-5 py-2 rounded-lg font-bold text-sm">Reject</button>
+                    </div>
+                </div>`;
+            }
+        });
+        list.innerHTML = html || `<p class="text-center text-slate-400 py-10">No pending withdrawal requests.</p>`;
+    });
+}
+
+function handleWithdrawal(id, status) {
+    db.ref(`withdrawals/${id}`).update({ 
+        status: status,
+        processedAt: Date.now()
+    }).then(() => {
+        // Automatic Seller Notification logic would trigger here
+        alert(`Request ${status}`);
+    });
+}
+
+// --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
+function loadPromotionPayments() {
+    const container = document.getElementById('section-promotion');
+    db.ref('promotion_payments').on('value', snapshot => {
+        let html = `
+        <h2 class="text-2xl font-bold mb-6">8.4 Seller Promotion Payment System</h2>
+        <div class="admin-card overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-slate-100">
+                    <tr class="text-[10px] uppercase font-black text-slate-500">
+                        <th class="p-3">Seller Details</th>
+                        <th class="p-3">Govt IDs (Aadhar/PAN)</th>
+                        <th class="p-3">Product ID</th>
+                        <th class="p-3">Amount Received</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        snapshot.forEach(child => {
+            const p = child.val();
+            html += `
+                <tr class="border-b text-sm">
+                    <td class="p-3 font-bold">${p.sellerName}<br><span class="text-xs font-normal text-slate-500">${p.mobile}</span></td>
+                    <td class="p-3 text-xs">ADR: ${p.aadhar}<br>PAN: ${p.pan}<br>GST: ${p.gst}</td>
+                    <td class="p-3 font-mono text-blue-600 font-bold">${p.productId}</td>
+                    <td class="p-3"><span class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold">₹${p.paymentAmount}</span></td>
+                </tr>`;
+        });
+        
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+    });
+}
+
+// Initialization of Listeners
+window.addEventListener('DOMContentLoaded', () => {
+    loadOrdersManagement();
+    loadWithdrawals();
+    loadPromotionPayments();
+});
 
         // --- INIT CALLS ---
         window.onload = () => {
