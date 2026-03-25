@@ -1,438 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SRP SHOPPING | ADMIN PANEL PRO MAX</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<style>
-body { font-family: 'Inter', sans-serif; }
-.sidebar { transition: transform 0.3s ease; }
-.sidebar-hidden { transform: translateX(-100%); }
-.overlay {
-    position: fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background: rgba(0,0,0,0.5);
-    display:none;
-}
-.overlay.active { display:block; }
-.section { display:none; }
-.section.active { display:block; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRP SHOPPING | Ultimate Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .sidebar { transition: all 0.3s ease; width: 280px; }
+        .sidebar.collapsed { width: 0; overflow: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(229, 231, 235, 1); }
+        .dark .glass-card { background: rgba(31, 41, 55, 0.95); border-color: rgba(75, 85, 99, 1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 10px; }
+        .loader { border-top-color: #6366f1; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden">
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white">
+<div id="admin-app" class="flex min-h-screen">
+    
+    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 z-50 bg-indigo-900 text-white shadow-2xl flex flex-col">
+        <div class="p-6 flex items-center justify-between border-b border-indigo-800">
+            <h1 class="text-xl font-bold tracking-wider">SRP ADMIN</h1>
+            <button onclick="toggleSidebar()" class="lg:hidden"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+            <a href="#" onclick="showSection('8.1')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-box w-6"></i> 8.1 Product Management</a>
+            <a href="#" onclick="showSection('8.2')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-shopping-cart w-6"></i> 8.2 Order Management</a>
+            <a href="#" onclick="showSection('8.3')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-hand-holding-usd w-6"></i> 8.3 Withdrawal Approval</a>
+            <a href="#" onclick="showSection('8.4')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-ad w-6"></i> 8.4 Seller Promotions</a>
+            <a href="#" onclick="showSection('8.5')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-home w-6"></i> 8.5 Featured Products</a>
+            <a href="#" onclick="showSection('8.6')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-globe w-6"></i> 8.6 Global Dashboard</a>
+            <a href="#" onclick="showSection('8.7')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-shield-alt w-6"></i> 8.7 Admin Security</a>
+            <a href="#" onclick="showSection('8.8')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-chart-line w-6"></i> 8.8 Website Analytics</a>
+            <a href="#" onclick="showSection('8.9')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-chart-pie w-6"></i> 8.9 Sales Analytics</a>
+            <a href="#" onclick="showSection('8.10')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-wallet w-6"></i> 8.10 Admin Income</a>
+            <a href="#" onclick="showSection('8.11')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-tags w-6"></i> 8.11 Category Manage</a>
+            <a href="#" onclick="showSection('8.12')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-percentage w-6"></i> 8.12 Coupon Manage</a>
+            <a href="#" onclick="showSection('8.13')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-image w-6"></i> 8.13 Banner Manage</a>
+            <a href="#" onclick="showSection('8.14')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-star w-6"></i> 8.14 Review Moderation</a>
+            <a href="#" onclick="showSection('8.15')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-users w-6"></i> 8.15 User Management</a>
+            <a href="#" onclick="showSection('8.16')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-store w-6"></i> 8.16 Seller Management</a>
+            <a href="#" onclick="showSection('8.17')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-history w-6"></i> 8.17 Payment History</a>
+            <a href="#" onclick="showSection('8.18')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-undo w-6"></i> 8.18 Refund System</a>
+            <a href="#" onclick="showSection('8.19')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-list-alt w-6"></i> 8.19 System Logs</a>
+            <a href="#" onclick="showSection('8.20')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-cogs w-6"></i> 8.20 Platform Settings</a>
+            <a href="#" onclick="showSection('8.21')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fab fa-github w-6"></i> 8.21 Code Checker</a>
+            <a href="#" onclick="showSection('8.22')" class="nav-item flex items-center p-3 rounded-lg hover:bg-indigo-800 transition"><i class="fas fa-robot w-6"></i> 8.22 AI Fixer</a>
+        </nav>
 
-<!-- OVERLAY -->
-<div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+        <div class="p-4 border-t border-indigo-800">
+            <button onclick="window.location.href='home.html'" class="w-full bg-red-500 hover:bg-red-600 p-2 rounded flex items-center justify-center gap-2">
+                <i class="fas fa-arrow-left"></i> BACK TO HOME
+            </button>
+        </div>
+    </aside>
 
-<!-- TOPBAR -->
-<div class="flex justify-between items-center bg-blue-900 text-white p-4 shadow">
+    <main class="flex-1 ml-0 lg:ml-64 p-4 lg:p-8">
+        <header class="flex justify-between items-center mb-8 glass-card p-4 rounded-xl shadow-sm">
+            <button onclick="toggleSidebar()" class="text-2xl text-indigo-900"><i class="fas fa-bars"></i></button>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleDarkMode()" id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200"><i class="fas fa-moon"></i></button>
+                <div class="text-right">
+                    <p class="font-bold text-sm">Super Admin</p>
+                    <p class="text-xs text-gray-500">Online</p>
+                </div>
+                <img src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff" class="w-10 h-10 rounded-full">
+            </div>
+        </header>
 
-    <div class="flex items-center gap-4">
-        <button onclick="openSidebar()" class="text-2xl">☰</button>
-        <h1 class="font-bold text-lg">SRP ADMIN PANEL</h1>
+        <div id="content-area">
+
+            <section id="sec-8.1" class="hidden animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Product Management</h2>
+                    <button onclick="openProductModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                        <i class="fas fa-plus"></i> Add New Product
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <input type="text" id="prod-search" placeholder="Search Product ID or Name..." class="p-2 border rounded shadow-sm">
+                    <select id="prod-cat-filter" class="p-2 border rounded shadow-sm">
+                        <option value="">All Categories</option>
+                    </select>
+                    <div class="bg-white p-2 border rounded flex justify-around">
+                        <span class="text-green-600 font-bold">Active: <span id="active-count">0</span></span>
+                        <span class="text-red-600 font-bold">Low Stock: <span id="stock-count">0</span></span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto bg-white rounded-xl shadow-lg">
+                    <table class="w-full text-left">
+                        <thead class="bg-indigo-50 border-b">
+                            <tr>
+                                <th class="p-4">Image</th>
+                                <th class="p-4">Product ID</th>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Category</th>
+                                <th class="p-4">Price (MRP/Disc)</th>
+                                <th class="p-4">Stock</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="sec-8.2" class="hidden">
+                <h2 class="text-2xl font-bold mb-6">Master Order Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-blue-500 text-white p-6 rounded-xl shadow-md">
+                        <p class="text-sm opacity-80">Total Orders</p>
+                        <h3 id="total-orders-count" class="text-3xl font-bold">0</h3>
+                    </div>
+                    <div class="bg-orange-500 text-white p-6 rounded-xl shadow-md">
+                        <p class="text-sm opacity-80">Pending Shipment</p>
+                        <h3 id="pending-ship-count" class="text-3xl font-bold">0</h3>
+                    </div>
+                    <div class="bg-green-500 text-white p-6 rounded-xl shadow-md">
+                        <p class="text-sm opacity-80">Successful Deliveries</p>
+                        <h3 id="success-order-count" class="text-3xl font-bold">0</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-100">
+                            <tr class="text-left">
+                                <th class="p-4">Order ID</th>
+                                <th class="p-4">Customer</th>
+                                <th class="p-4">Tracking ID</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-list-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="sec-8.3" class="hidden">
+                <h2 class="text-2xl font-bold mb-6">Withdrawal Requests</h2>
+                <div class="grid grid-cols-1 gap-4" id="withdrawal-list">
+                    </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<div id="product-modal" class="fixed inset-0 z-[60] hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 shadow-2xl">
+        <div class="flex justify-between mb-6">
+            <h3 id="modal-title" class="text-xl font-bold">Add New Product</h3>
+            <button onclick="closeProductModal()" class="text-2xl">&times;</button>
+        </div>
+        <form id="product-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <label class="block font-medium text-sm">Product Name</label>
+                <input type="text" id="p-name" required class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 outline-none">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-sm">MRP (₹)</label>
+                        <input type="number" id="p-mrp" required class="w-full p-3 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-sm">Discount Price (₹)</label>
+                        <input type="number" id="p-discount" required class="w-full p-3 border rounded-lg">
+                    </div>
+                </div>
+
+                <label class="block font-medium text-sm">Category</label>
+                <select id="p-category" required class="w-full p-3 border rounded-lg"></select>
+
+                <label class="block font-medium text-sm">Stock Quantity</label>
+                <input type="number" id="p-stock" required class="w-full p-3 border rounded-lg">
+            </div>
+
+            <div class="space-y-4">
+                <label class="block font-medium text-sm">Product Image</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500" onclick="document.getElementById('p-image').click()">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-xs text-gray-500">Click to upload from gallery</p>
+                    <input type="file" id="p-image" class="hidden" accept="image/*" onchange="previewImage(this)">
+                </div>
+                <img id="img-preview" class="w-full h-32 object-contain hidden border rounded">
+
+                <label class="block font-medium text-sm">Description</label>
+                <textarea id="p-desc" rows="4" class="w-full p-3 border rounded-lg"></textarea>
+            </div>
+
+            <div class="md:col-span-2 flex justify-end gap-4 mt-6">
+                <button type="button" onclick="closeProductModal()" class="px-6 py-2 border rounded-lg">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Product</button>
+            </div>
+        </form>
     </div>
-
-    <div class="flex items-center gap-3">
-        <button onclick="toggleTheme()" class="bg-gray-800 px-3 py-1 rounded">🌙</button>
-        <button onclick="goHome()" class="bg-green-600 px-3 py-1 rounded">Home</button>
-        <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded">Logout</button>
-    </div>
-</div>
-
-<div class="flex">
-
-<!-- SIDEBAR -->
-<div id="sidebar" class="sidebar sidebar-hidden fixed z-50 w-64 h-full bg-blue-800 p-4 text-white overflow-y-auto">
-
-    <h2 class="font-bold mb-4">ADMIN MENU</h2>
-    <div id="menuContainer"></div>
-
-</div>
-
-<!-- MAIN -->
-<div class="flex-1 p-4">
-
-<!-- DASHBOARD -->
-<div id="dashboard" class="section active">
-    <h2 class="text-2xl font-bold">Dashboard</h2>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-
-        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            Users: <span id="usersCount">0</span>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            Sellers: <span id="sellersCount">0</span>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            Orders: <span id="ordersCount">0</span>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            Revenue: ₹<span id="revenueCount">0</span>
-        </div>
-
-    </div>
-</div>
-
-<!-- ALL OTHER SECTIONS AUTO GENERATED -->
-<div id="sectionsContainer"></div>
-
-</div>
 </div>
 
 <script>
-
-// ================= FIREBASE =================
-const firebaseConfig = {
-  apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-  authDomain: "srp-shopping-54bbb.firebaseapp.com",
-  databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-  projectId: "srp-shopping-54bbb",
-  storageBucket: "srp-shopping-54bbb.appspot.com",
-  messagingSenderId: "491906168702",
-  appId: "1:491906168702:web:2873565fcd2d561077252f"
-};
-
+// INITIALIZATION & CONFIG
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+const db = firebase.firestore();
 const storage = firebase.storage();
+const auth = firebase.auth();
 
-// ================= AUTH SECURITY =================
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        alert("Access Denied");
-        window.location.href = "login.html";
-    }
-});
-
-// ================= MENU CONFIG =================
-const menuItems = [
-    {id:"products", label:"8.1 Product Management"},
-    {id:"orders", label:"8.2 Orders"},
-    {id:"withdrawals", label:"8.3 Withdrawals"},
-    {id:"promotion", label:"8.4 Promotion"},
-    {id:"featured", label:"8.5 Featured"},
-    {id:"globalOrders", label:"8.6 Global Orders"},
-    {id:"security", label:"8.7 Security"},
-    {id:"analytics", label:"8.8 Website Analytics"},
-    {id:"sales", label:"8.9 Sales"},
-    {id:"income", label:"8.10 Income"},
-    {id:"categories", label:"8.11 Categories"},
-    {id:"coupons", label:"8.12 Coupons"},
-    {id:"banners", label:"8.13 Banners"},
-    {id:"reviews", label:"8.14 Reviews"},
-    {id:"users", label:"8.15 Users"},
-    {id:"sellers", label:"8.16 Sellers"},
-    {id:"payments", label:"8.17 Payments"},
-    {id:"refunds", label:"8.18 Refunds"},
-    {id:"logs", label:"8.19 Logs"},
-    {id:"settings", label:"8.20 Settings"},
-    {id:"codeChecker", label:"8.21 Code Checker"}
-];
-
-// ================= BUILD MENU =================
-const menuContainer = document.getElementById("menuContainer");
-
-menuItems.forEach(item => {
-    const btn = document.createElement("button");
-    btn.innerText = item.label;
-    btn.className = "block w-full text-left p-2 hover:bg-blue-600 rounded";
-    btn.onclick = () => showSection(item.id);
-    menuContainer.appendChild(btn);
-});
-
-// ================= BUILD SECTIONS =================
-const sectionContainer = document.getElementById("sectionsContainer");
-
-menuItems.forEach(item => {
-    const div = document.createElement("div");
-    div.id = item.id;
-    div.className = "section p-4";
-    div.innerHTML = `<h2 class="text-xl font-bold">${item.label}</h2>
-                     <div class="mt-3 text-gray-500">Loading module...</div>`;
-    sectionContainer.appendChild(div);
-});
-
-// ================= NAVIGATION =================
-function showSection(id) {
-    document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
-    closeSidebar();
+// SECTION HANDLER
+function showSection(sectionId) {
+    document.querySelectorAll('#content-area section').forEach(s => s.classList.add('hidden'));
+    const target = document.getElementById(`sec-${sectionId}`);
+    if(target) target.classList.remove('hidden');
+    
+    // Auto-load section specific data
+    if(sectionId === '8.1') loadProducts();
+    if(sectionId === '8.2') loadOrders();
+    if(sectionId === '8.3') loadWithdrawals();
 }
 
-// ================= SIDEBAR =================
-function openSidebar() {
-    document.getElementById("sidebar").classList.remove("sidebar-hidden");
-    document.getElementById("overlay").classList.add("active");
-}
-function closeSidebar() {
-    document.getElementById("sidebar").classList.add("sidebar-hidden");
-    document.getElementById("overlay").classList.remove("active");
-}
-
-// ================= THEME =================
-function toggleTheme() {
-    document.body.classList.toggle("dark");
-}
-
-// ================= LOGOUT =================
-function logout() {
-    auth.signOut();
-}
-
-// ================= HOME =================
-function goHome() {
-    window.location.href = "index.html";
-}
-
-// ================= DASHBOARD (SCALABLE) =================
-function loadStats() {
-    db.ref("stats").on("value", snap => {
-        const data = snap.val() || {};
-
-        document.getElementById("usersCount").innerText = data.users || 0;
-        document.getElementById("sellersCount").innerText = data.sellers || 0;
-        document.getElementById("ordersCount").innerText = data.orders || 0;
-        document.getElementById("revenueCount").innerText = data.revenue || 0;
+// 8.1 PRODUCT MANAGEMENT LOGIC
+async function loadProducts() {
+    const list = document.getElementById('product-list-body');
+    list.innerHTML = '<tr><td colspan="7" class="text-center p-10"><div class="loader inline-block w-8 h-8 border-4 rounded-full"></div></td></tr>';
+    
+    const snapshot = await db.collection('products').get();
+    list.innerHTML = '';
+    snapshot.forEach(doc => {
+        const p = doc.data();
+        list.innerHTML += `
+            <tr class="border-b hover:bg-gray-50 transition">
+                <td class="p-4"><img src="${p.imageUrl}" class="w-12 h-12 rounded object-cover"></td>
+                <td class="p-4 font-mono text-xs font-bold text-indigo-600">${doc.id}</td>
+                <td class="p-4 font-semibold">${p.name}</td>
+                <td class="p-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs">${p.category}</span></td>
+                <td class="p-4">
+                    <span class="line-through text-gray-400 text-xs">₹${p.mrp}</span><br>
+                    <span class="text-green-600 font-bold">₹${p.discountPrice}</span>
+                </td>
+                <td class="p-4">
+                    <span class="${p.stock < 10 ? 'text-red-600 font-bold animate-pulse' : ''}">${p.stock} pcs</span>
+                </td>
+                <td class="p-4 space-x-2">
+                    <button onclick="editProduct('${doc.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
     });
 }
 
-loadStats();
-
-// ================= NOTIFICATION SYSTEM =================
-function notify(msg) {
-    alert(msg);
-}
-
-// ================= LOADER =================
-function showLoader() {
-    console.log("Loading...");
-}
-function hideLoader() {
-    console.log("Done");
-}
-// ==========================
-// 8.1 PRODUCT MANAGEMENT
-// ==========================
-
-document.getElementById("products").innerHTML = `
-<h2 class="text-2xl font-bold mb-4">Product Management</h2>
-
-<div class="grid md:grid-cols-2 gap-4">
-
-<div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-<h3 class="font-bold mb-2">Add Product</h3>
-
-<input id="p_name" placeholder="Product Name" class="w-full p-2 mb-2 border rounded">
-<input id="p_mrp" type="number" placeholder="MRP" class="w-full p-2 mb-2 border rounded">
-<input id="p_price" type="number" placeholder="Discount Price" class="w-full p-2 mb-2 border rounded">
-<input id="p_category" placeholder="Category" class="w-full p-2 mb-2 border rounded">
-<input id="p_stock" type="number" placeholder="Stock" class="w-full p-2 mb-2 border rounded">
-<input id="p_image" type="file" class="w-full mb-2">
-<textarea id="p_desc" placeholder="Description" class="w-full p-2 mb-2 border rounded"></textarea>
-
-<button onclick="addProduct()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Add Product</button>
-</div>
-
-<div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-<h3 class="font-bold mb-2">All Products</h3>
-<div id="productList" class="max-h-96 overflow-auto"></div>
-</div>
-
-</div>
-`;
-
-function addProduct() {
-    const id = "P" + Date.now();
-
-    const file = document.getElementById("p_image").files[0];
-
-    if(!file) return alert("Select image");
-
-    const ref = storage.ref("products/" + id);
-
-    ref.put(file).then(() => {
-        ref.getDownloadURL().then(url => {
-
-            const data = {
-                id,
-                name: p_name.value,
-                mrp: p_mrp.value,
-                price: p_price.value,
-                category: p_category.value,
-                stock: p_stock.value,
-                desc: p_desc.value,
-                image: url,
-                status: p_stock.value > 0 ? "In Stock" : "Out of Stock",
-                created: Date.now()
-            };
-
-            db.ref("products/" + id).set(data);
-
-            notify("Product Added");
-        });
+// 8.2 ORDER MANAGEMENT LOGIC
+async function loadOrders() {
+    const body = document.getElementById('order-list-body');
+    const snap = await db.collection('orders').orderBy('timestamp', 'desc').get();
+    body.innerHTML = '';
+    
+    snap.forEach(doc => {
+        const order = doc.data();
+        body.innerHTML += `
+            <tr class="border-b">
+                <td class="p-4 font-bold text-sm">#${doc.id.substring(0,8)}</td>
+                <td class="p-4">
+                    <div class="text-sm font-bold">${order.userName}</div>
+                    <div class="text-xs text-gray-500">${order.phone}</div>
+                </td>
+                <td class="p-4">
+                    <input type="text" value="${order.trackingId || ''}" 
+                        onchange="updateTracking('${doc.id}', this.value)"
+                        class="text-xs border p-1 rounded w-32" placeholder="Enter ID">
+                </td>
+                <td class="p-4">
+                    <select onchange="updateOrderStatus('${doc.id}', this.value)" 
+                        class="text-xs border p-1 rounded ${getStatusColor(order.status)}">
+                        <option value="Confirmed" ${order.status=='Confirmed'?'selected':''}>Confirmed</option>
+                        <option value="Shipped" ${order.status=='Shipped'?'selected':''}>Shipped</option>
+                        <option value="Delivered" ${order.status=='Delivered'?'selected':''}>Delivered</option>
+                    </select>
+                </td>
+                <td class="p-4">
+                    <button onclick="viewOrderDetails('${doc.id}')" class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold">VIEW INVOICE</button>
+                </td>
+            </tr>
+        `;
     });
 }
 
-// LOAD PRODUCTS
-db.ref("products").on("value", snap => {
-    let html = "";
-    snap.forEach(s => {
-        const p = s.val();
-
-        html += `
-        <div class="border p-2 mb-2 rounded">
-            <img src="${p.image}" class="w-16 h-16 object-cover">
-            <div>${p.name}</div>
-            <div>₹${p.price}</div>
-            <div>${p.status}</div>
-
-            <button onclick="deleteProduct('${p.id}')" class="bg-red-500 text-white px-2 py-1 mt-1">Delete</button>
-            <button onclick="toggleStock('${p.id}', ${p.stock})" class="bg-yellow-500 text-white px-2 py-1 mt-1">Toggle Stock</button>
-        </div>`;
-    });
-    productList.innerHTML = html;
-});
-
-function deleteProduct(id) {
-    db.ref("products/" + id).remove();
-    notify("Deleted");
+function getStatusColor(status) {
+    if(status === 'Delivered') return 'bg-green-100 text-green-700';
+    if(status === 'Shipped') return 'bg-blue-100 text-blue-700';
+    return 'bg-yellow-100 text-yellow-700';
 }
 
-function toggleStock(id, stock) {
-    const newStock = stock > 0 ? 0 : 10;
-    db.ref("products/" + id + "/stock").set(newStock);
+// TOGGLE SIDEBAR
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
-// ==========================
-// 8.2 ORDERS MANAGEMENT
-// ==========================
-
-document.getElementById("orders").innerHTML = `
-<h2 class="text-2xl font-bold mb-4">Orders</h2>
-<div id="orderList"></div>
-`;
-
-db.ref("orders").on("value", snap => {
-    let html = "";
-    snap.forEach(s => {
-        const o = s.val();
-
-        html += `
-        <div class="bg-white dark:bg-gray-800 p-3 mb-2 rounded shadow">
-            <div><b>Order:</b> ${o.id}</div>
-            <div>${o.name} | ${o.phone}</div>
-            <div>Status: ${o.status}</div>
-
-            <input placeholder="Tracking ID" id="track_${o.id}" class="border p-1 mt-1">
-
-            <button onclick="updateOrder('${o.id}')" class="bg-blue-600 text-white px-2 py-1 mt-1">Update</button>
-        </div>`;
-    });
-    orderList.innerHTML = html;
-});
-
-function updateOrder(id) {
-    const tracking = document.getElementById("track_" + id).value;
-
-    db.ref("orders/" + id).update({
-        tracking,
-        status: "Shipped"
-    });
-
-    db.ref("notifications/" + id).push({
-        msg: "Your order shipped",
-        time: Date.now()
-    });
-
-    notify("Order Updated");
+// THEME TOGGLE
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
 }
 
-// ==========================
-// 8.3 WITHDRAWALS
-// ==========================
-
-document.getElementById("withdrawals").innerHTML = `
-<h2 class="text-2xl font-bold mb-4">Withdrawals</h2>
-<div id="withdrawList"></div>
-`;
-
-db.ref("withdrawals").on("value", snap => {
-    let html = "";
-    snap.forEach(s => {
-        const w = s.val();
-
-        html += `
-        <div class="bg-white dark:bg-gray-800 p-3 mb-2 rounded">
-            <div>${w.seller}</div>
-            <div>₹${w.amount}</div>
-
-            <button onclick="approveWithdraw('${s.key}')" class="bg-green-600 px-2 py-1 text-white">Approve</button>
-            <button onclick="rejectWithdraw('${s.key}')" class="bg-red-600 px-2 py-1 text-white">Reject</button>
-        </div>`;
-    });
-    withdrawList.innerHTML = html;
-});
-
-function approveWithdraw(id) {
-    db.ref("withdrawals/" + id).update({status:"Approved"});
-    notify("Approved");
-}
-function rejectWithdraw(id) {
-    db.ref("withdrawals/" + id).update({status:"Rejected"});
-    notify("Rejected");
-}
-
-// ==========================
-// 8.4 PROMOTION PAYMENTS
-// ==========================
-
-document.getElementById("promotion").innerHTML = `
-<h2 class="text-2xl font-bold mb-4">Promotion Payments</h2>
-
-<input id="promo_name" placeholder="Seller Name" class="border p-2 mb-2 w-full">
-<input id="promo_amount" placeholder="Amount" class="border p-2 mb-2 w-full">
-
-<button onclick="addPromo()" class="bg-blue-600 text-white px-3 py-1">Add</button>
-
-<div id="promoList" class="mt-3"></div>
-`;
-
-function addPromo() {
-    const id = Date.now();
-
-    db.ref("promotion/" + id).set({
-        name: promo_name.value,
-        amount: promo_amount.value,
-        time: Date.now()
-    });
-
-    notify("Added");
-}
-
-db.ref("promotion").on("value", snap => {
-    let html = "";
-    snap.forEach(s => {
-        const p = s.val();
-        html += `<div>${p.name} - ₹${p.amount}</div>`;
-    });
-    promoList.innerHTML = html;
-});
-    </script>
+// Start on Dashboard
+window.onload = () => showSection('8.1');
+</script>
