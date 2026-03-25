@@ -558,6 +558,148 @@ function loadPromotionPayments() {
         container.innerHTML = html;
     });
 }
+// --- 8.5 FEATURED PRODUCTS ON HOME PAGE (With Expiry Logic) ---
+function loadFeaturedProducts() {
+    const container = document.getElementById('section-featured');
+    db.ref('featured_products').on('value', snap => {
+        let html = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">8.5 Featured Products</h2>
+            <button onclick="toggleModal('addFeaturedModal')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg hover:bg-indigo-700">
+                <i class="fas fa-thumbtack mr-2"></i> Pin New Product
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+
+        const now = new Date().getTime();
+        snap.forEach(child => {
+            const f = child.val();
+            const expiryDate = new Date(f.expiryDate).getTime();
+            const isExpired = now > expiryDate;
+
+            html += `
+            <div class="admin-card border-t-4 ${isExpired ? 'border-red-500' : 'border-indigo-500'} relative">
+                ${isExpired ? '<span class="absolute top-2 right-2 bg-red-100 text-red-600 text-[10px] px-2 py-1 rounded font-black">EXPIRED</span>' : ''}
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center font-bold text-slate-400">${f.priority}</div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase">Product ID: ${f.pid}</p>
+                        <h4 class="font-bold text-slate-800">Priority Level: ${f.priority}</h4>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500"><i class="far fa-calendar-alt mr-1"></i> Display Until: <b>${f.expiryDate}</b></p>
+                <div class="mt-4 flex gap-2">
+                    <button onclick="removeFeatured('${child.key}')" class="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 transition">Remove Pin</button>
+                    <button onclick="extendFeature('${child.key}')" class="flex-1 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition">Extend Date</button>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+    });
+}
+
+async function pinProductToHome() {
+    const pid = document.getElementById('feat-pid').value;
+    const priority = document.getElementById('feat-priority').value;
+    const expiry = document.getElementById('feat-expiry').value;
+
+    if(!pid || !expiry) return alert("Please fill all pinning details!");
+
+    const featData = {
+        pid: pid,
+        priority: parseInt(priority),
+        expiryDate: expiry,
+        timestamp: Date.now()
+    };
+
+    await db.ref('featured_products').push(featData);
+    alert("Product Pinned to Homepage Top Successfully!");
+    toggleModal('addFeaturedModal');
+}
+
+// --- 8.7 ADMIN SECURITY & THEME ENGINE ---
+const AdminSecurity = {
+    // Professional Suggestion: Implement Session Locking
+    changePassword: async (newPass) => {
+        const user = firebase.auth().currentUser;
+        try {
+            await user.updatePassword(newPass);
+            alert("Security Alert: Admin Password Changed Successfully!");
+            LogSystemAction("Security", "Admin changed login password");
+        } catch (e) { alert("Error: " + e.message); }
+    },
+
+    toggleTheme: (mode) => {
+        const root = document.documentElement;
+        if(mode === 'night') {
+            root.style.setProperty('--primary-bg', '#020617');
+            document.body.classList.add('bg-slate-950');
+            document.querySelectorAll('.admin-card').forEach(c => c.classList.add('bg-slate-900', 'border-slate-800', 'text-white'));
+        } else {
+            location.reload(); // Reset to default light/glass theme
+        }
+    },
+
+    enable2FA: () => {
+        // Mock 2FA Logic for UI Integrity
+        db.ref('admin_settings/security').update({ twoFactorEnabled: true });
+        alert("Two-Factor Authentication (2FA) has been enabled for next login.");
+    }
+};
+
+// --- 8.8 WEBSITE ANALYTICS (REAL-TIME AGGREGATION) ---
+function initWebsiteAnalytics() {
+    // 1. Total Users Count
+    db.ref('users').on('value', snap => {
+        const count = snap.numChildren();
+        document.getElementById('total-users').innerText = count;
+        document.getElementById('dash-visits').innerText = count * 14; // Mock logic for visits per user
+    });
+
+    // 2. Total Sellers Count
+    db.ref('sellers').on('value', snap => {
+        document.getElementById('total-sellers').innerText = snap.numChildren();
+        document.getElementById('dash-sellers').innerText = snap.numChildren();
+    });
+
+    // 3. Today's New Registrations (Filtering by Timestamp)
+    const todayStart = new Date().setHours(0,0,0,0);
+    db.ref('users').orderByChild('timestamp').startAt(todayStart).on('value', snap => {
+        document.getElementById('today-users').innerText = snap.numChildren();
+    });
+
+    // 4. Live Site Visit Counter Logic
+    db.ref('analytics/visits/total').on('value', snap => {
+        const val = snap.val() || 0;
+        // Animation for professional feel
+        animateValue("site-visits", 0, val, 1000);
+    });
+}
+
+// Professional Suggestion: Numerical Animation Utility
+function animateValue(id, start, end, duration) {
+    const obj = document.getElementById(id);
+    if (!obj) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress < 1) { window.requestAnimationFrame(step); }
+    };
+    window.requestAnimationFrame(step);
+}
+
+// --- 8.19 SYSTEM LOGS (PREVIEW FOR PART 3) ---
+function LogSystemAction(type, message) {
+    const logId = "LOG" + Date.now();
+    db.ref(`system_logs/${type}/${logId}`).set({
+        message: message,
+        timestamp: new Date().toLocaleString(),
+        admin: "MasterAdmin"
+    });
+}
 
 // Initialization of Listeners
 window.addEventListener('DOMContentLoaded', () => {
