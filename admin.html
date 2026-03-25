@@ -228,5 +228,211 @@ function showLoader() {
 function hideLoader() {
     console.log("Done");
 }
+// ==========================
+// 8.1 PRODUCT MANAGEMENT
+// ==========================
 
+document.getElementById("products").innerHTML = `
+<h2 class="text-2xl font-bold mb-4">Product Management</h2>
+
+<div class="grid md:grid-cols-2 gap-4">
+
+<div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+<h3 class="font-bold mb-2">Add Product</h3>
+
+<input id="p_name" placeholder="Product Name" class="w-full p-2 mb-2 border rounded">
+<input id="p_mrp" type="number" placeholder="MRP" class="w-full p-2 mb-2 border rounded">
+<input id="p_price" type="number" placeholder="Discount Price" class="w-full p-2 mb-2 border rounded">
+<input id="p_category" placeholder="Category" class="w-full p-2 mb-2 border rounded">
+<input id="p_stock" type="number" placeholder="Stock" class="w-full p-2 mb-2 border rounded">
+<input id="p_image" type="file" class="w-full mb-2">
+<textarea id="p_desc" placeholder="Description" class="w-full p-2 mb-2 border rounded"></textarea>
+
+<button onclick="addProduct()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Add Product</button>
+</div>
+
+<div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+<h3 class="font-bold mb-2">All Products</h3>
+<div id="productList" class="max-h-96 overflow-auto"></div>
+</div>
+
+</div>
+`;
+
+function addProduct() {
+    const id = "P" + Date.now();
+
+    const file = document.getElementById("p_image").files[0];
+
+    if(!file) return alert("Select image");
+
+    const ref = storage.ref("products/" + id);
+
+    ref.put(file).then(() => {
+        ref.getDownloadURL().then(url => {
+
+            const data = {
+                id,
+                name: p_name.value,
+                mrp: p_mrp.value,
+                price: p_price.value,
+                category: p_category.value,
+                stock: p_stock.value,
+                desc: p_desc.value,
+                image: url,
+                status: p_stock.value > 0 ? "In Stock" : "Out of Stock",
+                created: Date.now()
+            };
+
+            db.ref("products/" + id).set(data);
+
+            notify("Product Added");
+        });
+    });
+}
+
+// LOAD PRODUCTS
+db.ref("products").on("value", snap => {
+    let html = "";
+    snap.forEach(s => {
+        const p = s.val();
+
+        html += `
+        <div class="border p-2 mb-2 rounded">
+            <img src="${p.image}" class="w-16 h-16 object-cover">
+            <div>${p.name}</div>
+            <div>₹${p.price}</div>
+            <div>${p.status}</div>
+
+            <button onclick="deleteProduct('${p.id}')" class="bg-red-500 text-white px-2 py-1 mt-1">Delete</button>
+            <button onclick="toggleStock('${p.id}', ${p.stock})" class="bg-yellow-500 text-white px-2 py-1 mt-1">Toggle Stock</button>
+        </div>`;
+    });
+    productList.innerHTML = html;
+});
+
+function deleteProduct(id) {
+    db.ref("products/" + id).remove();
+    notify("Deleted");
+}
+
+function toggleStock(id, stock) {
+    const newStock = stock > 0 ? 0 : 10;
+    db.ref("products/" + id + "/stock").set(newStock);
+}
+
+// ==========================
+// 8.2 ORDERS MANAGEMENT
+// ==========================
+
+document.getElementById("orders").innerHTML = `
+<h2 class="text-2xl font-bold mb-4">Orders</h2>
+<div id="orderList"></div>
+`;
+
+db.ref("orders").on("value", snap => {
+    let html = "";
+    snap.forEach(s => {
+        const o = s.val();
+
+        html += `
+        <div class="bg-white dark:bg-gray-800 p-3 mb-2 rounded shadow">
+            <div><b>Order:</b> ${o.id}</div>
+            <div>${o.name} | ${o.phone}</div>
+            <div>Status: ${o.status}</div>
+
+            <input placeholder="Tracking ID" id="track_${o.id}" class="border p-1 mt-1">
+
+            <button onclick="updateOrder('${o.id}')" class="bg-blue-600 text-white px-2 py-1 mt-1">Update</button>
+        </div>`;
+    });
+    orderList.innerHTML = html;
+});
+
+function updateOrder(id) {
+    const tracking = document.getElementById("track_" + id).value;
+
+    db.ref("orders/" + id).update({
+        tracking,
+        status: "Shipped"
+    });
+
+    db.ref("notifications/" + id).push({
+        msg: "Your order shipped",
+        time: Date.now()
+    });
+
+    notify("Order Updated");
+}
+
+// ==========================
+// 8.3 WITHDRAWALS
+// ==========================
+
+document.getElementById("withdrawals").innerHTML = `
+<h2 class="text-2xl font-bold mb-4">Withdrawals</h2>
+<div id="withdrawList"></div>
+`;
+
+db.ref("withdrawals").on("value", snap => {
+    let html = "";
+    snap.forEach(s => {
+        const w = s.val();
+
+        html += `
+        <div class="bg-white dark:bg-gray-800 p-3 mb-2 rounded">
+            <div>${w.seller}</div>
+            <div>₹${w.amount}</div>
+
+            <button onclick="approveWithdraw('${s.key}')" class="bg-green-600 px-2 py-1 text-white">Approve</button>
+            <button onclick="rejectWithdraw('${s.key}')" class="bg-red-600 px-2 py-1 text-white">Reject</button>
+        </div>`;
+    });
+    withdrawList.innerHTML = html;
+});
+
+function approveWithdraw(id) {
+    db.ref("withdrawals/" + id).update({status:"Approved"});
+    notify("Approved");
+}
+function rejectWithdraw(id) {
+    db.ref("withdrawals/" + id).update({status:"Rejected"});
+    notify("Rejected");
+}
+
+// ==========================
+// 8.4 PROMOTION PAYMENTS
+// ==========================
+
+document.getElementById("promotion").innerHTML = `
+<h2 class="text-2xl font-bold mb-4">Promotion Payments</h2>
+
+<input id="promo_name" placeholder="Seller Name" class="border p-2 mb-2 w-full">
+<input id="promo_amount" placeholder="Amount" class="border p-2 mb-2 w-full">
+
+<button onclick="addPromo()" class="bg-blue-600 text-white px-3 py-1">Add</button>
+
+<div id="promoList" class="mt-3"></div>
+`;
+
+function addPromo() {
+    const id = Date.now();
+
+    db.ref("promotion/" + id).set({
+        name: promo_name.value,
+        amount: promo_amount.value,
+        time: Date.now()
+    });
+
+    notify("Added");
+}
+
+db.ref("promotion").on("value", snap => {
+    let html = "";
+    snap.forEach(s => {
+        const p = s.val();
+        html += `<div>${p.name} - ₹${p.amount}</div>`;
+    });
+    promoList.innerHTML = html;
+});
     </script>
