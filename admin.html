@@ -3,237 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Enterprise Command Center</title>
+    <title>SRP SHOPPING - Admin Control Panel</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
         :root {
-            --brand: #4f46e5;
-            --brand-surface: rgba(79, 70, 229, 0.1);
-            --bg-deep: #0f172a;
-            --bg-surface: #ffffff;
-            --text-main: #1e293b;
-            --text-sub: #64748b;
-            --danger: #ef4444;
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f3f4f6;
+            --sidebar-bg: #111827;
+            --sidebar-text: #9ca3af;
+            --sidebar-hover: #ffffff;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
             --success: #10b981;
-            --border: #e2e8f0;
-            --radius-lg: 16px;
-            --radius-md: 12px;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
 
-        .dark-mode {
-            --bg-deep: #020617;
-            --bg-surface: #1e293b;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --border: #334155;
+        body.dark-mode {
+            --bg-color: #1f2937;
+            --card-bg: #374151;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #4b5563;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg-deep); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
-
-        /* --- AUTH SHIELD LAYER --- */
-        #auth-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-deep); z-index: 9999; display: flex; align-items: center; justify-content: center;
-        }
-        .login-card {
-            background: var(--bg-surface); padding: 40px; border-radius: var(--radius-lg);
-            width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* --- LAYOUT ARCHITECTURE --- */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        /* 8. Admin Panel Layout */
         #sidebar {
-            width: 280px; background: var(--bg-deep); display: flex; flex-direction: column;
-            border-right: 1px solid var(--border); transition: 0.3s;
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
         }
-        .nav-container { flex: 1; overflow-y: auto; padding: 20px; }
+
+        #sidebar.closed {
+            transform: translateX(-100%);
+            position: absolute;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #374151;
+            text-align: center;
+        }
+
         .nav-item {
-            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-            color: var(--text-sub); text-decoration: none; border-radius: var(--radius-md);
-            margin-bottom: 4px; cursor: pointer; transition: 0.2s; font-weight: 500; font-size: 14px;
-        }
-        .nav-item:hover, .nav-item.active { background: var(--brand-surface); color: var(--brand); }
-        .nav-item.active { background: var(--brand); color: white; }
-
-        .app-canvas { flex: 1; display: flex; flex-direction: column; background: #f8fafc; overflow: hidden; }
-        .dark-mode .app-canvas { background: #0f172a; }
-
-        header {
-            height: 72px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #1f2937;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        /* --- DATA COMPONENTS --- */
-        .content-scroll { flex: 1; padding: 32px; overflow-y: auto; }
+        .nav-item:hover, .nav-item.active {
+            background-color: #374151;
+            color: var(--sidebar-hover);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #topbar {
+            height: 60px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--secondary-color); }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+
+        #content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .section-container {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .section-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .card {
-            background: var(--bg-surface); border-radius: var(--radius-lg);
-            border: 1px solid var(--border); padding: 24px; margin-bottom: 24px;
-            box-shadow: var(--shadow-sm);
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row .form-group { flex: 1; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: var(--bg-color);
+            font-weight: 600;
         }
         
-        .loading-shimmer {
-            width: 100%; height: 200px; background: linear-gradient(90deg, var(--border) 25%, var(--bg-deep) 50%, var(--border) 75%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md);
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
         }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        /* --- TOAST v2.0 --- */
-        #toast-stack { position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-        .toast-msg {
-            padding: 16px 24px; border-radius: var(--radius-md); color: white; font-weight: 600;
-            display: flex; align-items: center; gap: 12px; animation: slideUp 0.3s ease-out;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Modern Inputs */
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; color: var(--text-sub); }
-        .form-input { 
-            width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px;
-            background: transparent; color: var(--text-main); outline: none; transition: 0.2s;
+        .close-modal {
+            float: right;
+            cursor: pointer;
+            font-size: 20px;
         }
-        .form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-surface); }
-
-        .btn-core {
-            padding: 12px 24px; border-radius: 10px; border: none; font-weight: 700;
-            cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
-        }
-        .btn-brand { background: var(--brand); color: white; }
-        .btn-brand:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        .table-ui { width: 100%; border-collapse: collapse; }
-        .table-ui th { text-align: left; padding: 16px; border-bottom: 2px solid var(--border); font-size: 12px; color: var(--text-sub); }
-        .table-ui td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-
-        #admin-sections > section { display: none; }
-        #admin-sections > section.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay">
-        <div class="login-card">
-            <h2 style="margin-bottom: 8px;">Admin Login</h2>
-            <p style="color: var(--text-sub); font-size: 14px; margin-bottom: 24px;">Enter credentials to manage SRP SHOPPING</p>
-            <div class="input-group">
-                <label>Email Address</label>
-                <input type="email" id="admin-email" class="form-input" placeholder="admin@srpshopping.com">
-            </div>
-            <div class="input-group">
-                <label>Password</label>
-                <input type="password" id="admin-pass" class="form-input" placeholder="••••••••">
-            </div>
-            <button id="login-btn" class="btn-core btn-brand" style="width: 100%; justify-content: center;">
-                <i class="fas fa-lock"></i> Authorize Access
-            </button>
-        </div>
+    <div id="sidebar">
+        <div class="sidebar-header">SRP ADMIN</div>
+        <div class="nav-item active" data-target="sec-8-1">8.1 Product Mgmt</div>
+        <div class="nav-item" data-target="sec-8-2">8.2 Orders Mgmt</div>
+        <div class="nav-item" data-target="sec-8-3">8.3 Seller Withdrawals</div>
+        <div class="nav-item" data-target="sec-8-4">8.4 Seller Promotions</div>
+        <div class="nav-item" data-target="sec-8-5">8.5 Featured Products</div>
+        <div class="nav-item" data-target="sec-8-6">8.6 Global Dashboard</div>
+        <div class="nav-item" data-target="sec-8-7">8.7 Security & Theme</div>
+        <div class="nav-item" data-target="sec-8-8">8.8 Website Analytics</div>
+        <div class="nav-item" data-target="sec-8-9">8.9 Sales Analytics</div>
+        <div class="nav-item" data-target="sec-8-10">8.10 Admin Income</div>
+        <div class="nav-item" data-target="sec-8-11">8.11 Category Mgmt</div>
+        <div class="nav-item" data-target="sec-8-12">8.12 Coupon Mgmt</div>
+        <div class="nav-item" data-target="sec-8-13">8.13 Banner Mgmt</div>
+        <div class="nav-item" data-target="sec-8-14">8.14 Review Moderation</div>
+        <div class="nav-item" data-target="sec-8-15">8.15 User Mgmt</div>
+        <div class="nav-item" data-target="sec-8-16">8.16 Seller Mgmt</div>
+        <div class="nav-item" data-target="sec-8-17">8.17 Payment History</div>
+        <div class="nav-item" data-target="sec-8-18">8.18 Refund System</div>
+        <div class="nav-item" data-target="sec-8-19">8.19 System Logs</div>
+        <div class="nav-item" data-target="sec-8-20">8.20 Platform Settings</div>
+        <div class="nav-item" data-target="sec-8-21">8.21 Code Checker</div>
+        <div class="nav-item" data-target="sec-8-22">8.22 AI Auto Fix</div>
     </div>
 
-    <aside id="sidebar">
-        <div style="padding: 24px; border-bottom: 1px solid var(--border);">
-            <h1 style="font-size: 18px; color: white;">SRP COMMAND</h1>
-        </div>
-        <nav class="nav-container" id="main-nav">
-            </nav>
-        <div style="padding: 20px; border-top: 1px solid var(--border);">
-            <button id="logout-btn" class="nav-item" style="background: none; border: none; width: 100%;">
-                <i class="fas fa-sign-out-alt"></i> Logout Session
-            </button>
-        </div>
-    </aside>
-
-    <div class="app-canvas">
-        <header>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <h2 id="view-title" style="font-size: 20px;">Dashboard</h2>
+    <div class="main-wrapper">
+        <div id="topbar">
+            <button class="menu-btn" id="toggle-sidebar">☰</button>
+            <div class="topbar-actions">
+                <button class="btn btn-primary" id="btn-theme-toggle">🌙 Theme</button>
+                <button class="btn btn-danger" onclick="window.location.href='/'">🏠 Back to Home</button>
             </div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button id="theme-toggle" class="btn-core" style="background: var(--border);"><i class="fas fa-adjust"></i></button>
-                <div id="admin-profile" style="display: flex; align-items: center; gap: 10px;">
-                    <span id="user-display" style="font-size: 14px; font-weight: 600;">Authenticating...</span>
-                </div>
-            </div>
-        </header>
+        </div>
 
-        <main class="content-scroll">
-            <div id="admin-sections">
-                <section id="sec-8-1" class="active">
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                            <h3>Deploy New Product</h3>
+        <div id="content-area">
+            
+            <section id="sec-8-1" class="section-container active">
+                <div class="card">
+                    <div class="card-header">Add New Product</div>
+                    <form id="addProductForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Product Name</label>
+                                <input type="text" id="prodName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="prodCategory" class="form-control" required>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="home">Home & Kitchen</option>
+                                </select>
+                            </div>
                         </div>
-                        <form id="product-deploy-form">
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                                <div class="input-group">
-                                    <label>Product Title</label>
-                                    <input type="text" id="p-title" class="form-input" required>
-                                </div>
-                                <div class="input-group">
-                                    <label>Category</label>
-                                    <select id="p-category" class="form-input" required></select>
-                                </div>
-                                <div class="input-group">
-                                    <label>Master Stock</label>
-                                    <input type="number" id="p-stock" class="form-input" required>
-                                </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>MRP (₹)</label>
+                                <input type="number" id="prodMRP" class="form-control" required>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                <div class="input-group">
-                                    <label>Product Images (Gallery)</label>
-                                    <input type="file" id="p-image-file" class="form-input" accept="image/jpeg,image/png">
-                                </div>
-                                <div class="input-group">
-                                    <label>Price Configuration (MRP / Sale)</label>
-                                    <div style="display: flex; gap: 10px;">
-                                        <input type="number" id="p-mrp" class="form-input" placeholder="MRP">
-                                        <input type="number" id="p-sale" class="form-input" placeholder="Sale">
-                                    </div>
-                                </div>
+                            <div class="form-group">
+                                <label>Discount Price (₹)</label>
+                                <input type="number" id="prodDiscount" class="form-control" required>
                             </div>
-                            <button type="submit" class="btn-core btn-brand" id="deploy-trigger">
-                                <i class="fas fa-cloud-upload-alt"></i> Finalize Deployment
-                            </button>
-                        </form>
-                    </div>
+                            <div class="form-group">
+                                <label>Stock Quantity</label>
+                                <input type="number" id="prodStock" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Product Description</label>
+                            <textarea id="prodDesc" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Product Image (Gallery Upload)</label>
+                            <input type="file" id="prodImage" class="form-control" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-success" id="saveProductBtn">Add Product & Generate ID</button>
+                    </form>
+                </div>
 
-                    <div class="card">
-                        <h3>Inventory Ledger</h3>
-                        <div id="inventory-loader" class="loading-shimmer" style="display: none;"></div>
-                        <table class="table-ui" id="inventory-table">
+                <div class="card">
+                    <div class="card-header">Manage Existing Products</div>
+                    <div class="table-responsive">
+                        <table>
                             <thead>
                                 <tr>
-                                    <th>Asset</th>
-                                    <th>Product ID</th>
-                                    <th>Category</th>
-                                    <th>Valuation</th>
+                                    <th>Image</th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Price</th>
                                     <th>Stock</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventory-body"></tbody>
+                            <tbody id="productListTable">
+                                </tbody>
                         </table>
                     </div>
-                </section>
-
                 </div>
-        </main>
+            </section>
+
+            <section id="sec-8-2" class="section-container">
+                <div class="card">
+                    <div class="card-header">Global Order Management</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>User Info</th>
+                                    <th>Tracking ID</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersListTable">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-8-3" class="section-container">
+                <div class="card">
+                    <div class="card-header">Pending Withdrawal Requests</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Seller Name</th>
+                                    <th>Requested Amount</th>
+                                    <th>Current Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalsTable">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-8-4" class="section-container"><div class="card"><div class="card-header">8.4 Seller Promotion Payment System</div><div id="promoContainer"></div></div></section>
+            <section id="sec-8-5" class="section-container"><div class="card"><div class="card-header">8.5 Featured Products on Home Page</div><div id="featuredContainer"></div></div></section>
+            <section id="sec-8-6" class="section-container"><div class="card"><div class="card-header">8.6 Global Order Dashboard</div><div id="globalOrderContainer"></div></div></section>
+            <section id="sec-8-7" class="section-container"><div class="card"><div class="card-header">8.7 Admin Security</div><div id="securityContainer"></div></div></section>
+            <section id="sec-8-8" class="section-container"><div class="card"><div class="card-header">8.8 Website Analytics</div><div id="webAnalyticsContainer"></div></div></section>
+            <section id="sec-8-9" class="section-container"><div class="card"><div class="card-header">8.9 Sales Analytics</div><div id="salesAnalyticsContainer"></div></div></section>
+            <section id="sec-8-10" class="section-container"><div class="card"><div class="card-header">8.10 Admin Income</div><div id="incomeContainer"></div></div></section>
+            <section id="sec-8-11" class="section-container"><div class="card"><div class="card-header">8.11 Category Management</div><div id="categoryContainer"></div></div></section>
+            <section id="sec-8-12" class="section-container"><div class="card"><div class="card-header">8.12 Coupon Management</div><div id="couponContainer"></div></div></section>
+            <section id="sec-8-13" class="section-container"><div class="card"><div class="card-header">8.13 Banner Management</div><div id="bannerContainer"></div></div></section>
+            <section id="sec-8-14" class="section-container"><div class="card"><div class="card-header">8.14 Review Moderation</div><div id="reviewContainer"></div></div></section>
+            <section id="sec-8-15" class="section-container"><div class="card"><div class="card-header">8.15 User Management</div><div id="userContainer"></div></div></section>
+            <section id="sec-8-16" class="section-container"><div class="card"><div class="card-header">8.16 Seller Management</div><div id="sellerContainer"></div></div></section>
+            <section id="sec-8-17" class="section-container"><div class="card"><div class="card-header">8.17 Overall Payment History</div><div id="paymentHistoryContainer"></div></div></section>
+            <section id="sec-8-18" class="section-container"><div class="card"><div class="card-header">8.18 Refund System</div><div id="refundContainer"></div></div></section>
+            <section id="sec-8-19" class="section-container"><div class="card"><div class="card-header">8.19 System Logs</div><div id="logsContainer"></div></div></section>
+            <section id="sec-8-20" class="section-container"><div class="card"><div class="card-header">8.20 Platform Settings</div><div id="platformSettingsContainer"></div></div></section>
+            <section id="sec-8-21" class="section-container"><div class="card"><div class="card-header">8.21 Github Code Checker</div><div id="codeCheckerContainer"></div></div></section>
+            <section id="sec-8-22" class="section-container"><div class="card"><div class="card-header">8.22 AI Auto Fix</div><div id="aiFixContainer"></div></div></section>
+
+        </div>
     </div>
 
-    <div id="toast-stack"></div>
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('orderModal')">&times;</span>
+            <h3 id="modalTitle">Order Details & Invoice</h3>
+            <div id="modalBody" style="margin-top: 15px;"></div>
+            <div style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <input type="text" id="updateTrackingId" class="form-control" placeholder="Enter Tracking ID">
+                <select id="updateOrderStatus" class="form-control" style="margin-top: 10px;">
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                </select>
+                <button class="btn btn-primary" style="margin-top: 10px;" onclick="updateOrderLogic()">Update Order & Notify</button>
+            </div>
+        </div>
+    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, push, set, onValue, remove, update, query, limitToLast, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-        // --- ENTERPRISE CONFIG ---
+    <script>
+        // ==========================================
+        // FIREBASE INITIALIZATION & CONFIGURATION
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -241,166 +436,300 @@
             projectId: "srp-shopping-54bbb",
             storageBucket: "srp-shopping-54bbb.firebasestorage.app",
             messagingSenderId: "491906168702",
-            appId: "1:491906168702:web:2873565fcd2d561077252f"
+            appId: "1:491906168702:web:2873565fcd2d561077252f",
+            measurementId: "G-3S7X8V8EFQ"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-        const storage = getStorage(app);
-
-        // --- TOAST v2.0 SYSTEM ---
-        const messenger = {
-            show(msg, type = 'success') {
-                const stack = document.getElementById('toast-stack');
-                const t = document.createElement('div');
-                t.className = `toast-msg`;
-                t.style.background = type === 'success' ? 'var(--success)' : 'var(--danger)';
-                t.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check' : 'fa-times'}"></i> ${msg}`;
-                stack.appendChild(t);
-                setTimeout(() => t.remove(), 4000);
-            }
-        };
-
-        // --- AUTH GUARD: THE GATEKEEPER ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('user-display').innerText = user.email;
-                initAdmin();
-            } else {
-                document.getElementById('auth-overlay').style.display = 'flex';
-            }
-        });
-
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            const email = document.getElementById('admin-email').value;
-            const pass = document.getElementById('admin-pass').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                messenger.show("Session Authorized");
-            } catch (e) {
-                messenger.show("Unauthorized Access Denied", "error");
-            }
-        });
-
-        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-
-        // --- DYNAMIC NAVIGATION (8.0) ---
-        const sections = [
-            { id: '8-1', label: '8.1 Product Mgmt', icon: 'fa-box' },
-            { id: '8-2', label: '8.2 Orders Mgmt', icon: 'fa-shipping-fast' },
-            { id: '8-3', label: '8.3 Withdrawals', icon: 'fa-wallet' },
-            // ... truncated for Part 1 brevity, full list in Part 2
-        ];
-
-        function initAdmin() {
-            const nav = document.getElementById('main-nav');
-            nav.innerHTML = '';
-            sections.forEach(s => {
-                const el = document.createElement('div');
-                el.className = `nav-item ${s.id === '8-1' ? 'active' : ''}`;
-                el.innerHTML = `<i class="fas ${s.icon}"></i> ${s.label}`;
-                el.addEventListener('click', () => switchView(s.id, s.label, el));
-                nav.appendChild(el);
-            });
-            loadProducts();
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
 
-        function switchView(id, label, el) {
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
-            document.getElementById('view-title').innerText = label;
-            // logic to hide/show section divs
+        const db = firebase.database();
+        const storage = firebase.storage();
+        const auth = firebase.auth();
+
+        // ==========================================
+        // UI & NAVIGATION LOGIC (8. ADMIN LAYOUT)
+        // ==========================================
+        document.getElementById('toggle-sidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('closed');
+        });
+
+        document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            // 8.7 Sub-feature: Save theme preference
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('adminTheme', isDark ? 'dark' : 'light');
+        });
+
+        // Load theme
+        if(localStorage.getItem('adminTheme') === 'dark') {
+            document.body.classList.add('dark-mode');
         }
 
-        // --- 8.1 PRODUCT LOGIC (STRICT VALIDATION) ---
-        const pForm = document.getElementById('product-deploy-form');
-        pForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('deploy-trigger');
-            const file = document.getElementById('p-image-file').files[0];
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section-container');
 
-            // 1. Null Check
-            if(!file) return messenger.show("Critical: No Product Image Selected", "error");
-
-            // 2. Strict Type & Size Check
-            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            if(!validTypes.includes(file.type)) return messenger.show("Invalid Format: Use JPG/PNG", "error");
-            if(file.size > 2 * 1024 * 1024) return messenger.show("File Overload: Max 2MB Allowed", "error");
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
-
-            try {
-                // Secure Key Generation (ChatGPT's Fix)
-                const pKey = push(ref(db, 'products')).key;
-                const path = sRef(storage, `products/${pKey}/${file.name}`);
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
                 
-                const snap = await uploadBytes(path, file);
-                const url = await getDownloadURL(snap.ref);
+                const targetId = item.getAttribute('data-target');
+                sections.forEach(sec => sec.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
 
-                await set(ref(db, `products/${pKey}`), {
-                    pid: pKey,
-                    title: document.getElementById('p-title').value,
-                    category: document.getElementById('p-category').value,
-                    stock: parseInt(document.getElementById('p-stock').value),
-                    mrp: parseFloat(document.getElementById('p-mrp').value),
-                    sale: parseFloat(document.getElementById('p-sale').value),
-                    image: url,
-                    timestamp: Date.now()
+        // ==========================================
+        // 8.1 PRODUCT MANAGEMENT LOGIC
+        // ==========================================
+        
+        // Generate Unique Product ID Utility
+        function generateProductID() {
+            return 'SRP-PRD-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 5).toUpperCase();
+        }
+
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveProductBtn');
+            btn.innerText = "Uploading & Saving...";
+            btn.disabled = true;
+
+            const name = document.getElementById('prodName').value;
+            const category = document.getElementById('prodCategory').value;
+            const mrp = parseFloat(document.getElementById('prodMRP').value);
+            const discount = parseFloat(document.getElementById('prodDiscount').value);
+            const stock = parseInt(document.getElementById('prodStock').value);
+            const desc = document.getElementById('prodDesc').value;
+            const file = document.getElementById('prodImage').files[0];
+            const productID = generateProductID();
+
+            try {
+                // Upload Image to Firebase Storage
+                const storageRef = storage.ref(`products/${productID}/${file.name}`);
+                const snapshot = await storageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+
+                // Save to Realtime Database
+                await db.ref('products/' + productID).set({
+                    productID: productID,
+                    name: name,
+                    category: category,
+                    mrp: mrp,
+                    discountPrice: discount,
+                    stock: stock,
+                    description: desc,
+                    imageUrl: downloadURL,
+                    status: stock > 0 ? 'Active' : 'Out of Stock',
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
 
-                messenger.show("Product Globally Deployed: " + pKey);
-                pForm.reset();
-            } catch (err) {
-                messenger.show("Deployment Failed: " + err.code, "error");
+                alert('Product Added Successfully! ID: ' + productID);
+                document.getElementById('addProductForm').reset();
+                loadProducts(); // Refresh table
+            } catch (error) {
+                console.error("Error adding product: ", error);
+                alert('Error adding product. Check console.');
             } finally {
+                btn.innerText = "Add Product & Generate ID";
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Finalize Deployment`;
             }
         });
 
-        // --- OPTIMIZED REAL-TIME LEDGER ---
         function loadProducts() {
-            const loader = document.getElementById('inventory-loader');
-            const table = document.getElementById('inventory-body');
-            loader.style.display = 'block';
-
-            const pQuery = query(ref(db, 'products'), limitToLast(50));
-            onValue(pQuery, (snap) => {
-                loader.style.display = 'none';
-                table.innerHTML = '';
-                snap.forEach(child => {
-                    const data = child.val();
-                    table.insertAdjacentHTML('afterbegin', `
-                        <tr>
-                            <td><img src="${data.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;"></td>
-                            <td><code style="background:var(--brand-surface); color:var(--brand); padding:4px 8px; border-radius:5px;">${data.pid}</code></td>
-                            <td>${data.category}</td>
-                            <td>₹${data.sale} <small style="text-decoration:line-through; color:var(--text-sub)">₹${data.mrp}</small></td>
-                            <td><span style="color: ${data.stock < 10 ? 'var(--danger)' : 'var(--success)'}; font-weight:700;">${data.stock}</span></td>
-                            <td>
-                                <button class="btn-core" style="padding:6px; color:var(--danger); background:none;" onclick="pRemover('${data.pid}')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `);
+            db.ref('products').on('value', (snapshot) => {
+                const tbody = document.getElementById('productListTable');
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const prod = childSnapshot.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><img src="${prod.imageUrl}" alt="product" width="50" height="50" style="border-radius:4px; object-fit:cover;"></td>
+                        <td>${prod.productID}</td>
+                        <td>${prod.name}</td>
+                        <td>₹${prod.discountPrice} <del>₹${prod.mrp}</del></td>
+                        <td>
+                            <input type="number" value="${prod.stock}" style="width:60px;" id="stock-${prod.productID}">
+                            <button onclick="updateStock('${prod.productID}')" class="btn btn-primary" style="padding:4px 8px; font-size:12px;">Update</button>
+                        </td>
+                        <td>
+                            <button onclick="deleteProduct('${prod.productID}')" class="btn btn-danger" style="padding:4px 8px; font-size:12px;">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
-            }, (err) => {
-                messenger.show("Database Sync Error: Access Denied", "error");
             });
         }
 
-        // --- GLOBAL ACTION HANDLERS ---
-        window.pRemover = (id) => {
-            if(confirm("Confirm deletion of Asset ID: " + id)) {
-                remove(ref(db, `products/${id}`))
-                    .then(() => messenger.show("Asset Purged Successfully"))
-                    .catch(e => messenger.show("Action Blocked: Permission Denied", "error"));
+        window.updateStock = async function(id) {
+            const newStock = document.getElementById(`stock-${id}`).value;
+            await db.ref('products/' + id).update({
+                stock: parseInt(newStock),
+                status: parseInt(newStock) > 0 ? 'Active' : 'Out of Stock'
+            });
+            alert('Stock updated!');
+        };
+
+        window.deleteProduct = async function(id) {
+            if(confirm('Are you sure you want to delete this product?')) {
+                await db.ref('products/' + id).remove();
+                alert('Product deleted!');
             }
+        };
+
+        // Initialize Product Load
+        loadProducts();
+
+        // ==========================================
+        // 8.2 ADMIN ORDERS MANAGEMENT LOGIC
+        // ==========================================
+        let currentEditingOrder = null;
+
+        function loadOrders() {
+            db.ref('orders').on('value', (snapshot) => {
+                const tbody = document.getElementById('ordersListTable');
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const order = childSnapshot.val();
+                    const orderId = childSnapshot.key;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><a href="#" onclick="viewOrderDetails('${orderId}')" style="color:var(--primary-color); font-weight:bold;">${orderId}</a></td>
+                        <td>${order.userName}<br><small>${order.phone} | ${order.email}</small></td>
+                        <td>${order.trackingId || 'Not Assigned'}</td>
+                        <td><span style="padding:4px 8px; border-radius:4px; background:${getStatusColor(order.status)}; color:white; font-size:12px;">${order.status}</span></td>
+                        <td>
+                            <button onclick="viewOrderDetails('${orderId}')" class="btn btn-primary" style="padding:4px 8px; font-size:12px;">Manage</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
         }
-    </script>
-</body>
-</html>
+
+        function getStatusColor(status) {
+            if(status === 'Delivered') return 'var(--success)';
+            if(status === 'Shipped') return 'var(--primary-color)';
+            if(status === 'Confirmed') return 'var(--warning)';
+            return 'var(--text-muted)';
+        }
+
+        window.viewOrderDetails = function(orderId) {
+            db.ref('orders/' + orderId).once('value').then((snapshot) => {
+                const order = snapshot.val();
+                currentEditingOrder = orderId;
+                
+                const modalBody = document.getElementById('modalBody');
+                modalBody.innerHTML = `
+                    <div style="background:var(--bg-color); padding:10px; border-radius:4px;">
+                        <strong>Invoice / Order Ref:</strong> ${orderId}<br>
+                        <strong>Date:</strong> ${new Date(order.timestamp).toLocaleString()}<br>
+                        <strong>Product ID:</strong> ${order.productId}<br>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <strong>User Details:</strong><br>
+                        Name: ${order.userName}<br>
+                        Phone: ${order.phone}<br>
+                        Email: ${order.email}<br>
+                        Address: ${order.address}, ${order.pincode}
+                    </div>
+                `;
+                document.getElementById('updateTrackingId').value = order.trackingId || '';
+                document.getElementById('updateOrderStatus').value = order.status || 'Confirmed';
+                
+                document.getElementById('orderModal').style.display = 'flex';
+            });
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        };
+
+        window.updateOrderLogic = async function() {
+            const tracking = document.getElementById('updateTrackingId').value;
+            const status = document.getElementById('updateOrderStatus').value;
+            
+            await db.ref('orders/' + currentEditingOrder).update({
+                trackingId: tracking,
+                status: status
+            });
+
+            // Send Real Notification (Simulated push to users/notifications path)
+            db.ref('orders/' + currentEditingOrder).once('value').then(snap => {
+                const userId = snap.val().userId;
+                db.ref('notifications/' + userId).push({
+                    title: `Order ${status}`,
+                    body: `Your order ${currentEditingOrder} status is now ${status}. Tracking: ${tracking}`,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    read: false
+                });
+            });
+
+            alert('Order updated and user notified!');
+            closeModal('orderModal');
+        };
+
+        // Initialize Order Load
+        loadOrders();
+
+        // ==========================================
+        // 8.3 SELLER WITHDRAWAL APPROVAL LOGIC
+        // ==========================================
+        function loadWithdrawals() {
+            db.ref('withdrawals').on('value', (snapshot) => {
+                const tbody = document.getElementById('withdrawalsTable');
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const req = childSnapshot.val();
+                    const reqId = childSnapshot.key;
+                    if(req.status === 'Pending') {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${req.sellerName} <br><small>ID: ${req.sellerId}</small></td>
+                            <td>₹${req.requestedAmount}</td>
+                            <td>₹${req.sellerBalance}</td>
+                            <td><span style="color:var(--warning); font-weight:bold;">${req.status}</span></td>
+                            <td>
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', ${req.requestedAmount}, 'Approved')" class="btn btn-success" style="padding:4px 8px; font-size:12px;">Approve</button>
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', ${req.requestedAmount}, 'Rejected')" class="btn btn-danger" style="padding:4px 8px; font-size:12px;">Reject</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+            });
+        }
+
+        window.processWithdrawal = async function(reqId, sellerId, amount, action) {
+            if(confirm(`Are you sure you want to ${action} this request?`)) {
+                await db.ref('withdrawals/' + reqId).update({
+                    status: action,
+                    processedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                if(action === 'Approved') {
+                    // Update seller balance transaction logic
+                    const sellerRef = db.ref('sellers/' + sellerId);
+                    sellerRef.once('value').then(snap => {
+                        const currentBalance = snap.val().balance || 0;
+                        sellerRef.update({
+                            balance: currentBalance - amount
+                        });
+                        
+                        // Notify Seller automatically
+                        db.ref('notifications/' + sellerId).push({
+                            title: 'Withdrawal Approved',
+                            body: `Your withdrawal of ₹${amount} has been processed and marked as paid. Remaining balance: ₹${currentBalance - amount}`,
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    });
+                }
+                alert(`Withdrawal request ${action}!`);
+            }
+        };
+
+        // Initialize Withdrawals Load
+        loadWithdrawals();
+
+</script>
