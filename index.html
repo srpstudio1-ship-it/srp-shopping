@@ -7,9 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root { --srp-blue: #0047AB; --srp-white: #ffffff; }
@@ -140,7 +138,7 @@
                         <div class="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 transition-all"></div>
                     </div>
                 </button>
-                <button onclick="auth.signOut()" class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm text-red-500 font-bold">
+                <button onclick="signOutUser()" class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm text-red-500 font-bold">
                     <span><i class="fas fa-sign-out-alt mr-3"></i> Logout</span>
                 </button>
             </div>
@@ -202,19 +200,37 @@
     </nav>
 
     <script>
-        // FIREBASE CONFIG (Part 9)
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-            authDomain: "srp-shopping-54bbb.firebaseapp.com",
-            databaseURL: "https://srp-shopping-54bbb-default-rtdb.firebaseio.com",
-            projectId: "srp-shopping-54bbb",
-            storageBucket: "srp-shopping-54bbb"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        // 1. SUPABASE CONFIGURATION
+        const SB_URL = "https://cmxlfxqtrguuzpqdgcxv.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteGxmeHF0cmd1dXpwcWRnY3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzE0NDYsImV4cCI6MjA5MDAwNzQ0Nn0.Hl0S5yJnJEqvrxXSFt_YMjrKUKerNjUHb2ZvI7LfOC0";
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
         const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
 
-        // 1. Auth Toggle Logic
+        // 2. Auth State Management
+        let currentUser = null;
+
+        async function checkAuthState() {
+            const { data: { session } } = await supabase.auth.getSession();
+            handleAuthChange(session?.user || null);
+        }
+
+        supabase.auth.onAuthStateChange((_event, session) => {
+            handleAuthChange(session?.user || null);
+        });
+
+        function handleAuthChange(user) {
+            currentUser = user;
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-storefront').style.display = 'block';
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('main-storefront').style.display = 'none';
+            }
+        }
+
+        // 3. Auth Actions
         let isLoginMode = true;
         document.getElementById('toggle-auth').onclick = (e) => {
             e.preventDefault();
@@ -225,39 +241,41 @@
             document.getElementById('toggle-auth').innerText = isLoginMode ? 'Create Account' : 'Sign In';
         };
 
-        // 2. Auth Execution
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('main-storefront').style.display = 'block';
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('main-storefront').style.display = 'none';
-            }
-        });
-
-        document.getElementById('auth-form').onsubmit = (e) => {
+        document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            if(isLoginMode) auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
-            else auth.createUserWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+            const password = document.getElementById('password').value;
+
+            try {
+                if (isLoginMode) {
+                    const { error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase.auth.signUp({ email, password });
+                    if (error) throw error;
+                    alert("Verification email sent!");
+                }
+            } catch (err) { alert(err.message); }
         };
 
-        document.getElementById('google-btn').onclick = () => {
-            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => alert(err.message));
+        document.getElementById('google-btn').onclick = async () => {
+            const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+            if (error) alert(error.message);
         };
 
-        // 3. Admin Redirect Logic
+        async function signOutUser() {
+            await supabase.auth.signOut();
+        }
+
+        // 4. Admin Redirect Logic
         function handleLogoTap() {
-            const user = auth.currentUser;
-            if (user && ADMIN_EMAILS.includes(user.email)) {
+            if (currentUser && ADMIN_EMAILS.includes(currentUser.email)) {
                 const pin = prompt("Admin Security PIN:");
                 if (pin === "1234") window.location.href = "admin.html";
             } else { location.reload(); }
         }
 
-        // 4. Product Data & Display
+        // 5. Product Data & Display
         const products = Array.from({ length: 20 }, (_, i) => ({
             id: i,
             name: `SRP Premium Product ${i + 1}`,
@@ -293,7 +311,6 @@
             document.getElementById('detail-img-2').src = p.img;
             document.getElementById('product-detail-view').style.display = 'block';
 
-            // Feature 7.6 Integration: Hook the button to the cart logic
             document.getElementById('add-to-cart-action').onclick = () => {
                 addToCart(p, parseInt(document.getElementById('detail-qty').value));
             };
@@ -311,13 +328,12 @@
             renderProducts(products.filter(p => p.name.toLowerCase().includes(query)));
         }
 
-        // --- NEW FEATURES LOGIC (7.1 - 7.10) ---
+        // --- FEATURES LOGIC (Cart, Wallet, Orders) ---
 
         let cart = JSON.parse(localStorage.getItem('srp_cart')) || [];
         let orders = JSON.parse(localStorage.getItem('srp_orders')) || [];
         let walletBalance = 450;
 
-        // 7.6 Cart Logic
         function addToCart(product, qty) {
             const existing = cart.find(item => item.id === product.id);
             if(existing) existing.qty += qty;
@@ -363,14 +379,12 @@
         function openCart() { renderCart(); document.getElementById('cart-view').style.display = 'block'; }
         function closeCart() { document.getElementById('cart-view').style.display = 'none'; }
 
-        // 7.4 Wallet & Checkout
         function processCheckout() {
             const total = parseInt(document.getElementById('cart-grand-total').innerText);
             if(total === 0) return alert("Cart is empty");
             
             if(walletBalance >= total) {
                 walletBalance -= total;
-                // 7.1 Create Order
                 const newOrder = {
                     id: 'SRP' + Math.floor(Math.random() * 1000000),
                     date: new Date().toLocaleDateString(),
@@ -404,7 +418,6 @@
             }
         }
 
-        // 7.0 Profile & Theme
         function openProfile() { document.getElementById('profile-view').style.display = 'block'; }
         function closeProfile() { document.getElementById('profile-view').style.display = 'none'; }
 
@@ -420,7 +433,6 @@
             }
         }
 
-        // 7.1 Orders & Tracking
         function openOrders() {
             const container = document.getElementById('orders-list');
             document.getElementById('orders-view').style.display = 'block';
@@ -445,7 +457,9 @@
         function closeOrders() { document.getElementById('orders-view').style.display = 'none'; }
         function openAddressBook() { alert("Address Book: Under Encryption Setup..."); }
 
+        // Initial Load
         renderProducts(products);
+        checkAuthState();
     </script>
 </body>
 </html>
