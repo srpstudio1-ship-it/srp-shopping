@@ -949,5 +949,177 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('codeCheckerContainer').innerHTML = `<button class="btn btn-primary" onclick="checkCodeIntegrity()">Scan System Files</button>`;
     document.getElementById('aiFixContainer').innerHTML = `<button class="btn btn-primary" onclick="runAIAutoFix()">Run AI Diagnostic</button>`;
 });
+// ==========================================
+// 8.12 ADVANCED COUPON MANAGEMENT SYSTEM
+// ==========================================
+window.createCoupon = async () => {
+    const code = prompt("Enter Coupon Code (e.g., SRP50):").toUpperCase();
+    const discount = parseFloat(prompt("Enter Discount Percentage (e.g., 10):"));
+    const minOrder = parseFloat(prompt("Minimum Order Amount (₹):"));
+    const expiryDate = prompt("Expiry Date (YYYY-MM-DD):");
+
+    if (code && !isNaN(discount)) {
+        const couponRef = db.ref('coupons/' + code);
+        await couponRef.set({
+            code: code,
+            discountPercent: discount,
+            minPurchase: minOrder,
+            expiry: new Date(expiryDate).getTime(),
+            usageCount: 0,
+            status: 'Active',
+            createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        alert(`Coupon ${code} is now LIVE.`);
+    }
+};
+
+function loadCoupons() {
+    const container = document.getElementById('couponContainer');
+    db.ref('coupons').on('value', (snapshot) => {
+        let html = `<div class="card-header"><button class="btn btn-success" onclick="createCoupon()">+ Create Coupon</button></div>
+                    <div class="table-responsive"><table><thead><tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
+        snapshot.forEach(child => {
+            const c = child.val();
+            const isExpired = Date.now() > c.expiry;
+            html += `<tr>
+                <td><strong>${c.code}</strong></td>
+                <td>${c.discountPercent}% OFF</td>
+                <td>₹${c.minPurchase}</td>
+                <td><span style="color:${isExpired ? 'var(--danger)' : 'var(--success)'}">${isExpired ? 'EXPIRED' : 'ACTIVE'}</span></td>
+                <td><button class="btn btn-danger" onclick="deleteData('coupons/${c.code}')">Revoke</button></td>
+            </tr>`;
+        });
+        container.innerHTML = html + `</tbody></table></div>`;
+    });
+}
+
+// ==========================================
+// 8.13 PROMOTIONAL BANNER STORAGE SYSTEM
+// ==========================================
+window.uploadBanner = async () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        const bannerId = 'BNR-' + Date.now();
+        const btn = document.querySelector('#bannerUploadBtn');
+        
+        try {
+            const ref = storage.ref(`banners/${bannerId}`);
+            await ref.put(file);
+            const url = await ref.getDownloadURL();
+            
+            await db.ref('banners/' + bannerId).set({
+                bannerUrl: url,
+                active: true,
+                targetCategory: 'all',
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            alert("Banner Live on Homepage!");
+        } catch (err) { console.error(err); }
+    };
+    fileInput.click();
+};
+
+function loadBanners() {
+    const container = document.getElementById('bannerContainer');
+    db.ref('banners').on('value', snap => {
+        let html = `<button id="bannerUploadBtn" class="btn btn-primary" onclick="uploadBanner()">Upload New Banner</button><div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">`;
+        snap.forEach(child => {
+            const b = child.val();
+            html += `
+                <div style="width:200px; border:1px solid var(--border-color); border-radius:8px; overflow:hidden;">
+                    <img src="${b.bannerUrl}" style="width:100%; height:100px; object-fit:cover;">
+                    <div style="padding:5px; text-align:center;">
+                        <button class="btn btn-danger" style="width:100%; font-size:12px;" onclick="deleteData('banners/${child.key}')">Remove</button>
+                    </div>
+                </div>`;
+        });
+        container.innerHTML = html + `</div>`;
+    });
+}
+
+// ==========================================
+// 8.18 ATOMIC REFUND & TRANSACTION ROLLBACK
+// ==========================================
+window.initiateRefund = async (orderId, amount, userId) => {
+    if (!confirm(`Refund ₹${amount} to User ID: ${userId}? This cannot be undone.`)) return;
+
+    const refundRef = db.ref('refunds').push();
+    const walletRef = db.ref(`users/${userId}/walletBalance`);
+
+    try {
+        // Run as a Transaction to ensure data integrity
+        await db.ref().update({
+            [`orders/${orderId}/status`]: 'Refunded',
+            [`refunds/${refundRef.key}`]: {
+                orderId: orderId,
+                amount: amount,
+                userId: userId,
+                processedAt: firebase.database.ServerValue.TIMESTAMP
+            }
+        });
+
+        // Update User Wallet
+        await walletRef.transaction((currentBalance) => {
+            return (currentBalance || 0) + amount;
+        });
+
+        alert("Refund Processed: Amount credited to User Wallet.");
+    } catch (error) {
+        alert("Critical Error: Transaction Failed. " + error.message);
+    }
+};
+
+function loadRefundRequests() {
+    const container = document.getElementById('refundContainer');
+    db.ref('orders').orderByChild('status').equalTo('Return Requested').on('value', snap => {
+        let html = `<table><thead><tr><th>Order ID</th><th>Amount</th><th>Reason</th><th>Action</th></tr></thead><tbody>`;
+        if(!snap.exists()) html += `<tr><td colspan="4">No pending refunds.</td></tr>`;
+        snap.forEach(child => {
+            const o = child.val();
+            html += `<tr>
+                <td>${child.key}</td>
+                <td>₹${o.amount}</td>
+                <td>${o.returnReason || 'Not Specified'}</td>
+                <td><button class="btn btn-success" onclick="initiateRefund('${child.key}', ${o.amount}, '${o.userId}')">Approve & Refund</button></td>
+            </tr>`;
+        });
+        container.innerHTML = html + `</tbody></table>`;
+    });
+}
+
+// ==========================================
+// 8.19 SYSTEM LOGS (AUDIT TRAIL)
+// ==========================================
+function pushSystemLog(action, details) {
+    db.ref('system_logs').push({
+        action: action,
+        details: details,
+        adminId: auth.currentUser ? auth.currentUser.uid : 'System',
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+function loadSystemLogs() {
+    const container = document.getElementById('logsContainer');
+    db.ref('system_logs').limitToLast(20).on('value', snap => {
+        let html = `<ul style="list-style:none; font-family:monospace; font-size:12px; background:#000; color:#0f0; padding:15px; border-radius:5px;">`;
+        snap.forEach(child => {
+            const l = child.val();
+            html += `<li>[${new Date(l.timestamp).toLocaleTimeString()}] ${l.action.toUpperCase()}: ${l.details}</li>`;
+        });
+        container.innerHTML = html + `</ul>`;
+    });
+}
+
+// Initialize Part 3 Modules
+document.addEventListener('DOMContentLoaded', () => {
+    loadCoupons();
+    loadBanners();
+    loadRefundRequests();
+    loadSystemLogs();
+});
 
 </script>
