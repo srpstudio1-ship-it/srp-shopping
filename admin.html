@@ -383,6 +383,10 @@
                 db.ref('products/' + pid).remove();
             }
         }
+           // --- INIT CALLS ---
+        window.onload = () => {
+            loadProductTable();
+        }
 // --- 8.2 ADMIN ORDERS MANAGEMENT CORE LOGIC ---
 function loadOrdersManagement() {
     const ordersContainer = document.getElementById('orders-container');
@@ -558,6 +562,12 @@ function loadPromotionPayments() {
         container.innerHTML = html;
     });
 }
+        // Initialization of Listeners
+window.addEventListener('DOMContentLoaded', () => {
+    loadOrdersManagement();
+    loadWithdrawals();
+    loadPromotionPayments();
+});
 // --- 8.5 FEATURED PRODUCTS ON HOME PAGE (With Expiry Logic) ---
 function loadFeaturedProducts() {
     const container = document.getElementById('section-featured');
@@ -701,15 +711,7 @@ function LogSystemAction(type, message) {
     });
 }
 
-// Initialization of Listeners
-window.addEventListener('DOMContentLoaded', () => {
-    loadOrdersManagement();
-    loadWithdrawals();
-    loadPromotionPayments();
-});
 
-        // --- INIT CALLS ---
-        window.onload = () => {
-            loadProductTable();
-        }
+
+     
     </script>
