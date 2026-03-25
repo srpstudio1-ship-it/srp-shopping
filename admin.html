@@ -3,164 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SRP SHOPPING | ADMIN PANEL PRO</title>
+<title>SRP SHOPPING | ADMIN PANEL PRO MAX</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
 body { font-family: 'Inter', sans-serif; }
-.sidebar { transition: 0.3s; }
-.hidden-section { display: none; }
-.active-menu { background: #1e40af; }
+.sidebar { transition: transform 0.3s ease; }
+.sidebar-hidden { transform: translateX(-100%); }
+.overlay {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(0,0,0,0.5);
+    display:none;
+}
+.overlay.active { display:block; }
+.section { display:none; }
+.section.active { display:block; }
 </style>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white">
 
-<!-- TOP BAR -->
-<div class="flex items-center justify-between bg-blue-900 text-white p-4">
-    
+<!-- OVERLAY -->
+<div id="overlay" class="overlay" onclick="closeSidebar()"></div>
+
+<!-- TOPBAR -->
+<div class="flex justify-between items-center bg-blue-900 text-white p-4 shadow">
+
     <div class="flex items-center gap-4">
-        <!-- 3 LINE MENU -->
-        <button onclick="toggleSidebar()" class="text-2xl">☰</button>
+        <button onclick="openSidebar()" class="text-2xl">☰</button>
         <h1 class="font-bold text-lg">SRP ADMIN PANEL</h1>
     </div>
 
-    <div class="flex gap-4 items-center">
+    <div class="flex items-center gap-3">
         <button onclick="toggleTheme()" class="bg-gray-800 px-3 py-1 rounded">🌙</button>
-        <button onclick="goHome()" class="bg-green-600 px-3 py-1 rounded">Back to Home</button>
+        <button onclick="goHome()" class="bg-green-600 px-3 py-1 rounded">Home</button>
+        <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded">Logout</button>
     </div>
 </div>
 
-<!-- MAIN -->
 <div class="flex">
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="sidebar w-64 bg-blue-800 text-white min-h-screen p-3">
+<div id="sidebar" class="sidebar sidebar-hidden fixed z-50 w-64 h-full bg-blue-800 p-4 text-white overflow-y-auto">
 
-    <div class="font-bold mb-4">MENU</div>
-
-    <!-- 8 -->
-    <button onclick="showSection('dashboard')" class="block w-full text-left p-2 hover:bg-blue-600">8 Dashboard</button>
-
-    <!-- 8.1 -->
-    <button onclick="showSection('products')" class="block w-full text-left p-2 hover:bg-blue-600">8.1 Product Management</button>
-
-    <!-- 8.2 -->
-    <button onclick="showSection('orders')" class="block w-full text-left p-2 hover:bg-blue-600">8.2 Orders</button>
-
-    <!-- 8.3 -->
-    <button onclick="showSection('withdrawals')" class="block w-full text-left p-2 hover:bg-blue-600">8.3 Withdrawals</button>
-
-    <!-- 8.4 -->
-    <button onclick="showSection('promotion')" class="block w-full text-left p-2 hover:bg-blue-600">8.4 Promotion Payments</button>
-
-    <!-- 8.5 -->
-    <button onclick="showSection('featured')" class="block w-full text-left p-2 hover:bg-blue-600">8.5 Featured Products</button>
-
-    <!-- 8.6 -->
-    <button onclick="showSection('globalOrders')" class="block w-full text-left p-2 hover:bg-blue-600">8.6 Global Orders</button>
-
-    <!-- 8.7 -->
-    <button onclick="showSection('security')" class="block w-full text-left p-2 hover:bg-blue-600">8.7 Security</button>
-
-    <!-- 8.8 -->
-    <button onclick="showSection('analytics')" class="block w-full text-left p-2 hover:bg-blue-600">8.8 Website Analytics</button>
-
-    <!-- 8.9 -->
-    <button onclick="showSection('sales')" class="block w-full text-left p-2 hover:bg-blue-600">8.9 Sales Analytics</button>
-
-    <!-- 8.10 -->
-    <button onclick="showSection('income')" class="block w-full text-left p-2 hover:bg-blue-600">8.10 Income</button>
-
-    <!-- 8.11 -->
-    <button onclick="showSection('categories')" class="block w-full text-left p-2 hover:bg-blue-600">8.11 Categories</button>
-
-    <!-- 8.12 -->
-    <button onclick="showSection('coupons')" class="block w-full text-left p-2 hover:bg-blue-600">8.12 Coupons</button>
-
-    <!-- 8.13 -->
-    <button onclick="showSection('banners')" class="block w-full text-left p-2 hover:bg-blue-600">8.13 Banners</button>
-
-    <!-- 8.14 -->
-    <button onclick="showSection('reviews')" class="block w-full text-left p-2 hover:bg-blue-600">8.14 Reviews</button>
-
-    <!-- 8.15 -->
-    <button onclick="showSection('users')" class="block w-full text-left p-2 hover:bg-blue-600">8.15 Users</button>
-
-    <!-- 8.16 -->
-    <button onclick="showSection('sellers')" class="block w-full text-left p-2 hover:bg-blue-600">8.16 Sellers</button>
-
-    <!-- 8.17 -->
-    <button onclick="showSection('payments')" class="block w-full text-left p-2 hover:bg-blue-600">8.17 Payments</button>
-
-    <!-- 8.18 -->
-    <button onclick="showSection('refunds')" class="block w-full text-left p-2 hover:bg-blue-600">8.18 Refunds</button>
-
-    <!-- 8.19 -->
-    <button onclick="showSection('logs')" class="block w-full text-left p-2 hover:bg-blue-600">8.19 Logs</button>
-
-    <!-- 8.20 -->
-    <button onclick="showSection('settings')" class="block w-full text-left p-2 hover:bg-blue-600">8.20 Settings</button>
-
-    <!-- 8.21 -->
-    <button onclick="showSection('codeChecker')" class="block w-full text-left p-2 hover:bg-blue-600">8.21 Code Checker</button>
+    <h2 class="font-bold mb-4">ADMIN MENU</h2>
+    <div id="menuContainer"></div>
 
 </div>
 
-<!-- CONTENT -->
-<div class="flex-1 p-6">
+<!-- MAIN -->
+<div class="flex-1 p-4">
 
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="section">
-        <h2 class="text-2xl font-bold">Admin Dashboard</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+<!-- DASHBOARD -->
+<div id="dashboard" class="section active">
+    <h2 class="text-2xl font-bold">Dashboard</h2>
 
-            <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">Users: <span id="totalUsers">0</span></div>
-            <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">Sellers: <span id="totalSellers">0</span></div>
-            <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">Orders: <span id="totalOrders">0</span></div>
-            <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">Revenue: ₹<span id="totalRevenue">0</span></div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
 
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+            Users: <span id="usersCount">0</span>
         </div>
-    </div>
 
-    <!-- EMPTY SECTIONS PLACEHOLDER -->
-    <div id="products" class="section hidden-section"></div>
-    <div id="orders" class="section hidden-section"></div>
-    <div id="withdrawals" class="section hidden-section"></div>
-    <div id="promotion" class="section hidden-section"></div>
-    <div id="featured" class="section hidden-section"></div>
-    <div id="globalOrders" class="section hidden-section"></div>
-    <div id="security" class="section hidden-section"></div>
-    <div id="analytics" class="section hidden-section"></div>
-    <div id="sales" class="section hidden-section"></div>
-    <div id="income" class="section hidden-section"></div>
-    <div id="categories" class="section hidden-section"></div>
-    <div id="coupons" class="section hidden-section"></div>
-    <div id="banners" class="section hidden-section"></div>
-    <div id="reviews" class="section hidden-section"></div>
-    <div id="users" class="section hidden-section"></div>
-    <div id="sellers" class="section hidden-section"></div>
-    <div id="payments" class="section hidden-section"></div>
-    <div id="refunds" class="section hidden-section"></div>
-    <div id="logs" class="section hidden-section"></div>
-    <div id="settings" class="section hidden-section"></div>
-    <div id="codeChecker" class="section hidden-section"></div>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+            Sellers: <span id="sellersCount">0</span>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+            Orders: <span id="ordersCount">0</span>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
+            Revenue: ₹<span id="revenueCount">0</span>
+        </div>
+
+    </div>
+</div>
+
+<!-- ALL OTHER SECTIONS AUTO GENERATED -->
+<div id="sectionsContainer"></div>
 
 </div>
 </div>
 
 <script>
 
-// FIREBASE CONFIG
+// ================= FIREBASE =================
 const firebaseConfig = {
   apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
   authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -172,47 +110,123 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.database();
 const storage = firebase.storage();
 
-// SIDEBAR
-function toggleSidebar() {
-    document.getElementById("sidebar").classList.toggle("hidden");
+// ================= AUTH SECURITY =================
+auth.onAuthStateChanged(user => {
+    if (!user) {
+        alert("Access Denied");
+        window.location.href = "login.html";
+    }
+});
+
+// ================= MENU CONFIG =================
+const menuItems = [
+    {id:"products", label:"8.1 Product Management"},
+    {id:"orders", label:"8.2 Orders"},
+    {id:"withdrawals", label:"8.3 Withdrawals"},
+    {id:"promotion", label:"8.4 Promotion"},
+    {id:"featured", label:"8.5 Featured"},
+    {id:"globalOrders", label:"8.6 Global Orders"},
+    {id:"security", label:"8.7 Security"},
+    {id:"analytics", label:"8.8 Website Analytics"},
+    {id:"sales", label:"8.9 Sales"},
+    {id:"income", label:"8.10 Income"},
+    {id:"categories", label:"8.11 Categories"},
+    {id:"coupons", label:"8.12 Coupons"},
+    {id:"banners", label:"8.13 Banners"},
+    {id:"reviews", label:"8.14 Reviews"},
+    {id:"users", label:"8.15 Users"},
+    {id:"sellers", label:"8.16 Sellers"},
+    {id:"payments", label:"8.17 Payments"},
+    {id:"refunds", label:"8.18 Refunds"},
+    {id:"logs", label:"8.19 Logs"},
+    {id:"settings", label:"8.20 Settings"},
+    {id:"codeChecker", label:"8.21 Code Checker"}
+];
+
+// ================= BUILD MENU =================
+const menuContainer = document.getElementById("menuContainer");
+
+menuItems.forEach(item => {
+    const btn = document.createElement("button");
+    btn.innerText = item.label;
+    btn.className = "block w-full text-left p-2 hover:bg-blue-600 rounded";
+    btn.onclick = () => showSection(item.id);
+    menuContainer.appendChild(btn);
+});
+
+// ================= BUILD SECTIONS =================
+const sectionContainer = document.getElementById("sectionsContainer");
+
+menuItems.forEach(item => {
+    const div = document.createElement("div");
+    div.id = item.id;
+    div.className = "section p-4";
+    div.innerHTML = `<h2 class="text-xl font-bold">${item.label}</h2>
+                     <div class="mt-3 text-gray-500">Loading module...</div>`;
+    sectionContainer.appendChild(div);
+});
+
+// ================= NAVIGATION =================
+function showSection(id) {
+    document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    closeSidebar();
 }
 
-// THEME
+// ================= SIDEBAR =================
+function openSidebar() {
+    document.getElementById("sidebar").classList.remove("sidebar-hidden");
+    document.getElementById("overlay").classList.add("active");
+}
+function closeSidebar() {
+    document.getElementById("sidebar").classList.add("sidebar-hidden");
+    document.getElementById("overlay").classList.remove("active");
+}
+
+// ================= THEME =================
 function toggleTheme() {
     document.body.classList.toggle("dark");
 }
 
-// HOME BUTTON
+// ================= LOGOUT =================
+function logout() {
+    auth.signOut();
+}
+
+// ================= HOME =================
 function goHome() {
     window.location.href = "index.html";
 }
 
-// SECTION SWITCH
-function showSection(id) {
-    document.querySelectorAll(".section").forEach(sec => {
-        sec.classList.add("hidden-section");
-    });
-    document.getElementById(id).classList.remove("hidden-section");
-}
+// ================= DASHBOARD (SCALABLE) =================
+function loadStats() {
+    db.ref("stats").on("value", snap => {
+        const data = snap.val() || {};
 
-// DASHBOARD DATA
-function loadDashboard() {
-    db.ref("users").on("value", snap => {
-        document.getElementById("totalUsers").innerText = snap.numChildren();
-    });
-
-    db.ref("sellers").on("value", snap => {
-        document.getElementById("totalSellers").innerText = snap.numChildren();
-    });
-
-    db.ref("orders").on("value", snap => {
-        document.getElementById("totalOrders").innerText = snap.numChildren();
+        document.getElementById("usersCount").innerText = data.users || 0;
+        document.getElementById("sellersCount").innerText = data.sellers || 0;
+        document.getElementById("ordersCount").innerText = data.orders || 0;
+        document.getElementById("revenueCount").innerText = data.revenue || 0;
     });
 }
 
-loadDashboard();
+loadStats();
 
-</script>
+// ================= NOTIFICATION SYSTEM =================
+function notify(msg) {
+    alert(msg);
+}
+
+// ================= LOADER =================
+function showLoader() {
+    console.log("Loading...");
+}
+function hideLoader() {
+    console.log("Done");
+}
+
+    </script>
