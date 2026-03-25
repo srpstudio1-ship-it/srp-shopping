@@ -3,284 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRP SHOPPING | Professional Admin Suite</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>SRP SHOPPING - Admin Control Panel</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
         :root {
-            --glass: rgba(255, 255, 255, 0.95);
-            --srp-blue: #2563eb;
-            --srp-dark: #0f172a;
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f3f4f6;
+            --sidebar-bg: #111827;
+            --sidebar-text: #9ca3af;
+            --sidebar-hover: #ffffff;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body.dark-mode {
+            --bg-color: #1f2937;
+            --card-bg: #374151;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #4b5563;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
-            color: var(--srp-dark);
-            overflow-x: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s;
         }
 
-        /* Smooth Sidebar Transition */
+        /* 8. Admin Panel Layout */
         #sidebar {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.05);
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
         }
 
-        .sidebar-hidden { transform: translateX(-100%); }
-
-        /* Glassmorphism Sections */
-        .admin-card {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        #sidebar.closed {
+            transform: translateX(-100%);
+            position: absolute;
+            height: 100%;
         }
 
-        .section-view { display: none; animation: fadeIn 0.3s ease-in-out; }
-        .active-section { display: block; }
+        .sidebar-header {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #374151;
+            text-align: center;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #1f2937;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: #374151;
+            color: var(--sidebar-hover);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #topbar {
+            height: 60px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--secondary-color); }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+
+        #content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .section-container {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .section-container.active {
+            display: block;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        /* Modern Inputs */
-        input, textarea, select {
-            border: 1px solid #cbd5e1 !important;
-            transition: all 0.2s;
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
-        input:focus { border-color: var(--srp-blue) !important; outline: none; ring: 2px var(--srp-blue); }
+
+        .card-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row .form-group { flex: 1; }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: var(--bg-color);
+            font-weight: 600;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-modal {
+            float: right;
+            cursor: pointer;
+            font-size: 20px;
+        }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-    <header class="sticky top-0 w-full bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-40">
-        <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-xl">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">S</div>
-                <h1 class="font-bold text-lg tracking-tight">SRP SHOPPING <span class="text-blue-600">ADMIN</span></h1>
+    <div id="sidebar">
+        <div class="sidebar-header">SRP ADMIN</div>
+        <div class="nav-item active" data-target="sec-8-1">8.1 Product Mgmt</div>
+        <div class="nav-item" data-target="sec-8-2">8.2 Orders Mgmt</div>
+        <div class="nav-item" data-target="sec-8-3">8.3 Seller Withdrawals</div>
+        <div class="nav-item" data-target="sec-8-4">8.4 Seller Promotions</div>
+        <div class="nav-item" data-target="sec-8-5">8.5 Featured Products</div>
+        <div class="nav-item" data-target="sec-8-6">8.6 Global Dashboard</div>
+        <div class="nav-item" data-target="sec-8-7">8.7 Security & Theme</div>
+        <div class="nav-item" data-target="sec-8-8">8.8 Website Analytics</div>
+        <div class="nav-item" data-target="sec-8-9">8.9 Sales Analytics</div>
+        <div class="nav-item" data-target="sec-8-10">8.10 Admin Income</div>
+        <div class="nav-item" data-target="sec-8-11">8.11 Category Mgmt</div>
+        <div class="nav-item" data-target="sec-8-12">8.12 Coupon Mgmt</div>
+        <div class="nav-item" data-target="sec-8-13">8.13 Banner Mgmt</div>
+        <div class="nav-item" data-target="sec-8-14">8.14 Review Moderation</div>
+        <div class="nav-item" data-target="sec-8-15">8.15 User Mgmt</div>
+        <div class="nav-item" data-target="sec-8-16">8.16 Seller Mgmt</div>
+        <div class="nav-item" data-target="sec-8-17">8.17 Payment History</div>
+        <div class="nav-item" data-target="sec-8-18">8.18 Refund System</div>
+        <div class="nav-item" data-target="sec-8-19">8.19 System Logs</div>
+        <div class="nav-item" data-target="sec-8-20">8.20 Platform Settings</div>
+        <div class="nav-item" data-target="sec-8-21">8.21 Code Checker</div>
+        <div class="nav-item" data-target="sec-8-22">8.22 AI Auto Fix</div>
+    </div>
+
+    <div class="main-wrapper">
+        <div id="topbar">
+            <button class="menu-btn" id="toggle-sidebar">☰</button>
+            <div class="topbar-actions">
+                <button class="btn btn-primary" id="btn-theme-toggle">🌙 Theme</button>
+                <button class="btn btn-danger" onclick="window.location.href='/'">🏠 Back to Home</button>
             </div>
         </div>
-        <button onclick="goHome()" class="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition">
-            <i class="fas fa-external-link-alt text-sm"></i>
-            <span class="font-medium">Home Page</span>
-        </button>
-    </header>
 
-    <div class="flex">
-        <aside id="sidebar" class="fixed left-0 top-0 h-full w-72 bg-white border-r border-slate-200 overflow-y-auto pt-20 pb-10">
-            <nav class="px-3 space-y-1" id="nav-container">
-                <p class="text-[10px] font-bold text-slate-400 uppercase px-3 mb-2">Main Controls</p>
-                <button onclick="openSection('dashboard', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-50 text-blue-700 active-link"><i class="fas fa-th-large"></i> 8. Admin Dashboard</button>
-                <button onclick="openSection('products', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-box"></i> 8.1 Product Management</button>
-                <button onclick="openSection('orders', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-truck"></i> 8.2 Orders Management</button>
-                <button onclick="openSection('withdrawal', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-university"></i> 8.3 Seller Withdrawal</button>
-                
-                <p class="text-[10px] font-bold text-slate-400 uppercase px-3 mt-6 mb-2">Finance & Marketing</p>
-                <button onclick="openSection('promotion', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-bullhorn"></i> 8.4 Promotion System</button>
-                <button onclick="openSection('featured', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-star"></i> 8.5 Featured Products</button>
-                <button onclick="openSection('global-orders', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-globe"></i> 8.6 Global Dashboard</button>
-                <button onclick="openSection('security', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-user-shield"></i> 8.7 Admin Security</button>
-                
-                <p class="text-[10px] font-bold text-slate-400 uppercase px-3 mt-6 mb-2">Data & Analytics</p>
-                <button onclick="openSection('analytics', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-chart-line"></i> 8.8 Website Analytics</button>
-                <button onclick="openSection('sales', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-file-invoice-dollar"></i> 8.9 Sales Analytics</button>
-                <button onclick="openSection('income', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-wallet"></i> 8.10 Admin Income</button>
-                
-                <p class="text-[10px] font-bold text-slate-400 uppercase px-3 mt-6 mb-2">Platform Content</p>
-                <button onclick="openSection('category', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-tags"></i> 8.11 Category Management</button>
-                <button onclick="openSection('coupon', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-ticket-alt"></i> 8.12 Coupon Management</button>
-                <button onclick="openSection('banner', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-images"></i> 8.13 Banner Management</button>
-                <button onclick="openSection('reviews', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-comments"></i> 8.14 Review Moderation</button>
-                
-                <p class="text-[10px] font-bold text-slate-400 uppercase px-3 mt-6 mb-2">Users & Sellers</p>
-                <button onclick="openSection('users', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-user-friends"></i> 8.15 User Management</button>
-                <button onclick="openSection('sellers', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-store-alt"></i> 8.16 Seller Management</button>
-                <button onclick="openSection('payments', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-history"></i> 8.17 Payment History</button>
-                <button onclick="openSection('refunds', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-undo"></i> 8.18 Refund System</button>
-                
-                <p class="text-[10px] font-bold text-slate-400 uppercase px-3 mt-6 mb-2">System Tools</p>
-                <button onclick="openSection('logs', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-terminal"></i> 8.19 System Logs</button>
-                <button onclick="openSection('settings', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-sliders-h"></i> 8.20 Platform Settings</button>
-                <button onclick="openSection('code-checker', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-file-code"></i> 8.21 Github Code Checker</button>
-                <button onclick="openSection('ai-fixer', this)" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50"><i class="fas fa-robot"></i> 8.22 AI Code Auto-Fix</button>
-            </nav>
-        </aside>
-
-        <main class="flex-1 p-6 lg:ml-72" id="main-view">
+        <div id="content-area">
             
-            <div id="section-dashboard" class="section-view active-section">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
-                        <p class="text-slate-500 text-sm">Welcome back to SRP Shopping Central Hub.</p>
-                    </div>
+            <section id="sec-8-1" class="section-container active">
+                <div class="card">
+                    <div class="card-header">Add New Product</div>
+                    <form id="addProductForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Product Name</label>
+                                <input type="text" id="prodName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="prodCategory" class="form-control" required>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="home">Home & Kitchen</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>MRP (₹)</label>
+                                <input type="number" id="prodMRP" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Discount Price (₹)</label>
+                                <input type="number" id="prodDiscount" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Stock Quantity</label>
+                                <input type="number" id="prodStock" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Product Description</label>
+                            <textarea id="prodDesc" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Product Image (Gallery Upload)</label>
+                            <input type="file" id="prodImage" class="form-control" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-success" id="saveProductBtn">Add Product & Generate ID</button>
+                    </form>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-blue-600 text-white p-5 rounded-2xl shadow-lg">
-                        <p class="text-blue-100 text-sm uppercase font-bold tracking-wider">Total Revenue</p>
-                        <h3 class="text-3xl font-black mt-1" id="dash-revenue">₹0.00</h3>
-                        <p class="text-xs mt-3 opacity-80"><i class="fas fa-arrow-up"></i> +12% from last week</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-slate-400 text-sm uppercase font-bold tracking-wider">Active Orders</p>
-                        <h3 class="text-3xl font-black mt-1 text-slate-800" id="dash-orders">0</h3>
-                        <p class="text-xs mt-3 text-blue-600 font-semibold">View All Orders</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-slate-400 text-sm uppercase font-bold tracking-wider">Total Sellers</p>
-                        <h3 class="text-3xl font-black mt-1 text-slate-800" id="dash-sellers">0</h3>
-                        <p class="text-xs mt-3 text-orange-500 font-semibold">4 Pending Approval</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-slate-400 text-sm uppercase font-bold tracking-wider">Site Visits</p>
-                        <h3 class="text-3xl font-black mt-1 text-slate-800" id="dash-visits">0</h3>
-                        <p class="text-xs mt-3 text-green-600 font-semibold">Live Traffic Active</p>
-                    </div>
-                </div>
-            </div>
 
-            <div id="section-products" class="section-view">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <h2 class="text-2xl font-bold">8.1 Product Management</h2>
-                    <button onclick="toggleModal('addProductModal')" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">
-                        <i class="fas fa-plus mr-2"></i> Add New Product
-                    </button>
-                </div>
-
-                <div class="admin-card">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 border-b">
+                <div class="card">
+                    <div class="card-header">Manage Existing Products</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
                                 <tr>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase">Product Details</th>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase">Category</th>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase">Price/MRP</th>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase">Stock Status</th>
-                                    <th class="p-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                                    <th>Image</th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="product-table-body">
+                            <tbody id="productListTable">
                                 </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
-<div id="addFeaturedModal" class="fixed inset-0 bg-black/60 hidden z-[101] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl p-6">
-        <h3 class="text-xl font-bold mb-4">Pin Product to Home</h3>
-        <div class="space-y-4">
-            <div>
-                <label class="text-xs font-bold text-slate-400">PRODUCT ID</label>
-                <input type="text" id="feat-pid" placeholder="Enter Product ID" class="w-full p-3 bg-slate-50 rounded-xl">
-            </div>
-            <div>
-                <label class="text-xs font-bold text-slate-400">DISPLAY PRIORITY (1-10)</label>
-                <input type="number" id="feat-priority" value="1" class="w-full p-3 bg-slate-50 rounded-xl">
-            </div>
-            <div>
-                <label class="text-xs font-bold text-slate-400">EXPIRY DATE</label>
-                <input type="date" id="feat-expiry" class="w-full p-3 bg-slate-50 rounded-xl">
-            </div>
-            <div class="flex gap-2 mt-6">
-                <button onclick="toggleModal('addFeaturedModal')" class="flex-1 py-3 text-slate-500 font-bold">Cancel</button>
-                <button onclick="pinProductToHome()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Save Pin</button>
-            </div>
+            </section>
+
+            <section id="sec-8-2" class="section-container">
+                <div class="card">
+                    <div class="card-header">Global Order Management</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>User Info</th>
+                                    <th>Tracking ID</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersListTable">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-8-3" class="section-container">
+                <div class="card">
+                    <div class="card-header">Pending Withdrawal Requests</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Seller Name</th>
+                                    <th>Requested Amount</th>
+                                    <th>Current Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalsTable">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-8-4" class="section-container"><div class="card"><div class="card-header">8.4 Seller Promotion Payment System</div><div id="promoContainer"></div></div></section>
+            <section id="sec-8-5" class="section-container"><div class="card"><div class="card-header">8.5 Featured Products on Home Page</div><div id="featuredContainer"></div></div></section>
+            <section id="sec-8-6" class="section-container"><div class="card"><div class="card-header">8.6 Global Order Dashboard</div><div id="globalOrderContainer"></div></div></section>
+            <section id="sec-8-7" class="section-container"><div class="card"><div class="card-header">8.7 Admin Security</div><div id="securityContainer"></div></div></section>
+            <section id="sec-8-8" class="section-container"><div class="card"><div class="card-header">8.8 Website Analytics</div><div id="webAnalyticsContainer"></div></div></section>
+            <section id="sec-8-9" class="section-container"><div class="card"><div class="card-header">8.9 Sales Analytics</div><div id="salesAnalyticsContainer"></div></div></section>
+            <section id="sec-8-10" class="section-container"><div class="card"><div class="card-header">8.10 Admin Income</div><div id="incomeContainer"></div></div></section>
+            <section id="sec-8-11" class="section-container"><div class="card"><div class="card-header">8.11 Category Management</div><div id="categoryContainer"></div></div></section>
+            <section id="sec-8-12" class="section-container"><div class="card"><div class="card-header">8.12 Coupon Management</div><div id="couponContainer"></div></div></section>
+            <section id="sec-8-13" class="section-container"><div class="card"><div class="card-header">8.13 Banner Management</div><div id="bannerContainer"></div></div></section>
+            <section id="sec-8-14" class="section-container"><div class="card"><div class="card-header">8.14 Review Moderation</div><div id="reviewContainer"></div></div></section>
+            <section id="sec-8-15" class="section-container"><div class="card"><div class="card-header">8.15 User Management</div><div id="userContainer"></div></div></section>
+            <section id="sec-8-16" class="section-container"><div class="card"><div class="card-header">8.16 Seller Management</div><div id="sellerContainer"></div></div></section>
+            <section id="sec-8-17" class="section-container"><div class="card"><div class="card-header">8.17 Overall Payment History</div><div id="paymentHistoryContainer"></div></div></section>
+            <section id="sec-8-18" class="section-container"><div class="card"><div class="card-header">8.18 Refund System</div><div id="refundContainer"></div></div></section>
+            <section id="sec-8-19" class="section-container"><div class="card"><div class="card-header">8.19 System Logs</div><div id="logsContainer"></div></div></section>
+            <section id="sec-8-20" class="section-container"><div class="card"><div class="card-header">8.20 Platform Settings</div><div id="platformSettingsContainer"></div></div></section>
+            <section id="sec-8-21" class="section-container"><div class="card"><div class="card-header">8.21 Github Code Checker</div><div id="codeCheckerContainer"></div></div></section>
+            <section id="sec-8-22" class="section-container"><div class="card"><div class="card-header">8.22 AI Auto Fix</div><div id="aiFixContainer"></div></div></section>
+
         </div>
     </div>
-</div>
 
-            <div id="section-orders" class="section-view">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold">8.2 Orders Management</h2>
-                    <p class="text-slate-500">Monitor and update tracking for all user purchases.</p>
-                </div>
-
-                <div class="admin-card">
-                    <div id="orders-container" class="space-y-4">
-                        </div>
-                </div>
-            </div>
-
-            <div id="section-withdrawal" class="section-view">
-                <h2 class="text-2xl font-bold mb-6">8.3 Seller Withdrawal Requests</h2>
-                <div class="grid grid-cols-1 gap-4" id="withdrawal-list">
-                    </div>
-            </div>
-
-        </main>
-    </div>
-
-    <div id="addProductModal" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
-            <div class="bg-slate-900 p-4 text-white flex justify-between">
-                <h3 class="font-bold">Add Professional Product</h3>
-                <button onclick="toggleModal('addProductModal')"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
-                <div>
-                    <label class="text-xs font-bold text-slate-500">Product Name</label>
-                    <input type="text" id="p-name" class="w-full p-3 rounded-lg bg-slate-50 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500">Category</label>
-                    <select id="p-cat" class="w-full p-3 rounded-lg bg-slate-50 mt-1">
-                        <option>Electronics</option>
-                        <option>Smartphones</option>
-                        <option>Fashion</option>
-                        <option>Groceries</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500">MRP (₹)</label>
-                    <input type="number" id="p-mrp" class="w-full p-3 rounded-lg bg-slate-50 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500">Sale Price (₹)</label>
-                    <input type="number" id="p-price" class="w-full p-3 rounded-lg bg-slate-50 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500">Stock Qty</label>
-                    <input type="number" id="p-stock" class="w-full p-3 rounded-lg bg-slate-50 mt-1">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500">Upload Image</label>
-                    <input type="file" id="p-file" class="w-full p-2 text-sm mt-1">
-                </div>
-                <div class="col-span-2">
-                    <label class="text-xs font-bold text-slate-500">Detailed Description</label>
-                    <textarea id="p-desc" rows="4" class="w-full p-3 rounded-lg bg-slate-50 mt-1"></textarea>
-                </div>
-            </div>
-            <div class="p-4 border-t bg-slate-50 flex justify-end gap-3">
-                <button onclick="toggleModal('addProductModal')" class="px-6 py-2 font-medium text-slate-600">Cancel</button>
-                <button onclick="processAddProduct()" class="bg-blue-600 text-white px-8 py-2 rounded-lg font-bold shadow-lg">Save & Allot ID</button>
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('orderModal')">&times;</span>
+            <h3 id="modalTitle">Order Details & Invoice</h3>
+            <div id="modalBody" style="margin-top: 15px;"></div>
+            <div style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <input type="text" id="updateTrackingId" class="form-control" placeholder="Enter Tracking ID">
+                <select id="updateOrderStatus" class="form-control" style="margin-top: 10px;">
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                </select>
+                <button class="btn btn-primary" style="margin-top: 10px;" onclick="updateOrderLogic()">Update Order & Notify</button>
             </div>
         </div>
     </div>
 
     <script>
-        // CORE FIREBASE CONFIGURATION
+        // ==========================================
+        // FIREBASE INITIALIZATION & CONFIGURATION
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -288,453 +436,299 @@
             projectId: "srp-shopping-54bbb",
             storageBucket: "srp-shopping-54bbb.firebasestorage.app",
             messagingSenderId: "491906168702",
-            appId: "1:491906168702:web:2873565fcd2d561077252f"
+            appId: "1:491906168702:web:2873565fcd2d561077252f",
+            measurementId: "G-3S7X8V8EFQ"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
         const db = firebase.database();
         const storage = firebase.storage();
+        const auth = firebase.auth();
 
-        // UI HELPERS
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('sidebar-hidden');
+        // ==========================================
+        // UI & NAVIGATION LOGIC (8. ADMIN LAYOUT)
+        // ==========================================
+        document.getElementById('toggle-sidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('closed');
+        });
+
+        document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            // 8.7 Sub-feature: Save theme preference
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('adminTheme', isDark ? 'dark' : 'light');
+        });
+
+        // Load theme
+        if(localStorage.getItem('adminTheme') === 'dark') {
+            document.body.classList.add('dark-mode');
         }
 
-        function toggleModal(id) {
-            const m = document.getElementById(id);
-            m.classList.toggle('hidden');
-        }
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section-container');
 
-        function goHome() {
-            window.location.href = "index.html"; // Takes user to SRP Shopping home
-        }
-
-        function openSection(target, btn) {
-            // Update UI Sidebar Links
-            document.querySelectorAll('.nav-link').forEach(l => {
-                l.classList.remove('bg-blue-50', 'text-blue-700', 'active-link');
-                l.classList.add('text-slate-600');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                const targetId = item.getAttribute('data-target');
+                sections.forEach(sec => sec.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
             });
-            btn.classList.add('bg-blue-50', 'text-blue-700', 'active-link');
-            btn.classList.remove('text-slate-600');
+        });
 
-            // Switch Sections
-            document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active-section'));
-            const activeSec = document.getElementById('section-' + target);
-            if (activeSec) activeSec.classList.add('active-section');
-            
-            // Mobile Auto Close
-            if (window.innerWidth < 1024) toggleSidebar();
+        // ==========================================
+        // 8.1 PRODUCT MANAGEMENT LOGIC
+        // ==========================================
+        
+        // Generate Unique Product ID Utility
+        function generateProductID() {
+            return 'SRP-PRD-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 5).toUpperCase();
         }
 
-        // --- 8.1 PRODUCT MANAGEMENT CORE LOGIC ---
-        async function processAddProduct() {
-            const name = document.getElementById('p-name').value;
-            const mrp = document.getElementById('p-mrp').value;
-            const price = document.getElementById('p-price').value;
-            const cat = document.getElementById('p-cat').value;
-            const stock = document.getElementById('p-stock').value;
-            const desc = document.getElementById('p-desc').value;
-            const file = document.getElementById('p-file').files[0];
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveProductBtn');
+            btn.innerText = "Uploading & Saving...";
+            btn.disabled = true;
 
-            if(!name || !file) return alert("Product Name and Image are mandatory!");
+            const name = document.getElementById('prodName').value;
+            const category = document.getElementById('prodCategory').value;
+            const mrp = parseFloat(document.getElementById('prodMRP').value);
+            const discount = parseFloat(document.getElementById('prodDiscount').value);
+            const stock = parseInt(document.getElementById('prodStock').value);
+            const desc = document.getElementById('prodDesc').value;
+            const file = document.getElementById('prodImage').files[0];
+            const productID = generateProductID();
 
-            // Auto Allot Unique Product ID
-            const pid = "SRP" + Math.floor(100000 + Math.random() * 900000);
-            
-            const storageRef = storage.ref(`products/${pid}`);
-            const uploadTask = await storageRef.put(file);
-            const imgUrl = await uploadTask.ref.getDownloadURL();
+            try {
+                // Upload Image to Firebase Storage
+                const storageRef = storage.ref(`products/${productID}/${file.name}`);
+                const snapshot = await storageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
 
-            const productData = {
-                pid: pid,
-                name: name,
-                mrp: mrp,
-                price: price,
-                category: cat,
-                stock: stock,
-                description: desc,
-                imageUrl: imgUrl,
-                status: "active",
-                timestamp: Date.now()
-            };
+                // Save to Realtime Database
+                await db.ref('products/' + productID).set({
+                    productID: productID,
+                    name: name,
+                    category: category,
+                    mrp: mrp,
+                    discountPrice: discount,
+                    stock: stock,
+                    description: desc,
+                    imageUrl: downloadURL,
+                    status: stock > 0 ? 'Active' : 'Out of Stock',
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
 
-            db.ref('products/' + pid).set(productData).then(() => {
-                alert(`Product Added Successfully! ID: ${pid}`);
-                toggleModal('addProductModal');
-                loadProductTable();
-            });
-        }
+                alert('Product Added Successfully! ID: ' + productID);
+                document.getElementById('addProductForm').reset();
+                loadProducts(); // Refresh table
+            } catch (error) {
+                console.error("Error adding product: ", error);
+                alert('Error adding product. Check console.');
+            } finally {
+                btn.innerText = "Add Product & Generate ID";
+                btn.disabled = false;
+            }
+        });
 
-        function loadProductTable() {
-            db.ref('products').on('value', snap => {
-                const products = snap.val();
-                let html = "";
-                for (let key in products) {
-                    const p = products[key];
-                    const stockColor = p.stock > 5 ? 'text-green-600' : 'text-red-600';
-                    html += `
-                        <tr class="border-b hover:bg-slate-50 transition">
-                            <td class="p-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="${p.imageUrl}" class="w-12 h-12 rounded object-cover border shadow-sm">
-                                    <div>
-                                        <p class="font-bold text-sm">${p.name}</p>
-                                        <p class="text-[10px] text-slate-400">ID: ${p.pid}</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="p-4 text-sm font-medium text-slate-600">${p.category}</td>
-                            <td class="p-4 text-sm">
-                                <span class="font-bold text-blue-600">₹${p.price}</span>
-                                <del class="text-slate-400 text-xs ml-1">₹${p.mrp}</del>
-                            </td>
-                            <td class="p-4 text-sm font-bold ${stockColor}">${p.stock} In Stock</td>
-                            <td class="p-4 text-right">
-                                <button onclick="deleteProduct('${p.pid}')" class="text-slate-400 hover:text-red-600 p-2"><i class="fas fa-trash-alt"></i></button>
-                                <button onclick="markOutOfStock('${p.pid}')" class="text-slate-400 hover:text-orange-500 p-2"><i class="fas fa-eye-slash"></i></button>
-                            </td>
-                        </tr>
+        function loadProducts() {
+            db.ref('products').on('value', (snapshot) => {
+                const tbody = document.getElementById('productListTable');
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const prod = childSnapshot.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><img src="${prod.imageUrl}" alt="product" width="50" height="50" style="border-radius:4px; object-fit:cover;"></td>
+                        <td>${prod.productID}</td>
+                        <td>${prod.name}</td>
+                        <td>₹${prod.discountPrice} <del>₹${prod.mrp}</del></td>
+                        <td>
+                            <input type="number" value="${prod.stock}" style="width:60px;" id="stock-${prod.productID}">
+                            <button onclick="updateStock('${prod.productID}')" class="btn btn-primary" style="padding:4px 8px; font-size:12px;">Update</button>
+                        </td>
+                        <td>
+                            <button onclick="deleteProduct('${prod.productID}')" class="btn btn-danger" style="padding:4px 8px; font-size:12px;">Delete</button>
+                        </td>
                     `;
-                }
-                document.getElementById('product-table-body').innerHTML = html;
+                    tbody.appendChild(tr);
+                });
             });
         }
 
-        function deleteProduct(pid) {
-            if(confirm("Confirm deletion of product ID: " + pid)) {
-                db.ref('products/' + pid).remove();
+        window.updateStock = async function(id) {
+            const newStock = document.getElementById(`stock-${id}`).value;
+            await db.ref('products/' + id).update({
+                stock: parseInt(newStock),
+                status: parseInt(newStock) > 0 ? 'Active' : 'Out of Stock'
+            });
+            alert('Stock updated!');
+        };
+
+        window.deleteProduct = async function(id) {
+            if(confirm('Are you sure you want to delete this product?')) {
+                await db.ref('products/' + id).remove();
+                alert('Product deleted!');
             }
-        }
-           // --- INIT CALLS ---
-        window.onload = () => {
-            loadProductTable();
-        }
-// --- 8.2 ADMIN ORDERS MANAGEMENT CORE LOGIC ---
-function loadOrdersManagement() {
-    const ordersContainer = document.getElementById('orders-container');
-    
-    // Real-time listener for all orders
-    db.ref('orders').on('value', snapshot => {
-        let html = "";
-        const orders = snapshot.val();
-        
-        if (!orders) {
-            ordersContainer.innerHTML = `<div class="p-10 text-center text-slate-400">No active orders found in system.</div>`;
-            return;
+        };
+
+        // Initialize Product Load
+        loadProducts();
+
+        // ==========================================
+        // 8.2 ADMIN ORDERS MANAGEMENT LOGIC
+        // ==========================================
+        let currentEditingOrder = null;
+
+        function loadOrders() {
+            db.ref('orders').on('value', (snapshot) => {
+                const tbody = document.getElementById('ordersListTable');
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const order = childSnapshot.val();
+                    const orderId = childSnapshot.key;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><a href="#" onclick="viewOrderDetails('${orderId}')" style="color:var(--primary-color); font-weight:bold;">${orderId}</a></td>
+                        <td>${order.userName}<br><small>${order.phone} | ${order.email}</small></td>
+                        <td>${order.trackingId || 'Not Assigned'}</td>
+                        <td><span style="padding:4px 8px; border-radius:4px; background:${getStatusColor(order.status)}; color:white; font-size:12px;">${order.status}</span></td>
+                        <td>
+                            <button onclick="viewOrderDetails('${orderId}')" class="btn btn-primary" style="padding:4px 8px; font-size:12px;">Manage</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
         }
 
-        Object.keys(orders).forEach(orderId => {
-            const o = orders[orderId];
-            const statusClass = o.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700';
-            
-            html += `
-            <div class="border border-slate-200 rounded-xl p-4 hover:shadow-md transition bg-white mb-4">
-                <div class="flex flex-wrap justify-between items-start gap-4">
-                    <div class="cursor-pointer" onclick="viewOrderInvoice('${orderId}')">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold px-2 py-1 rounded ${statusClass}">${o.status || 'Pending'}</span>
-                            <h4 class="font-bold text-slate-800">Order #${orderId}</h4>
-                        </div>
-                        <p class="text-sm text-slate-500 mt-1"><i class="fas fa-user mr-1"></i> ${o.userName} | <i class="fas fa-phone mr-1"></i> ${o.phone}</p>
-                        <p class="text-[11px] text-slate-400 mt-1 uppercase tracking-widest">Tap to view full invoice & product details</p>
-                    </div>
-                    
-                    <div class="flex-1 min-w-[250px] space-y-2">
-                        <div class="flex gap-2">
-                            <input type="text" id="track-${orderId}" value="${o.trackingId || ''}" placeholder="Enter Tracking ID" 
-                                class="text-xs p-2 border rounded-lg w-full bg-slate-50">
-                            <button onclick="updateOrderField('${orderId}', 'trackingId')" class="bg-slate-800 text-white px-3 py-1 rounded-lg text-xs">Update</button>
-                        </div>
-                        <div class="flex gap-2">
-                            <select id="status-${orderId}" class="text-xs p-2 border rounded-lg w-full bg-slate-50">
-                                <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                                <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                            </select>
-                            <button onclick="updateOrderStatus('${orderId}')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Set Status</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        });
-        ordersContainer.innerHTML = html;
-    });
-}
+        function getStatusColor(status) {
+            if(status === 'Delivered') return 'var(--success)';
+            if(status === 'Shipped') return 'var(--primary-color)';
+            if(status === 'Confirmed') return 'var(--warning)';
+            return 'var(--text-muted)';
+        }
 
-// 8.2.1 Detailed Invoice View (Tap Logic)
-async function viewOrderInvoice(orderId) {
-    const snap = await db.ref('orders/' + orderId).once('value');
-    const o = snap.val();
-    
-    const invoiceHtml = `
-        <div class="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center p-4 overflow-y-auto" id="invoice-modal">
-            <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
-                <button onclick="this.parentElement.parentElement.remove()" class="absolute top-4 right-4 text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-2xl"></i></button>
+        window.viewOrderDetails = function(orderId) {
+            db.ref('orders/' + orderId).once('value').then((snapshot) => {
+                const order = snapshot.val();
+                currentEditingOrder = orderId;
                 
-                <h2 class="text-xl font-black border-b pb-4 mb-4">INVOICE DETAILS</h2>
+                const modalBody = document.getElementById('modalBody');
+                modalBody.innerHTML = `
+                    <div style="background:var(--bg-color); padding:10px; border-radius:4px;">
+                        <strong>Invoice / Order Ref:</strong> ${orderId}<br>
+                        <strong>Date:</strong> ${new Date(order.timestamp).toLocaleString()}<br>
+                        <strong>Product ID:</strong> ${order.productId}<br>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <strong>User Details:</strong><br>
+                        Name: ${order.userName}<br>
+                        Phone: ${order.phone}<br>
+                        Email: ${order.email}<br>
+                        Address: ${order.address}, ${order.pincode}
+                    </div>
+                `;
+                document.getElementById('updateTrackingId').value = order.trackingId || '';
+                document.getElementById('updateOrderStatus').value = order.status || 'Confirmed';
                 
-                <div class="flex gap-4 mb-6 bg-slate-50 p-3 rounded-xl border">
-                    <img src="${o.productImage}" class="w-20 h-20 rounded-lg object-cover shadow-sm">
-                    <div>
-                        <p class="text-xs font-bold text-blue-600">PRODUCT ID: ${o.productId}</p>
-                        <h3 class="font-bold text-slate-800">${o.productName}</h3>
-                        <p class="text-sm font-medium">Price: ₹${o.totalAmount}</p>
-                    </div>
-                </div>
+                document.getElementById('orderModal').style.display = 'flex';
+            });
+        };
 
-                <div class="grid grid-cols-2 gap-y-4 text-sm">
-                    <div><p class="text-[10px] font-bold text-slate-400">CUSTOMER</p><p class="font-semibold">${o.userName}</p></div>
-                    <div><p class="text-[10px] font-bold text-slate-400">PHONE</p><p class="font-semibold">${o.phone}</p></div>
-                    <div class="col-span-2"><p class="text-[10px] font-bold text-slate-400">SHIPPING ADDRESS</p><p class="font-medium">${o.address}, ${o.pincode}</p></div>
-                    <div><p class="text-[10px] font-bold text-slate-400">ORDER DATE</p><p class="font-semibold">${o.purchaseDate || 'N/A'} ${o.purchaseTime || ''}</p></div>
-                    <div><p class="text-[10px] font-bold text-slate-400">PAYMENT STATUS</p><span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-bold">PAID</span></div>
-                </div>
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        };
 
-                <button onclick="window.print()" class="w-full mt-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition">Print Full Invoice</button>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', invoiceHtml);
-}
-
-function updateOrderStatus(orderId) {
-    const newStatus = document.getElementById(`status-${orderId}`).value;
-    db.ref(`orders/${orderId}`).update({ status: newStatus }).then(() => {
-        // 8.2 Real Notification Logic (Mock implementation for professional feedback)
-        sendOrderNotification(orderId, newStatus);
-        alert(`Order ${orderId} marked as ${newStatus}`);
-    });
-}
-
-function updateOrderField(orderId, field) {
-    const val = document.getElementById(`track-${orderId}`).value;
-    db.ref(`orders/${orderId}`).update({ [field]: val }).then(() => {
-        alert("Record Updated Successfully");
-    });
-}
-
-// --- 8.3 SELLER WITHDRAWAL APPROVAL ---
-function loadWithdrawals() {
-    const list = document.getElementById('withdrawal-list');
-    db.ref('withdrawals').on('value', snapshot => {
-        let html = "";
-        snapshot.forEach(child => {
-            const w = child.val();
-            const wid = child.key;
+        window.updateOrderLogic = async function() {
+            const tracking = document.getElementById('updateTrackingId').value;
+            const status = document.getElementById('updateOrderStatus').value;
             
-            if (w.status === 'pending') {
-                html += `
-                <div class="admin-card flex flex-col md:flex-row justify-between items-center gap-4 border-l-4 border-orange-500">
-                    <div>
-                        <h4 class="font-bold text-lg">${w.sellerName}</h4>
-                        <p class="text-sm text-slate-500">Balance: <span class="font-bold text-slate-800">₹${w.totalBalance}</span> | Req: <span class="text-orange-600 font-bold">₹${w.amount}</span></p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="handleWithdrawal('${wid}', 'Approved')" class="bg-green-600 text-white px-5 py-2 rounded-lg font-bold text-sm">Approve & Pay</button>
-                        <button onclick="handleWithdrawal('${wid}', 'Rejected')" class="bg-red-500 text-white px-5 py-2 rounded-lg font-bold text-sm">Reject</button>
-                    </div>
-                </div>`;
+            await db.ref('orders/' + currentEditingOrder).update({
+                trackingId: tracking,
+                status: status
+            });
+
+            // Send Real Notification (Simulated push to users/notifications path)
+            db.ref('orders/' + currentEditingOrder).once('value').then(snap => {
+                const userId = snap.val().userId;
+                db.ref('notifications/' + userId).push({
+                    title: `Order ${status}`,
+                    body: `Your order ${currentEditingOrder} status is now ${status}. Tracking: ${tracking}`,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    read: false
+                });
+            });
+
+            alert('Order updated and user notified!');
+            closeModal('orderModal');
+        };
+
+        // Initialize Order Load
+        loadOrders();
+
+        // ==========================================
+        // 8.3 SELLER WITHDRAWAL APPROVAL LOGIC
+        // ==========================================
+        function loadWithdrawals() {
+            db.ref('withdrawals').on('value', (snapshot) => {
+                const tbody = document.getElementById('withdrawalsTable');
+                tbody.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const req = childSnapshot.val();
+                    const reqId = childSnapshot.key;
+                    if(req.status === 'Pending') {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${req.sellerName} <br><small>ID: ${req.sellerId}</small></td>
+                            <td>₹${req.requestedAmount}</td>
+                            <td>₹${req.sellerBalance}</td>
+                            <td><span style="color:var(--warning); font-weight:bold;">${req.status}</span></td>
+                            <td>
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', ${req.requestedAmount}, 'Approved')" class="btn btn-success" style="padding:4px 8px; font-size:12px;">Approve</button>
+                                <button onclick="processWithdrawal('${reqId}', '${req.sellerId}', ${req.requestedAmount}, 'Rejected')" class="btn btn-danger" style="padding:4px 8px; font-size:12px;">Reject</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+            });
+        }
+
+        window.processWithdrawal = async function(reqId, sellerId, amount, action) {
+            if(confirm(`Are you sure you want to ${action} this request?`)) {
+                await db.ref('withdrawals/' + reqId).update({
+                    status: action,
+                    processedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                if(action === 'Approved') {
+                    // Update seller balance transaction logic
+                    const sellerRef = db.ref('sellers/' + sellerId);
+                    sellerRef.once('value').then(snap => {
+                        const currentBalance = snap.val().balance || 0;
+                        sellerRef.update({
+                            balance: currentBalance - amount
+                        });
+                        
+                        // Notify Seller automatically
+                        db.ref('notifications/' + sellerId).push({
+                            title: 'Withdrawal Approved',
+                            body: `Your withdrawal of ₹${amount} has been processed and marked as paid. Remaining balance: ₹${currentBalance - amount}`,
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    });
+                }
+                alert(`Withdrawal request ${action}!`);
             }
-        });
-        list.innerHTML = html || `<p class="text-center text-slate-400 py-10">No pending withdrawal requests.</p>`;
-    });
-}
+        };
 
-function handleWithdrawal(id, status) {
-    db.ref(`withdrawals/${id}`).update({ 
-        status: status,
-        processedAt: Date.now()
-    }).then(() => {
-        // Automatic Seller Notification logic would trigger here
-        alert(`Request ${status}`);
-    });
-}
+        // Initialize Withdrawals Load
+        loadWithdrawals();
 
-// --- 8.4 SELLER PROMOTION PAYMENT SYSTEM ---
-function loadPromotionPayments() {
-    const container = document.getElementById('section-promotion');
-    db.ref('promotion_payments').on('value', snapshot => {
-        let html = `
-        <h2 class="text-2xl font-bold mb-6">8.4 Seller Promotion Payment System</h2>
-        <div class="admin-card overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-slate-100">
-                    <tr class="text-[10px] uppercase font-black text-slate-500">
-                        <th class="p-3">Seller Details</th>
-                        <th class="p-3">Govt IDs (Aadhar/PAN)</th>
-                        <th class="p-3">Product ID</th>
-                        <th class="p-3">Amount Received</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-        
-        snapshot.forEach(child => {
-            const p = child.val();
-            html += `
-                <tr class="border-b text-sm">
-                    <td class="p-3 font-bold">${p.sellerName}<br><span class="text-xs font-normal text-slate-500">${p.mobile}</span></td>
-                    <td class="p-3 text-xs">ADR: ${p.aadhar}<br>PAN: ${p.pan}<br>GST: ${p.gst}</td>
-                    <td class="p-3 font-mono text-blue-600 font-bold">${p.productId}</td>
-                    <td class="p-3"><span class="bg-green-100 text-green-700 px-2 py-1 rounded font-bold">₹${p.paymentAmount}</span></td>
-                </tr>`;
-        });
-        
-        html += `</tbody></table></div>`;
-        container.innerHTML = html;
-    });
-}
-        // Initialization of Listeners
-window.addEventListener('DOMContentLoaded', () => {
-    loadOrdersManagement();
-    loadWithdrawals();
-    loadPromotionPayments();
-});
-// --- 8.5 FEATURED PRODUCTS ON HOME PAGE (With Expiry Logic) ---
-function loadFeaturedProducts() {
-    const container = document.getElementById('section-featured');
-    db.ref('featured_products').on('value', snap => {
-        let html = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">8.5 Featured Products</h2>
-            <button onclick="toggleModal('addFeaturedModal')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg hover:bg-indigo-700">
-                <i class="fas fa-thumbtack mr-2"></i> Pin New Product
-            </button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
-
-        const now = new Date().getTime();
-        snap.forEach(child => {
-            const f = child.val();
-            const expiryDate = new Date(f.expiryDate).getTime();
-            const isExpired = now > expiryDate;
-
-            html += `
-            <div class="admin-card border-t-4 ${isExpired ? 'border-red-500' : 'border-indigo-500'} relative">
-                ${isExpired ? '<span class="absolute top-2 right-2 bg-red-100 text-red-600 text-[10px] px-2 py-1 rounded font-black">EXPIRED</span>' : ''}
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center font-bold text-slate-400">${f.priority}</div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase">Product ID: ${f.pid}</p>
-                        <h4 class="font-bold text-slate-800">Priority Level: ${f.priority}</h4>
-                    </div>
-                </div>
-                <p class="text-sm text-slate-500"><i class="far fa-calendar-alt mr-1"></i> Display Until: <b>${f.expiryDate}</b></p>
-                <div class="mt-4 flex gap-2">
-                    <button onclick="removeFeatured('${child.key}')" class="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 transition">Remove Pin</button>
-                    <button onclick="extendFeature('${child.key}')" class="flex-1 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition">Extend Date</button>
-                </div>
-            </div>`;
-        });
-        html += `</div>`;
-        container.innerHTML = html;
-    });
-}
-
-async function pinProductToHome() {
-    const pid = document.getElementById('feat-pid').value;
-    const priority = document.getElementById('feat-priority').value;
-    const expiry = document.getElementById('feat-expiry').value;
-
-    if(!pid || !expiry) return alert("Please fill all pinning details!");
-
-    const featData = {
-        pid: pid,
-        priority: parseInt(priority),
-        expiryDate: expiry,
-        timestamp: Date.now()
-    };
-
-    await db.ref('featured_products').push(featData);
-    alert("Product Pinned to Homepage Top Successfully!");
-    toggleModal('addFeaturedModal');
-}
-
-// --- 8.7 ADMIN SECURITY & THEME ENGINE ---
-const AdminSecurity = {
-    // Professional Suggestion: Implement Session Locking
-    changePassword: async (newPass) => {
-        const user = firebase.auth().currentUser;
-        try {
-            await user.updatePassword(newPass);
-            alert("Security Alert: Admin Password Changed Successfully!");
-            LogSystemAction("Security", "Admin changed login password");
-        } catch (e) { alert("Error: " + e.message); }
-    },
-
-    toggleTheme: (mode) => {
-        const root = document.documentElement;
-        if(mode === 'night') {
-            root.style.setProperty('--primary-bg', '#020617');
-            document.body.classList.add('bg-slate-950');
-            document.querySelectorAll('.admin-card').forEach(c => c.classList.add('bg-slate-900', 'border-slate-800', 'text-white'));
-        } else {
-            location.reload(); // Reset to default light/glass theme
-        }
-    },
-
-    enable2FA: () => {
-        // Mock 2FA Logic for UI Integrity
-        db.ref('admin_settings/security').update({ twoFactorEnabled: true });
-        alert("Two-Factor Authentication (2FA) has been enabled for next login.");
-    }
-};
-
-// --- 8.8 WEBSITE ANALYTICS (REAL-TIME AGGREGATION) ---
-function initWebsiteAnalytics() {
-    // 1. Total Users Count
-    db.ref('users').on('value', snap => {
-        const count = snap.numChildren();
-        document.getElementById('total-users').innerText = count;
-        document.getElementById('dash-visits').innerText = count * 14; // Mock logic for visits per user
-    });
-
-    // 2. Total Sellers Count
-    db.ref('sellers').on('value', snap => {
-        document.getElementById('total-sellers').innerText = snap.numChildren();
-        document.getElementById('dash-sellers').innerText = snap.numChildren();
-    });
-
-    // 3. Today's New Registrations (Filtering by Timestamp)
-    const todayStart = new Date().setHours(0,0,0,0);
-    db.ref('users').orderByChild('timestamp').startAt(todayStart).on('value', snap => {
-        document.getElementById('today-users').innerText = snap.numChildren();
-    });
-
-    // 4. Live Site Visit Counter Logic
-    db.ref('analytics/visits/total').on('value', snap => {
-        const val = snap.val() || 0;
-        // Animation for professional feel
-        animateValue("site-visits", 0, val, 1000);
-    });
-}
-
-// Professional Suggestion: Numerical Animation Utility
-function animateValue(id, start, end, duration) {
-    const obj = document.getElementById(id);
-    if (!obj) return;
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        obj.innerHTML = Math.floor(progress * (end - start) + start);
-        if (progress < 1) { window.requestAnimationFrame(step); }
-    };
-    window.requestAnimationFrame(step);
-}
-
-// --- 8.19 SYSTEM LOGS (PREVIEW FOR PART 3) ---
-function LogSystemAction(type, message) {
-    const logId = "LOG" + Date.now();
-    db.ref(`system_logs/${type}/${logId}`).set({
-        message: message,
-        timestamp: new Date().toLocaleString(),
-        admin: "MasterAdmin"
-    });
-}
-
-
-
-     
-    </script>
