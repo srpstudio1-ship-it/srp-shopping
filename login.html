@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRP SHOPPING | Login</title>
@@ -27,6 +25,9 @@
             border: 1px solid rgba(255, 255, 255, 0.1); 
         }
         input:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+        /* Simple loader for better UX */
+        .loader { border-top-color: #3b82f6; animation: spinner 0.6s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-4">
@@ -48,14 +49,14 @@
                     <input type="password" id="password" class="w-full mt-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500" placeholder="••••••••" required>
                 </div>
                 
-                <button type="submit" id="main-submit" class="w-full py-3 mt-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors font-bold uppercase tracking-wider shadow-lg">
-                    Sign In
+                <button type="submit" id="main-submit" class="w-full py-3 mt-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-all font-bold uppercase tracking-wider shadow-lg flex justify-center items-center">
+                    <span id="btn-text">Sign In</span>
                 </button>
             </form>
 
             <div class="relative my-8">
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
-                <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#121212] px-2 text-gray-500">Or continue with</span></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#0f0f0f] px-2 text-gray-500">Or continue with</span></div>
             </div>
 
             <button id="google-btn" class="w-full py-3 rounded-lg bg-white text-black font-bold flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
@@ -75,16 +76,30 @@
     </section>
 
     <script>
-        // 1. SUPABASE CONFIGURATION (Using your provided keys)
+        // 1. SUPABASE CONFIGURATION
         const SB_URL = "https://cmxlfxqtrguuzpqdgcxv.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteGxmeHF0cmd1dXpwcWRnY3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzE0NDYsImV4cCI6MjA5MDAwNzQ0Nn0.Hl0S5yJnJEqvrxXSFt_YMjrKUKerNjUHb2ZvI7LfOC0";
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        
+        let supabase;
+        
+        // Initialize client safely
+        try {
+            supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        } catch (e) {
+            console.error("Supabase fail to load:", e);
+            alert("Connection Error: Check internet or Supabase URL.");
+        }
 
-        // 2. Auth State Check
+        // 2. Auth State Check & Auto-Redirect
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                window.location.href = 'index.html'; // Redirect if already logged in
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                if (session) {
+                    window.location.replace('index.html'); 
+                }
+            } catch (err) {
+                console.log("Session check error:", err.message);
             }
         }
         checkSession();
@@ -95,12 +110,13 @@
         const mainSubmit = document.getElementById('main-submit');
         const authSubtitle = document.getElementById('auth-subtitle');
         const toggleText = document.getElementById('toggle-text');
+        const btnText = document.getElementById('btn-text');
 
         toggleBtn.onclick = (e) => {
             e.preventDefault();
             isLoginMode = !isLoginMode;
             
-            mainSubmit.innerText = isLoginMode ? 'Sign In' : 'Create Account';
+            btnText.innerText = isLoginMode ? 'Sign In' : 'Create Account';
             authSubtitle.innerText = isLoginMode ? 'Welcome back, please login' : 'Start your journey with us';
             toggleText.innerText = isLoginMode ? "New here?" : "Joined before?";
             toggleBtn.innerText = isLoginMode ? 'Create Account' : 'Sign In';
@@ -109,33 +125,44 @@
         // 4. Form Submission Logic
         document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+
+            // Simple Loading State
+            btnText.innerHTML = '<div class="loader w-5 h-5 border-2 border-white rounded-full"></div>';
+            mainSubmit.disabled = true;
 
             try {
                 if (isLoginMode) {
                     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                     if (error) throw error;
-                    if (data.user) window.location.href = 'index.html';
+                    if (data.user) window.location.replace('index.html');
                 } else {
                     const { data, error } = await supabase.auth.signUp({ email, password });
                     if (error) throw error;
-                    alert("Account created! Please check your email for the verification link.");
+                    alert("Registration successful! If you have email confirmation enabled, please check your inbox.");
                 }
             } catch (err) {
                 alert("Auth Error: " + err.message);
+            } finally {
+                btnText.innerText = isLoginMode ? 'Sign In' : 'Create Account';
+                mainSubmit.disabled = false;
             }
         };
 
         // 5. Google Auth Logic
         document.getElementById('google-btn').onclick = async () => {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin + '/index.html'
-                }
-            });
-            if (error) alert("Google Auth Error: " + error.message);
+            try {
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname.replace('login.html', 'index.html')
+                    }
+                });
+                if (error) throw error;
+            } catch (err) {
+                alert("Google Auth Error: " + err.message);
+            }
         };
     </script>
 </body>
