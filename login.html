@@ -1,490 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SRP SHOPPING | Secure Authentication Gateway</title>
-    
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supabase Auth - SRP</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.container {
+    width: 350px;
+    padding: 25px;
+    background: #1e293b;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+h2 { text-align: center; }
 
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #1d4ed8;
-            --bg-dark: #050505;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --error: #ef4444;
-            --success: #22c55e;
-        }
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 6px;
+}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+}
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-dark);
-            color: #ffffff;
-            overflow: hidden; /* Canvas handled background */
-            height: 100vh;
-            width: 100vw;
-        }
+.google {
+    background: #ef4444;
+}
 
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: -1;
-            filter: blur(2px);
-        }
-
-        .auth-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            z-index: 10;
-        }
-
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 2rem;
-            width: 100%;
-            max-width: 440px;
-            padding: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transform: translateY(0);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 1.25rem;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            transition: color 0.3s;
-        }
-
-        .input-field {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 1rem;
-            padding: 1rem 1rem 1rem 3rem;
-            color: white;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-        }
-
-        .input-field:focus + i {
-            color: var(--primary);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            width: 100%;
-            padding: 1rem;
-            border-radius: 1rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-
-        .btn-google {
-            background: white;
-            color: #000;
-            width: 100%;
-            padding: 0.85rem;
-            border-radius: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .loader-ring {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-            display: none;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .status-toast {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
-            border-radius: 1rem;
-            background: #1a1a1a;
-            border-left: 4px solid var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
-            transform: translateX(200%);
-            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            z-index: 1000;
-        }
-
-        .status-toast.active {
-            transform: translateX(0);
-        }
-
-        /* Password Strength Meter */
-        .strength-meter {
-            height: 4px;
-            width: 100%;
-            background: #222;
-            margin-top: -0.5rem;
-            margin-bottom: 1rem;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .strength-bar {
-            height: 100%;
-            width: 0%;
-            transition: all 0.5s ease;
-        }
-    </style>
+.switch {
+    text-align: center;
+    margin-top: 10px;
+    cursor: pointer;
+    color: #60a5fa;
+}
+</style>
 </head>
 <body>
 
-    <canvas id="bg-canvas"></canvas>
+<div class="container">
+    <h2 id="title">Login</h2>
 
-    <div class="status-toast" id="toast">
-        <i id="toast-icon" class="fas fa-info-circle"></i>
-        <div>
-            <p id="toast-title" class="font-bold text-sm">Notification</p>
-            <p id="toast-msg" class="text-xs text-gray-400">Processing request...</p>
-        </div>
-    </div>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
 
-    <div class="auth-container">
-        <div class="glass-panel" id="main-panel">
-            <div class="text-center mb-10">
-                <div class="inline-block p-4 rounded-3xl bg-blue-600/10 mb-4">
-                    <i class="fas fa-shield-halved text-4xl text-blue-500"></i>
-                </div>
-                <h1 class="text-4xl font-extrabold tracking-tighter">SRP <span class="text-blue-500">SHOPPING</span></h1>
-                <p class="text-gray-400 text-sm mt-2" id="subtitle">Enter your credentials to continue</p>
-            </div>
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Create Account</button>
 
-            <form id="master-auth-form" autocomplete="off">
-                <div class="input-group">
-                    <input type="email" id="email" class="input-field" placeholder="Email Address" required>
-                    <i class="fas fa-envelope"></i>
-                </div>
+    <button class="google" onclick="googleLogin()">Login with Google</button>
 
-                <div class="input-group">
-                    <input type="password" id="password" class="input-field" placeholder="Security Password" required>
-                    <i class="fas fa-lock"></i>
-                </div>
+    <div class="switch" onclick="logout()">Logout</div>
 
-                <div class="strength-meter" id="strength-container" style="display: none;">
-                    <div id="strength-bar" class="strength-bar"></div>
-                </div>
+    <p id="msg"></p>
+</div>
 
-                <button type="submit" id="auth-btn" class="btn-primary">
-                    <span id="btn-label">Sign In</span>
-                    <div id="btn-loader" class="loader-ring mx-auto"></div>
-                </button>
-            </form>
+<script>
+const supabase = window.supabase.createClient(
+    "https://cmxlfxqtrguuzpqdgcxv.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteGxmeHF0cmd1dXpwcWRnY3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzE0NDYsImV4cCI6MjA5MDAwNzQ0Nn0.Hl0S5yJnJEqvrxXSFt_YMjrKUKerNjUHb2ZvI7LfOC0"
+);
 
-            <div class="relative my-8">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-white/5"></div>
-                </div>
-                <div class="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-                    <span class="bg-[#0a0a0a] px-4 text-gray-500">Secure Gateway</span>
-                </div>
-            </div>
+// Signup
+async function signup() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-            <button id="google-auth-btn" class="btn-google">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20">
-                <span>Continue with Google</span>
-            </button>
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+    });
 
-            <div class="mt-10 text-center">
-                <p class="text-gray-500 text-sm">
-                    <span id="toggle-hint">New to SRP Shopping?</span>
-                    <button id="toggle-view" class="text-blue-500 font-bold ml-1 hover:text-blue-400 transition-colors focus:outline-none">Create Account</button>
-                </p>
-            </div>
+    showMsg(error ? error.message : "Account Created!");
+}
 
-            <div class="mt-6 flex justify-center gap-4 text-[10px] text-gray-600 uppercase font-bold tracking-tighter">
-                <a href="#" class="hover:text-white transition-colors">Privacy</a>
-                <span>&bull;</span>
-                <a href="#" class="hover:text-white transition-colors">Terms</a>
-                <span>&bull;</span>
-                <a href="#" class="hover:text-white transition-colors">Support</a>
-            </div>
-        </div>
-    </div>
+// Login
+async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-    <script>
-        /**
-         * SRP SHOPPING CORE AUTH ARCHITECTURE
-         * Version: 2.0.4 (Supabase Integrated)
-         * Author: SRP Studio
-         */
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+    });
 
-        // 1. SUPABASE CLIENT INITIALIZATION
-        const SUPABASE_URL = "https://cmxlfxqtrguuzpqdgcxv.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteGxmeHF0cmd1dXpwcWRnY3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzE0NDYsImV4cCI6MjA5MDAwNzQ0Nn0.Hl0S5yJnJEqvrxXSFt_YMjrKUKerNjUHb2ZvI7LfOC0";
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    showMsg(error ? error.message : "Login Successful!");
+}
 
-        // 2. APP STATE MANAGEMENT
-        const state = {
-            isLogin: true,
-            isLoading: false,
-            redirectUrl: 'index.html',
-            errors: []
-        };
+// Google Login
+async function googleLogin() {
+    await supabase.auth.signInWithOAuth({
+        provider: 'google'
+    });
+}
 
-        // 3. UI ELEMENT MAPPING
-        const dom = {
-            form: document.getElementById('master-auth-form'),
-            email: document.getElementById('email'),
-            pass: document.getElementById('password'),
-            btn: document.getElementById('auth-btn'),
-            btnLabel: document.getElementById('btn-label'),
-            btnLoader: document.getElementById('btn-loader'),
-            toggle: document.getElementById('toggle-view'),
-            subtitle: document.getElementById('subtitle'),
-            hint: document.getElementById('toggle-hint'),
-            googleBtn: document.getElementById('google-auth-btn'),
-            toast: document.getElementById('toast'),
-            toastTitle: document.getElementById('toast-title'),
-            toastMsg: document.getElementById('toast-msg'),
-            strengthContainer: document.getElementById('strength-container'),
-            strengthBar: document.getElementById('strength-bar'),
-            panel: document.getElementById('main-panel')
-        };
+// Logout
+async function logout() {
+    await supabase.auth.signOut();
+    showMsg("Logged out!");
+}
 
-        // 4. TOAST NOTIFICATION SYSTEM
-        function showNotification(title, msg, type = 'info') {
-            const colors = {
-                info: '#3b82f6',
-                success: '#22c55e',
-                error: '#ef4444',
-                warning: '#f59e0b'
-            };
-            
-            dom.toast.style.borderLeftColor = colors[type];
-            dom.toastTitle.innerText = title;
-            dom.toastMsg.innerText = msg;
-            dom.toast.classList.add('active');
-            
-            setTimeout(() => dom.toast.classList.remove('active'), 4000);
-        }
+// Session check
+supabase.auth.getSession().then(({ data }) => {
+    if (data.session) {
+        showMsg("Already Logged In");
+    }
+});
 
-        // 5. VIEW TOGGLE LOGIC (Sign In <-> Sign Up)
-        dom.toggle.onclick = (e) => {
-            e.preventDefault();
-            state.isLogin = !state.isLogin;
-            
-            gsap.to(dom.panel, {
-                opacity: 0,
-                y: 20,
-                duration: 0.3,
-                onComplete: () => {
-                    dom.btnLabel.innerText = state.isLogin ? 'Sign In' : 'Create Account';
-                    dom.subtitle.innerText = state.isLogin ? 'Enter your credentials to continue' : 'Join the SRP marketplace today';
-                    dom.hint.innerText = state.isLogin ? 'New to SRP Shopping?' : 'Already a member?';
-                    dom.toggle.innerText = state.isLogin ? 'Create Account' : 'Sign In';
-                    dom.strengthContainer.style.display = state.isLogin ? 'none' : 'block';
-                    
-                    gsap.to(dom.panel, { opacity: 1, y: 0, duration: 0.3 });
-                }
-            });
-        };
+function showMsg(text) {
+    document.getElementById("msg").innerText = text;
+}
+</script>
 
-        // 6. PASSWORD STRENGTH ANALYZER
-        dom.pass.oninput = () => {
-            if(state.isLogin) return;
-            const val = dom.pass.value;
-            let strength = 0;
-            if(val.length > 6) strength += 25;
-            if(val.match(/[A-Z]/)) strength += 25;
-            if(val.match(/[0-9]/)) strength += 25;
-            if(val.match(/[^A-Za-z0-9]/)) strength += 25;
-
-            const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#22c55e'];
-            const idx = Math.floor(strength / 26);
-            dom.strengthBar.style.width = strength + '%';
-            dom.strengthBar.style.background = colors[idx];
-        };
-
-        // 7. AUTH EXECUTION ENGINE
-        dom.form.onsubmit = async (e) => {
-            e.preventDefault();
-            if(state.isLoading) return;
-
-            setLoading(true);
-            const email = dom.email.value.trim();
-            const password = dom.pass.value;
-
-            try {
-                if(state.isLogin) {
-                    // LOGIN HANDLER
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                    if(error) throw error;
-                    
-                    showNotification("Success", "Welcome back! Redirecting...", "success");
-                    setTimeout(() => window.location.href = state.redirectUrl, 1500);
-                } else {
-                    // REGISTRATION HANDLER
-                    const { data, error } = await supabase.auth.signUp({ email, password });
-                    if(error) throw error;
-                    
-                    showNotification("Account Created", "Check your email if confirmation is required.", "success");
-                    if(data.user) {
-                        setTimeout(() => window.location.href = state.redirectUrl, 2000);
-                    }
-                }
-            } catch (err) {
-                console.error("Auth Failure:", err.message);
-                showNotification("Auth Error", err.message, "error");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // 8. GOOGLE OAUTH HANDLER
-        dom.googleBtn.onclick = async () => {
-            try {
-                const { error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin + '/' + state.redirectUrl
-                    }
-                });
-                if(error) throw error;
-            } catch (err) {
-                showNotification("OAuth Failure", err.message, "error");
-            }
-        };
-
-        // 9. HELPER FUNCTIONS
-        function setLoading(loading) {
-            state.isLoading = loading;
-            dom.btn.disabled = loading;
-            dom.btnLabel.style.display = loading ? 'none' : 'block';
-            dom.btnLoader.style.display = loading ? 'block' : 'none';
-        }
-
-        // 10. BACKGROUND PARTICLE ENGINE (Canvas Implementation)
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.5;
-                this.speedX = Math.random() * 0.5 - 0.25;
-                this.speedY = Math.random() * 0.5 - 0.25;
-                this.opacity = Math.random() * 0.5;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if(this.x > canvas.width) this.x = 0;
-                if(this.x < 0) this.x = canvas.width;
-                if(this.y > canvas.height) this.y = 0;
-                if(this.y < 0) this.y = canvas.height;
-            }
-            draw() {
-                ctx.fillStyle = `rgba(59, 130, 246, ${this.opacity})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function initParticles() {
-            particles = [];
-            for(let i = 0; i < 100; i++) particles.push(new Particle());
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', resize);
-        resize();
-        initParticles();
-        animate();
-
-        // 11. SECURITY: PREVENT LOGOUT REDIRECT LOOPS
-        window.addEventListener('load', async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if(session) window.location.href = state.redirectUrl;
-        });
-
-    </script>
 </body>
-</html>
 </html>
