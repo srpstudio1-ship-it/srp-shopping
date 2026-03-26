@@ -7,135 +7,110 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <style>
-        :root { --srp-blue: #0047AB; --srp-white: #ffffff; }
         body { 
-            font-family: 'Inter', sans-serif; 
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            background: #000;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            color: white;
+            font-family: sans-serif;
         }
         .glass-card { 
             background: rgba(255, 255, 255, 0.05); 
-            backdrop-filter: blur(10px); 
+            backdrop-filter: blur(15px); 
             border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
         }
-        input { transition: all 0.3s ease; }
-        input:focus { outline: 2px solid #3b82f6; background: rgba(255, 255, 255, 0.15) !important; }
-        .loader { border-top-color: #3b82f6; animation: spinner 0.6s linear infinite; display: none; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 100%; padding: 0.75rem; margin-top: 0.5rem; border-radius: 0.5rem; color: white; }
     </style>
 </head>
-<body class="p-4">
+<body>
 
-    <section class="w-full max-w-md">
-        <div class="glass-card rounded-2xl p-8 text-white shadow-2xl">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-extrabold tracking-tighter">SRP <span class="text-blue-500">SHOPPING</span></h1>
-                <p class="text-gray-400 text-sm mt-2" id="auth-subtitle">Welcome back, please login</p>
-            </div>
-
-            <form id="auth-form" class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Email Address</label>
-                    <input type="email" id="email" class="w-full mt-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white" placeholder="name@example.com" required>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Password</label>
-                    <input type="password" id="password" class="w-full mt-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white" placeholder="••••••••" required>
-                </div>
-                
-                <button type="submit" id="main-submit" class="w-full py-3 mt-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-all font-bold uppercase tracking-wider flex justify-center items-center gap-2">
-                    <div id="btn-spinner" class="loader w-5 h-5 border-2 border-white rounded-full"></div>
-                    <span id="btn-text">Sign In</span>
-                </button>
-            </form>
-
-            <div class="relative my-8">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
-                <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#0f0f0f] px-2 text-gray-500">Secure Access</span></div>
-            </div>
-
-            <button id="google-btn" class="w-full py-3 rounded-lg bg-white text-black font-bold flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> 
-                Google Login
-            </button>
-
-            <p class="mt-8 text-center text-sm text-gray-400">
-                <span id="toggle-text">New here?</span> 
-                <a href="#" id="toggle-auth" class="text-blue-400 font-bold ml-1 hover:underline">Create Account</a>
-            </p>
+    <div class="glass-card">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold">SRP <span class="text-blue-500">SHOPPING</span></h1>
+            <p id="status-msg" class="text-xs text-yellow-500 mt-2 italic">Connecting to Supabase...</p>
         </div>
-    </section>
+
+        <form id="auth-form" class="space-y-4">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" id="submit-btn" class="w-full bg-blue-600 py-3 rounded-lg font-bold uppercase hover:bg-blue-700">Sign In</button>
+        </form>
+
+        <button id="google-btn" class="w-full bg-white text-black py-3 rounded-lg font-bold mt-4 flex items-center justify-center gap-2">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> Google Login
+        </button>
+
+        <p class="text-center mt-6 text-sm text-gray-400">
+            <span id="toggle-text">New here?</span> 
+            <a href="#" id="toggle-auth" class="text-blue-400 font-bold ml-1">Create Account</a>
+        </p>
+    </div>
 
     <script>
-        // 1. SUPABASE CONNECTION
+        // YOUR CREDENTIALS
         const SB_URL = "https://cmxlfxqtrguuzpqdgcxv.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteGxmeHF0cmd1dXpwcWRnY3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzE0NDYsImV4cCI6MjA5MDAwNzQ0Nn0.Hl0S5yJnJEqvrxXSFt_YMjrKUKerNjUHb2ZvI7LfOC0";
         
-        const { createClient } = window.supabase;
-        const supabase = createClient(SB_URL, SB_KEY);
+        let supabase;
+        const statusMsg = document.getElementById('status-msg');
 
-        // 2. Auth Toggle Logic
-        let isLoginMode = true;
-        const toggleBtn = document.getElementById('toggle-auth');
-        const btnText = document.getElementById('btn-text');
-        const authSubtitle = document.getElementById('auth-subtitle');
-        const toggleText = document.getElementById('toggle-text');
+        // INITIALIZE & TEST CONNECTION
+        try {
+            supabase = window.supabase.createClient(SB_URL, SB_KEY);
+            statusMsg.innerText = "System Online ✅";
+            statusMsg.classList.replace('text-yellow-500', 'text-green-500');
+        } catch (e) {
+            statusMsg.innerText = "Connection Failed ❌";
+            alert("Library Load Error: Check your internet connection.");
+        }
 
-        toggleBtn.onclick = (e) => {
+        let isLogin = true;
+
+        // TOGGLE LOGIC
+        document.getElementById('toggle-auth').onclick = (e) => {
             e.preventDefault();
-            isLoginMode = !isLoginMode;
-            btnText.innerText = isLoginMode ? 'Sign In' : 'Create Account';
-            authSubtitle.innerText = isLoginMode ? 'Welcome back, please login' : 'Start your journey with us';
-            toggleText.innerText = isLoginMode ? "New here?" : "Joined before?";
-            toggleBtn.innerText = isLoginMode ? 'Create Account' : 'Sign In';
+            isLogin = !isLogin;
+            document.getElementById('submit-btn').innerText = isLogin ? 'Sign In' : 'Create Account';
+            document.getElementById('toggle-text').innerText = isLogin ? "New here?" : "Have account?";
+            document.getElementById('toggle-auth').innerText = isLogin ? 'Create Account' : 'Sign In';
         };
 
-        // 3. Execution Logic
+        // FORM SUBMISSION
         document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value.trim();
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const spinner = document.getElementById('btn-spinner');
-
-            // Start Loading
-            spinner.style.display = 'block';
-            document.getElementById('main-submit').disabled = true;
 
             try {
-                if (isLoginMode) {
+                if (isLogin) {
                     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                     window.location.href = 'index.html';
                 } else {
-                    const { data, error } = await supabase.auth.signUp({ 
-                        email, 
-                        password,
-                        options: { emailRedirectTo: window.location.origin + '/index.html' }
-                    });
+                    const { data, error } = await supabase.auth.signUp({ email, password });
                     if (error) throw error;
-                    alert("Success! Now check your email or try logging in (if confirmation is off).");
+                    alert("Account Created! If it doesn't log in, go to Supabase Dashboard and turn OFF 'Confirm Email'.");
                 }
             } catch (err) {
-                console.error("Auth Failure:", err);
                 alert("Error: " + err.message);
-            } finally {
-                spinner.style.display = 'none';
-                document.getElementById('main-submit').disabled = false;
             }
         };
 
-        // 4. Google Login
+        // GOOGLE LOGIN
         document.getElementById('google-btn').onclick = async () => {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin + '/index.html' }
+                options: { redirectTo: window.location.origin + window.location.pathname.replace('login.html', 'index.html') }
             });
             if (error) alert(error.message);
         };
