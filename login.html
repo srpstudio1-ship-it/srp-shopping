@@ -2,221 +2,139 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SRP Shopping | Secure Access</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRP SHOPPING | Login</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #0047AB; /* SRP Primary Blue */
-            background: linear-gradient(135deg, #0047AB 0%, #002D6B 100%);
+        :root { --srp-blue: #0047AB; --srp-white: #ffffff; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
-
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            width: 90%;
-            max-width: 400px;
-            padding: 40px 30px;
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
         }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px 14px 14px 45px;
-            border-radius: 16px;
-            border: 1.5px solid #e2e8f0;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: #0047AB;
-            box-shadow: 0 0 0 4px rgba(0, 71, 171, 0.1);
-        }
-
-        .btn-srp {
-            background: #0047AB;
-            color: white;
-            width: 100%;
-            padding: 16px;
-            border-radius: 16px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-srp:active { transform: scale(0.96); }
-
-        .loader {
-            display: none;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #0047AB;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        input:focus { outline: 2px solid #3b82f6; border-color: transparent; }
     </style>
 </head>
-<body>
+<body class="p-4">
 
-    <div class="login-card text-center">
-        <div class="mb-8">
-            <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-white text-3xl font-black mb-3 shadow-lg">
-                S
-            </div>
-            <h1 class="text-2xl font-black text-slate-800">SRP SHOPPING</h1>
-            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Enterprise Marketplace</p>
-        </div>
-
-        <div id="auth-form">
-            <div class="input-group">
-                <i class="fas fa-envelope"></i>
-                <input type="email" id="email" placeholder="Email Address">
+    <section id="auth-screen" class="w-full max-w-md">
+        <div class="glass-card rounded-2xl p-8 text-white shadow-2xl">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-extrabold tracking-tighter">SRP <span class="text-blue-500">SHOPPING</span></h1>
+                <p class="text-gray-400 text-sm mt-2" id="auth-subtitle">Welcome back, please login</p>
             </div>
 
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="password" placeholder="Password">
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">Email Address</label>
+                    <input type="email" id="email" class="w-full mt-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500" placeholder="name@example.com" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">Password</label>
+                    <input type="password" id="password" class="w-full mt-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-500" placeholder="••••••••" required>
+                </div>
+                
+                <button type="submit" id="main-submit" class="w-full py-3 mt-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors font-bold uppercase tracking-wider shadow-lg">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="relative my-8">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+                <div class="relative flex justify-center text-xs uppercase"><span class="bg-[#121212] px-2 text-gray-500">Or continue with</span></div>
             </div>
 
-            <button onclick="handleAuth('login')" id="login-btn" class="btn-srp mb-4 flex items-center justify-center gap-3">
-                <span>Sign In</span>
-                <div id="load-spinner" class="loader"></div>
+            <button id="google-btn" class="w-full py-3 rounded-lg bg-white text-black font-bold flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="18"> 
+                Sign in with Google
             </button>
 
-            <div class="flex items-center gap-3 mb-6">
-                <div class="h-[1px] bg-slate-200 flex-1"></div>
-                <span class="text-[10px] text-slate-400 font-bold">OR</span>
-                <div class="h-[1px] bg-slate-200 flex-1"></div>
-            </div>
-
-            <button onclick="googleSignIn()" class="w-full border-1.5 border-slate-200 py-3 rounded-16 flex items-center justify-center gap-3 text-slate-600 font-semibold text-sm hover:bg-slate-50 border rounded-xl mb-6">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5">
-                Google Login
-            </button>
-
-            <p class="text-xs text-slate-500">
-                New to SRP? 
-                <button onclick="handleAuth('signup')" class="text-blue-600 font-bold underline">Create Account</button>
+            <p class="mt-8 text-center text-sm text-gray-400">
+                <span id="toggle-text">New here?</span> 
+                <a href="#" id="toggle-auth" class="text-blue-400 font-bold ml-1 hover:underline">Create Account</a>
             </p>
         </div>
-    </div>
+
+        <div class="text-center mt-6">
+            <button class="text-[10px] text-gray-500 opacity-60 hover:opacity-100 transition-opacity uppercase tracking-widest">Privacy Policy & Terms</button>
+        </div>
+    </section>
 
     <script>
-        // 1. CONFIG
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-            authDomain: "srp-shopping-54bbb.firebaseapp.com",
-            projectId: "srp-shopping-54bbb",
-            storageBucket: "srp-shopping-54bbb.appspot.com",
-            messagingSenderId: "491906168702",
-            appId: "1:491906168702:web:2873565fcd2d561077252f"
+        // 1. SUPABASE CONFIGURATION (Using your provided keys)
+        const SB_URL = "https://cmxlfxqtrguuzpqdgcxv.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteGxmeHF0cmd1dXpwcWRnY3h2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzE0NDYsImV4cCI6MjA5MDAwNzQ0Nn0.Hl0S5yJnJEqvrxXSFt_YMjrKUKerNjUHb2ZvI7LfOC0";
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+        // 2. Auth State Check
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'index.html'; // Redirect if already logged in
+            }
+        }
+        checkSession();
+
+        // 3. Auth Mode Toggle Logic
+        let isLoginMode = true;
+        const toggleBtn = document.getElementById('toggle-auth');
+        const mainSubmit = document.getElementById('main-submit');
+        const authSubtitle = document.getElementById('auth-subtitle');
+        const toggleText = document.getElementById('toggle-text');
+
+        toggleBtn.onclick = (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            
+            mainSubmit.innerText = isLoginMode ? 'Sign In' : 'Create Account';
+            authSubtitle.innerText = isLoginMode ? 'Welcome back, please login' : 'Start your journey with us';
+            toggleText.innerText = isLoginMode ? "New here?" : "Joined before?";
+            toggleBtn.innerText = isLoginMode ? 'Create Account' : 'Sign In';
         };
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // 2. CHECK REDIRECT (If already logged in)
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // If it's an admin, go to Admin Panel, else Home
-                const ADMIN_UID = "YOUR_ADMIN_UID_HERE"; 
-                if(user.uid === ADMIN_UID) {
-                    window.location.href = "admin.html";
-                } else {
-                    window.location.href = "index.html";
-                }
-            }
-        });
-
-        // 3. MAIN AUTH HANDLER
-        async function handleAuth(type) {
+        // 4. Form Submission Logic
+        document.getElementById('auth-form').onsubmit = async (e) => {
+            e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const spinner = document.getElementById('load-spinner');
-
-            if(!email || !password) return alert("Please fill all fields.");
-
-            spinner.style.display = 'block';
 
             try {
-                let userCredential;
-                if(type === 'login') {
-                    userCredential = await auth.signInWithEmailAndPassword(email, password);
+                if (isLoginMode) {
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    if (data.user) window.location.href = 'index.html';
                 } else {
-                    userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    // Initialize New User Data in Firestore
-                    await initializeUserProfile(userCredential.user);
+                    const { data, error } = await supabase.auth.signUp({ email, password });
+                    if (error) throw error;
+                    alert("Account created! Please check your email for the verification link.");
                 }
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                spinner.style.display = 'none';
+            } catch (err) {
+                alert("Auth Error: " + err.message);
             }
-        }
+        };
 
-        // 4. GOOGLE SIGN IN
-        async function googleSignIn() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await auth.signInWithPopup(provider);
-                await initializeUserProfile(result.user);
-            } catch (error) {
-                alert(error.message);
-            }
-        }
-
-        // 5. DATABASE INITIALIZATION
-        async function initializeUserProfile(user) {
-            const userRef = db.collection("users").doc(user.uid);
-            const doc = await userRef.get();
-
-            // Only create if user doesn't exist in DB
-            if (!doc.exists) {
-                await userRef.set({
-                    name: user.displayName || "New Member",
-                    email: user.email,
-                    walletBalance: 0,
-                    isVendor: false,
-                    joinedAt: new Date().toISOString(),
-                    kycStatus: "none"
-                });
-            }
-        }
+        // 5. Google Auth Logic
+        document.getElementById('google-btn').onclick = async () => {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/index.html'
+                }
+            });
+            if (error) alert("Google Auth Error: " + error.message);
+        };
     </script>
 </body>
 </html>
