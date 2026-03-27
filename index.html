@@ -13,7 +13,7 @@
 
     <style>
         :root { --srp-blue: #0047AB; --srp-white: #ffffff; }
-        body { font-family: 'Inter', sans-serif; background: #f4f7f6; transition: background 0.3s; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7f6; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         /* Auth Styles */
@@ -32,12 +32,9 @@
         #cart-view, #profile-view, #orders-view, #address-view { 
             display: none; position: fixed; inset: 0; background: #f4f7f6; z-index: 110; overflow-y: auto; 
         }
-        
-        /* Dark Mode support */
         .dark { background-color: #111827 !important; color: white !important; }
         .dark .bg-white { background-color: #1f2937 !important; color: white !important; }
         .dark .text-gray-600 { color: #9ca3af !important; }
-        .dark .bottom-nav { background-color: #1f2937; border-top-color: #374151; }
     </style>
 </head>
 <body class="pb-20">
@@ -105,7 +102,8 @@
                 <span class="font-bold">My Shopping Cart</span>
             </div>
         </nav>
-        <div id="cart-items-container" class="p-4 space-y-4"></div>
+        <div id="cart-items-container" class="p-4 space-y-4">
+            </div>
         <div class="p-4 bg-white border-t sticky bottom-0">
             <div class="flex justify-between items-center mb-4">
                 <span class="font-bold">Total Amount:</span>
@@ -154,7 +152,8 @@
             <button onclick="closeOrders()" class="fas fa-arrow-left text-xl"></button>
             <span class="font-bold">Track Orders</span>
         </nav>
-        <div id="orders-list" class="p-4 space-y-4"></div>
+        <div id="orders-list" class="p-4 space-y-4">
+            </div>
     </div>
 
     <div id="product-detail-view" class="fixed inset-0 bg-white overflow-y-auto">
@@ -179,11 +178,7 @@
                     <div class="flex gap-2"><div class="w-6 h-6 rounded-full bg-black border"></div><div class="w-6 h-6 rounded-full bg-blue-500 border"></div></div>
                 </div>
                 <div><label class="text-xs font-bold block mb-1">Quantity</label>
-                    <select id="detail-qty" class="w-full p-1 border rounded text-sm">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
+                    <select id="detail-qty" class="w-full p-1 border rounded text-sm"><option>1</option><option>2</option><option>3</option></select>
                 </div>
             </div>
             <p class="text-sm text-gray-500 mb-6"><i class="fas fa-truck mr-2"></i>Delivery: 7 to 15 days</p>
@@ -207,7 +202,7 @@
     </nav>
 
     <script>
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG (Part 9)
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -219,7 +214,7 @@
         const auth = firebase.auth();
         const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
 
-        // 1. Auth Logic
+        // 1. Auth Toggle Logic
         let isLoginMode = true;
         document.getElementById('toggle-auth').onclick = (e) => {
             e.preventDefault();
@@ -230,6 +225,7 @@
             document.getElementById('toggle-auth').innerText = isLoginMode ? 'Create Account' : 'Sign In';
         };
 
+        // 2. Auth Execution
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('auth-screen').style.display = 'none';
@@ -252,7 +248,7 @@
             auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => alert(err.message));
         };
 
-        // 2. Admin & Navigation
+        // 3. Admin Redirect Logic
         function handleLogoTap() {
             const user = auth.currentUser;
             if (user && ADMIN_EMAILS.includes(user.email)) {
@@ -261,7 +257,7 @@
             } else { location.reload(); }
         }
 
-        // 3. Product Management
+        // 4. Product Data & Display
         const products = Array.from({ length: 20 }, (_, i) => ({
             id: i,
             name: `SRP Premium Product ${i + 1}`,
@@ -297,6 +293,7 @@
             document.getElementById('detail-img-2').src = p.img;
             document.getElementById('product-detail-view').style.display = 'block';
 
+            // Feature 7.6 Integration: Hook the button to the cart logic
             document.getElementById('add-to-cart-action').onclick = () => {
                 addToCart(p, parseInt(document.getElementById('detail-qty').value));
             };
@@ -314,15 +311,18 @@
             renderProducts(products.filter(p => p.name.toLowerCase().includes(query)));
         }
 
-        // 4. Integrated Features Logic
+        // --- NEW FEATURES LOGIC (7.1 - 7.10) ---
+
         let cart = JSON.parse(localStorage.getItem('srp_cart')) || [];
         let orders = JSON.parse(localStorage.getItem('srp_orders')) || [];
         let walletBalance = 450;
 
+        // 7.6 Cart Logic
         function addToCart(product, qty) {
             const existing = cart.find(item => item.id === product.id);
             if(existing) existing.qty += qty;
             else cart.push({...product, qty});
+            
             saveCart();
             alert("Product added to SRP Cart!");
             closeDetail();
@@ -363,12 +363,14 @@
         function openCart() { renderCart(); document.getElementById('cart-view').style.display = 'block'; }
         function closeCart() { document.getElementById('cart-view').style.display = 'none'; }
 
+        // 7.4 Wallet & Checkout
         function processCheckout() {
             const total = parseInt(document.getElementById('cart-grand-total').innerText);
             if(total === 0) return alert("Cart is empty");
             
             if(walletBalance >= total) {
                 walletBalance -= total;
+                // 7.1 Create Order
                 const newOrder = {
                     id: 'SRP' + Math.floor(Math.random() * 1000000),
                     date: new Date().toLocaleDateString(),
@@ -378,6 +380,7 @@
                 };
                 orders.push(newOrder);
                 localStorage.setItem('srp_orders', JSON.stringify(orders));
+                
                 cart = [];
                 saveCart();
                 updateWalletUI();
@@ -401,6 +404,7 @@
             }
         }
 
+        // 7.0 Profile & Theme
         function openProfile() { document.getElementById('profile-view').style.display = 'block'; }
         function closeProfile() { document.getElementById('profile-view').style.display = 'none'; }
 
@@ -416,6 +420,7 @@
             }
         }
 
+        // 7.1 Orders & Tracking
         function openOrders() {
             const container = document.getElementById('orders-list');
             document.getElementById('orders-view').style.display = 'block';
@@ -440,7 +445,6 @@
         function closeOrders() { document.getElementById('orders-view').style.display = 'none'; }
         function openAddressBook() { alert("Address Book: Under Encryption Setup..."); }
 
-        // Initial Load
         renderProducts(products);
     </script>
 </body>
