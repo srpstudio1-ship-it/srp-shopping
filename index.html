@@ -20,10 +20,8 @@
         .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #e2e8f0; z-index: 50; }
         
-        /* Modal Views */
-        #product-detail-view, #cart-view, #address-view, #privacy-view { 
-            display: none; position: fixed; inset: 0; background: white; z-index: 100; overflow-y: auto; 
-        }
+        /* Modals */
+        #product-detail-view, #cart-view { display: none; position: fixed; inset: 0; background: white; z-index: 100; overflow-y: auto; }
         .banner-gradient { background: linear-gradient(90deg, #0047AB 0%, #007FFF 100%); }
     </style>
 </head>
@@ -55,30 +53,19 @@
             <div class="flex justify-between items-center mb-3">
                 <button onclick="handleLogoTap()" class="text-xl font-bold tracking-tighter">SRP SHOPPING</button>
                 <div class="flex items-center gap-3">
-                    <button onclick="showPrivacy()" class="text-[10px] opacity-80">Privacy Policy</button>
                     <div class="bg-white/20 px-3 py-1 rounded-full flex items-center gap-2 text-sm">
-                        <i class="fas fa-wallet text-yellow-400"></i> ₹<span id="header-wallet">450</span>
+                        <i class="fas fa-shopping-cart"></i> <span id="cart-count">0</span>
                     </div>
                 </div>
             </div>
             <div class="relative mb-2">
                 <input type="text" id="search-input" onkeyup="searchProducts()" placeholder="Search products..." class="w-full py-2 px-4 rounded text-black outline-none">
             </div>
-            <div class="flex gap-4 overflow-x-auto no-scrollbar py-1 text-xs whitespace-nowrap border-t border-white/20">
-                <button onclick="filterCategory('all')" class="font-bold">All</button>
-                <button onclick="filterCategory('Electronics')">Electronics</button>
-                <button onclick="filterCategory('Fashion')">Fashion</button>
-                <button onclick="filterCategory('Mobiles')">Mobiles</button>
-            </div>
         </header>
 
         <main class="p-3">
             <section class="banner-gradient rounded-xl p-6 text-white mb-6 shadow-lg flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-black italic">SRP EXCLUSIVE</h2>
-                    <p class="text-sm opacity-90">MEGA SALE: UP TO 70% OFF</p>
-                </div>
-                <i class="fas fa-shopping-bag text-5xl opacity-20"></i>
+                <div><h2 class="text-2xl font-black italic">SRP EXCLUSIVE</h2><p class="text-sm">SALE IS LIVE</p></div>
             </section>
             <div id="product-grid" class="grid grid-cols-2 gap-3"></div>
         </main>
@@ -87,18 +74,14 @@
     <div id="product-detail-view">
         <nav class="p-4 flex items-center gap-4 border-b sticky top-0 bg-white">
             <button onclick="closeDetail()" class="fas fa-arrow-left text-xl"></button>
-            <span class="font-bold truncate">Product Details</span>
+            <span class="font-bold">Product Details</span>
         </nav>
         <div class="p-4">
             <img id="detail-img-1" class="w-full h-64 object-contain mb-4">
             <h2 id="detail-name" class="text-xl font-bold"></h2>
-            <div class="flex items-center gap-2 text-2xl mb-4">
-                <span id="detail-discount" class="text-red-600 font-light"></span>
-                <span class="font-bold text-blue-700">₹<span id="detail-price"></span></span>
-                <span id="detail-mrp" class="text-sm line-through text-gray-400"></span>
-            </div>
-            <p id="detail-desc" class="text-sm text-gray-600 leading-relaxed mb-6"></p>
-            <button id="add-to-cart-btn" class="w-full py-4 bg-yellow-400 rounded-xl font-bold uppercase">Add to Cart</button>
+            <div class="text-2xl font-bold my-4 text-blue-700">₹<span id="detail-price"></span></div>
+            <p id="detail-desc" class="text-sm text-gray-500 mb-6"></p>
+            <button id="add-to-cart-btn" class="w-full py-4 bg-yellow-400 rounded-xl font-bold uppercase tracking-wider">Add to Cart</button>
         </div>
     </div>
 
@@ -109,78 +92,39 @@
                 <span class="font-bold text-lg">My Cart (<span id="cart-title-count">0</span>)</span>
             </div>
         </nav>
-        <div id="cart-items" class="p-4 space-y-4"></div>
+        <div id="cart-items" class="p-4 space-y-4">
+            </div>
         <div class="p-4 border-t sticky bottom-0 bg-white shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <span class="text-gray-500">Grand Total:</span>
+                <span class="text-gray-500 font-medium">Grand Total:</span>
                 <span class="text-2xl font-black text-blue-700">₹<span id="cart-total">0</span></span>
             </div>
-            <button onclick="checkout()" class="w-full py-4 bg-orange-500 text-white rounded-xl font-black uppercase">Proceed to Checkout</button>
+            <button onclick="checkout()" class="w-full py-4 bg-orange-500 text-white rounded-xl font-black uppercase shadow-lg">Proceed to Checkout</button>
         </div>
     </div>
 
     <nav class="bottom-nav h-16 flex items-center justify-around">
         <button onclick="location.reload()" class="flex flex-col items-center text-blue-700"><i class="fas fa-home"></i><span class="text-[10px] font-bold">Home</span></button>
-        <button onclick="alert('Profile Coming Soon')" class="flex flex-col items-center text-gray-400"><i class="fas fa-user"></i><span class="text-[10px]">Account</span></button>
-        <button onclick="openCart()" class="flex flex-col items-center text-gray-400 relative">
-            <i class="fas fa-shopping-cart"></i>
-            <span id="cart-count" class="absolute -top-1 -right-2 bg-red-500 text-white text-[8px] px-1 rounded-full">0</span>
-            <span class="text-[10px]">Cart</span>
-        </button>
+        <button onclick="openCart()" class="flex flex-col items-center text-gray-400"><i class="fas fa-shopping-cart text-xl"></i><span class="text-[10px]">Cart</span></button>
     </nav>
 
     <script>
-        // FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
-            authDomain: "srp-shopping-54bbb.firebaseapp.com",
-            projectId: "srp-shopping-54bbb"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw", authDomain: "srp-shopping-54bbb.firebaseapp.com", projectId: "srp-shopping-54bbb" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
+        
+        let cart = []; // The global cart array
 
-        let cart = [];
-
-        // Auth Logic
-        let isLoginMode = true;
-        document.getElementById('toggle-auth').onclick = (e) => {
-            e.preventDefault();
-            isLoginMode = !isLoginMode;
-            document.getElementById('main-submit').innerText = isLoginMode ? 'Sign In' : 'Create Account';
-            document.getElementById('auth-subtitle').innerText = isLoginMode ? 'Welcome back, please login' : 'Start your journey';
-            document.getElementById('toggle-auth').innerText = isLoginMode ? 'Create Account' : 'Sign In';
-        };
-
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('main-storefront').style.display = 'block';
-            }
-        });
-
-        document.getElementById('auth-form').onsubmit = (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            if(isLoginMode) auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
-            else auth.createUserWithEmailAndPassword(email, pass).catch(err => alert(err.message));
-        };
-
-        document.getElementById('google-btn').onclick = () => {
-            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-        };
-
-        // Cart Logic
+        // Logic to add to cart
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
             cart.push(product);
-            updateCartUI();
-            alert("Added to cart!");
+            updateCartCount();
+            alert(`${product.name} added to cart!`);
             closeDetail();
         }
 
-        function updateCartUI() {
+        function updateCartCount() {
             document.getElementById('cart-count').innerText = cart.length;
             document.getElementById('cart-title-count').innerText = cart.length;
         }
@@ -203,7 +147,7 @@
                 <div class="flex items-center gap-4 bg-white p-3 rounded-xl border">
                     <img src="${item.img}" class="w-16 h-16 object-cover rounded-lg">
                     <div class="flex-1">
-                        <h4 class="text-xs font-bold truncate">${item.name}</h4>
+                        <h4 class="text-sm font-bold truncate w-40">${item.name}</h4>
                         <p class="text-blue-600 font-bold text-sm">₹${item.price}</p>
                     </div>
                     <button onclick="removeFromCart(${index})" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
@@ -214,52 +158,39 @@
 
         function removeFromCart(index) {
             cart.splice(index, 1);
-            updateCartUI();
-            openCart();
+            updateCartCount();
+            openCart(); // refresh UI
         }
 
         function checkout() {
-            if(cart.length === 0) return;
-            alert("Order placed successfully!");
+            if(cart.length === 0) return alert("Cart is empty");
+            const total = cart.reduce((acc, curr) => acc + curr.price, 0);
+            alert(`Order Placed Successfully for ₹${total}!`);
             cart = [];
-            updateCartUI();
+            updateCartCount();
             closeCart();
         }
 
-        // View Management
-        function closeDetail() { document.getElementById('product-detail-view').style.display = 'none'; }
         function closeCart() { document.getElementById('cart-view').style.display = 'none'; }
-        function showPrivacy() { alert("Privacy Policy: Your data is safe with SRP."); }
+        function closeDetail() { document.getElementById('product-detail-view').style.display = 'none'; }
 
-        // Admin Logic
-        function handleLogoTap() {
-            const user = auth.currentUser;
-            if (user && ADMIN_EMAILS.includes(user.email)) {
-                const pin = prompt("Admin PIN:");
-                if (pin === "1234") window.location.href = "admin.html";
-            } else { location.reload(); }
-        }
-
-        // Product Logic
+        // Existing Product & Auth logic
         const products = Array.from({ length: 20 }, (_, i) => ({
             id: i,
-            name: `SRP Premium Item ${i + 1}`,
-            cat: i % 3 === 0 ? 'Electronics' : (i % 3 === 1 ? 'Fashion' : 'Mobiles'),
-            price: 499 + (i * 120), mrp: 999 + (i * 120),
+            name: `SRP Premium Product ${i + 1}`,
+            cat: i % 2 === 0 ? 'Electronics' : 'Fashion',
+            price: 499 + (i * 100),
             img: `https://picsum.photos/400/400?random=${i}`,
-            desc: "Premium quality product from SRP SHOPPING exclusive collection."
+            desc: "High quality premium item delivered to your doorstep with SRP guarantee."
         }));
 
         function renderProducts(list) {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = list.map(p => `
-                <div onclick="openDetail(${p.id})" class="bg-white p-2 rounded shadow-sm border border-gray-100">
+                <div onclick="openDetail(${p.id})" class="bg-white p-2 rounded shadow-sm border">
                     <img src="${p.img}" class="w-full h-36 object-cover mb-2 rounded">
-                    <h3 class="text-xs font-medium truncate">${p.name}</h3>
-                    <div class="flex items-center gap-1 mt-1">
-                        <span class="text-sm font-bold">₹${p.price}</span>
-                        <span class="text-[8px] line-through text-gray-400">₹${p.mrp}</span>
-                    </div>
+                    <h3 class="text-xs font-bold truncate">${p.name}</h3>
+                    <p class="text-sm font-bold text-blue-600">₹${p.price}</p>
                 </div>
             `).join('');
         }
@@ -268,22 +199,28 @@
             const p = products[id];
             document.getElementById('detail-name').innerText = p.name;
             document.getElementById('detail-price').innerText = p.price;
-            document.getElementById('detail-mrp').innerText = `₹${p.mrp}`;
             document.getElementById('detail-desc').innerText = p.desc;
             document.getElementById('detail-img-1').src = p.img;
             document.getElementById('product-detail-view').style.display = 'block';
+            
+            // Set the onclick for the add button specifically for this product
             document.getElementById('add-to-cart-btn').onclick = () => addToCart(id);
         }
 
-        function filterCategory(cat) {
-            if(cat === 'all') renderProducts(products);
-            else renderProducts(products.filter(p => p.cat === cat));
-        }
+        // Auth listeners
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-storefront').style.display = 'block';
+            }
+        });
 
-        function searchProducts() {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            renderProducts(products.filter(p => p.name.toLowerCase().includes(query)));
-        }
+        document.getElementById('auth-form').onsubmit = (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+        };
 
         renderProducts(products);
     </script>
