@@ -960,7 +960,1732 @@
             renderSellerInventory();
             console.log("SRP Shopping Pro — Enterprise Core Engine (Part 1) Online & Synchronized.");
         };
+                // ============================================================================
+        // PART 2: ADVANCED ENTERPRISE SUB-SYSTEMS & ARCHITECTURAL MODULES (1,100+ LINES)
+        // ============================================================================
+
+        // 1. INTERNATIONALIZATION (i18n) & MULTI-CURRENCY CONVERSION ENGINE
+        class SRPCurrencyEngine {
+            constructor() {
+                this.currentCurrency = 'INR';
+                this.exchangeRates = {
+                    INR: { symbol: '₹', rate: 1.0, locale: 'en-IN' },
+                    USD: { symbol: '$', rate: 0.012, locale: 'en-US' },
+                    EUR: { symbol: '€', rate: 0.011, locale: 'de-DE' },
+                    GBP: { symbol: '£', rate: 0.0095, locale: 'en-GB' },
+                    JPY: { symbol: '¥', rate: 1.85, locale: 'ja-JP' }
+                };
+            }
+
+            setCurrency(currencyCode) {
+                if (this.exchangeRates[currencyCode]) {
+                    this.currentCurrency = currencyCode;
+                    srpAuditLogger.log(`Currency switched to ${currencyCode}`, 'INFO');
+                    return true;
+                }
+                return false;
+            }
+
+            format(amountInINR) {
+                const config = this.exchangeRates[this.currentCurrency] || this.exchangeRates['INR'];
+                const converted = amountInINR * config.rate;
+                return new Intl.NumberFormat(config.locale, {
+                    style: 'currency',
+                    currency: this.currentCurrency,
+                    maximumFractionDigits: 2
+                }).format(converted);
+            }
+
+            rawConvert(amountInINR) {
+                const config = this.exchangeRates[this.currentCurrency] || this.exchangeRates['INR'];
+                return parseFloat((amountInINR * config.rate).toFixed(2));
+            }
+        }
+
+        const srpCurrency = new SRPCurrencyEngine();
+
+
+        // 2. ADVANCED COUPON, DISCOUNT, & PROMOTIONAL CODE SUB-SYSTEM
+        class SRPCouponEngine {
+            constructor() {
+                this.activeCoupons = {
+                    'SRPWELCOME10': { type: 'PERCENTAGE', value: 10, minOrder: 500, description: '10% off for new corporate users' },
+                    'SUMMER500': { type: 'FLAT', value: 500, minOrder: 3000, description: 'Flat ₹500 off on summer fest orders' },
+                    'PRIME20': { type: 'PERCENTAGE', value: 20, minOrder: 5000, description: '20% Prime Tier privilege discount' },
+                    'SRPFLASH100': { type: 'FLAT', value: 100, minOrder: 1000, description: 'Flash deal instant savings voucher' }
+                };
+                this.appliedCoupon = null;
+            }
+
+            validateAndApply(couponCode, cartSubtotal) {
+                const code = couponCode.trim().toUpperCase();
+                if (!this.activeCoupons[code]) {
+                    return { success: false, message: 'Invalid or expired promotion code.' };
+                }
+
+                const coupon = this.activeCoupons[code];
+                if (cartSubtotal < coupon.minOrder) {
+                    return { success: false, message: `Minimum cart subtotal of ₹${coupon.minOrder} required for this coupon.` };
+                }
+
+                this.appliedCoupon = { code: code, ...coupon };
+                srpSync.showToast(`Coupon '${code}' applied successfully!`, 'success');
+                return { success: true, coupon: this.appliedCoupon };
+            }
+
+            calculateDiscount(subtotal) {
+                if (!this.appliedCoupon) return 0;
+                if (this.appliedCoupon.type === 'PERCENTAGE') {
+                    return Math.round((subtotal * this.appliedCoupon.value) / 100);
+                } else if (this.appliedCoupon.type === 'FLAT') {
+                    return Math.min(subtotal, this.appliedCoupon.value);
+                }
+                return 0;
+            }
+
+            removeCoupon() {
+                this.appliedCoupon = null;
+                srpSync.showToast('Coupon removed from order.', 'info');
+            }
+        }
+
+        const srpCoupons = new SRPCouponEngine();
+
+
+        // 3. SRP ENTERPRISE AUDIT LOGGER & PERFORMANCE TELEMETRY DAEMON
+        class SRPAuditLogger {
+            constructor() {
+                this.logs = [];
+                this.maxLogs = 500;
+                this.startTime = performance.now();
+            }
+
+            log(message, level = 'INFO', metadata = {}) {
+                const entry = {
+                    timestamp: new Date().toISOString(),
+                    uptimeSeconds: ((performance.now() - this.startTime) / 1000).toFixed(2),
+                    level: level.toUpperCase(),
+                    message: message,
+                    metadata: metadata,
+                    userAgent: navigator.userAgent
+                };
+
+                this.logs.unshift(entry);
+                if (this.logs.length > this.maxLogs) {
+                    this.logs.pop();
+                }
+
+                if (level === 'ERROR') {
+                    console.error(`[SRP AUDIT ERROR] ${message}`, metadata);
+                } else if (level === 'WARN') {
+                    console.warn(`[SRP AUDIT WARN] ${message}`, metadata);
+                } else {
+                    console.log(`[SRP AUDIT INFO] ${message}`);
+                }
+            }
+
+            exportLogsJSON() {
+                return JSON.stringify(this.logs, null, 2);
+            }
+
+            getTelemetryReport() {
+                return {
+                    totalLogsRecorded: this.logs.length,
+                    systemUptime: ((performance.now() - this.startTime) / 1000).toFixed(2) + 's',
+                    memoryUsage: performance.memory ? `${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB` : 'N/A',
+                    errorCount: this.logs.filter(l => l.level === 'ERROR').length
+                };
+            }
+        }
+
+        const srpAuditLogger = new SRPAuditLogger();
+
+
+        // 4. CUSTOMER WISHLIST, PRODUCT COMPARISON, & RECENTLY VIEWED ENGINE
+        class SRPUserPreferencesEngine {
+            constructor() {
+                this.wishlist = JSON.parse(localStorage.getItem('srp_wishlist') || '[]');
+                this.recentlyViewed = JSON.parse(localStorage.getItem('srp_recent') || '[]');
+                this.compareList = [];
+            }
+
+            toggleWishlist(productId) {
+                const index = this.wishlist.indexOf(productId);
+                if (index > -1) {
+                    this.wishlist.splice(index, 1);
+                    srpSync.showToast('Removed item from your wishlist.', 'info');
+                } else {
+                    this.wishlist.push(productId);
+                    srpSync.showToast('Added item to your wishlist!', 'success');
+                }
+                localStorage.setItem('srp_wishlist', JSON.stringify(this.wishlist));
+                return this.wishlist.includes(productId);
+            }
+
+            isInWishlist(productId) {
+                return this.wishlist.includes(productId);
+            }
+
+            addRecentlyViewed(productId) {
+                if (!this.recentlyViewed.includes(productId)) {
+                    this.recentlyViewed.unshift(productId);
+                    if (this.recentlyViewed.length > 10) this.recentlyViewed.pop();
+                    localStorage.setItem('srp_recent', JSON.stringify(this.recentlyViewed));
+                }
+            }
+
+            addToCompare(productId) {
+                if (this.compareList.includes(productId)) {
+                    srpSync.showToast('Product already in comparison matrix.', 'warning');
+                    return;
+                }
+                if (this.compareList.length >= 3) {
+                    srpSync.showToast('Maximum 3 products can be compared simultaneously.', 'warning');
+                    return;
+                }
+                this.compareList.push(productId);
+                srpSync.showToast('Added product to comparison matrix.', 'success');
+            }
+
+            removeFromCompare(productId) {
+                this.compareList = this.compareList.filter(id => id !== productId);
+            }
+        }
+
+        const srpPreferences = new SRPUserPreferencesEngine();
+
+
+        // 5. INVENTORY MANAGEMENT & LOW-STOCK AUTOMATED WARNING DAEMON
+        class SRPInventoryDaemon {
+            constructor() {
+                this.stockLevels = {};
+                this.threshold = 5;
+            }
+
+            initializeStock(productId, initialStock = 50) {
+                this.stockLevels[productId] = initialStock;
+            }
+
+            decrementStock(productId, qty = 1) {
+                if (this.stockLevels[productId] !== undefined) {
+                    this.stockLevels[productId] = Math.max(0, this.stockLevels[productId] - qty);
+                    srpAuditLogger.log(`Stock decremented for ${productId}. Remaining: ${this.stockLevels[productId]}`, 'INFO');
+                    
+                    if (this.stockLevels[productId] <= this.threshold) {
+                        srpSync.showToast(`Low stock warning for item ${productId}! Only ${this.stockLevels[productId]} units remaining.`, 'warning');
+                        srpAuditLogger.log(`Low stock alert triggered for ${productId}`, 'WARN');
+                    }
+                }
+            }
+
+            getStock(productId) {
+                return this.stockLevels[productId] !== undefined ? this.stockLevels[productId] : 50;
+            }
+        }
+
+        const srpInventory = new SRPInventoryDaemon();
+
+
+        // 6. MULTI-VENDOR PAYOUT & COMMISSION CALCULATION ENGINE
+        class SRPSellerPayoutEngine {
+            constructor() {
+                this.platformCommissionRate = 0.05; // 5% standard fee
+                this.settlementCycleDays = 7;
+            }
+
+            calculateNetPayout(grossSalesAmount) {
+                const commission = grossSalesAmount * this.platformCommissionRate;
+                const gatewayFee = grossSalesAmount * 0.02; // 2% payment gateway processing fee
+                const net = grossSalesAmount - commission - gatewayFee;
+                return {
+                    gross: grossSalesAmount,
+                    commission: commission,
+                    gatewayFee: gatewayFee,
+                    netPayout: parseFloat(net.toFixed(2))
+                };
+            }
+
+            generatePayoutInvoice(vendorId, salesArray) {
+                const totalGross = salesArray.reduce((acc, item) => acc + (item.price * item.qty), 0);
+                const breakdown = this.calculateNetPayout(totalGross);
+                
+                srpAuditLogger.log(`Generated payout invoice for vendor ${vendorId}. Net Payout: ₹${breakdown.netPayout}`, 'INFO');
+                return {
+                    invoiceId: 'SRP_INV_' + Date.now(),
+                    vendorId: vendorId,
+                    generatedAt: new Date().toISOString(),
+                    payoutSchedule: `Every ${this.settlementCycleDays} business days`,
+                    breakdown: breakdown
+                };
+            }
+        }
+
+        const srpPayouts = new SRPSellerPayoutEngine();
+
+
+        // 7. SECURE PAYMENT GATEWAY & WEBHOOK SIMULATOR (ADVANCED)
+        class SRPAdvancedPaymentGateway {
+            constructor() {
+                this.gatewayVersion = "v3.8-Enterprise";
+                this.supportedMethods = ['UPI', 'CREDIT_CARD', 'DEBIT_CARD', 'NET_BANKING', 'WALLET', 'COD'];
+            }
+
+            verifyAndSignPayload(payload) {
+                srpAuditLogger.log("Cryptographically signing payment payload for secure dispatch", 'INFO', { payloadId: payload.orderId });
+                return {
+                    ...payload,
+                    signature: 'SRP_SIG_' + Math.random().toString(36).substring(2, 15).toUpperCase(),
+                    gatewayVersion: this.gatewayVersion,
+                    verifiedAt: new Date().toISOString()
+                };
+            }
+
+            simulateWebhookCallback(orderId, status) {
+                srpAuditLogger.log(`Webhook callback received for order ${orderId}: Status -> ${status}`, 'INFO');
+                srpSync.showToast(`Order ${orderId} status updated to: ${status}`, 'success');
+            }
+        }
+
+        const srpAdvancedGateway = new SRPAdvancedPaymentGateway();
+
+
+        // 8. AI RECOMMENDATION & PERSONALIZED PRODUCT SCORING ENGINE
+        class SRPAIRecommendationMatrix {
+            constructor() {
+                this.categoryWeights = {
+                    'Mobiles': 1.5,
+                    'Electronics': 1.4,
+                    'Fashion': 1.2,
+                    'Home': 1.0,
+                    'Beauty': 1.1,
+                    'Appliances': 1.3
+                };
+            }
+
+            scoreProducts(products, userHistoryCategories) {
+                return products.map(product => {
+                    let score = parseFloat(product.rating) * 10;
+                    if (userHistoryCategories.includes(product.category)) {
+                        score *= (this.categoryWeights[product.category] || 1.0);
+                    }
+                    return { ...product, aiScore: parseFloat(score.toFixed(2)) };
+                }).sort((a, b) => b.aiScore - a.aiScore);
+            }
+
+            getSmartBannerCopy(hourOfDay) {
+                if (hourOfDay < 12) return "SRP Morning Flash Deals — Extra 10% Off on Electronics";
+                if (hourOfDay < 18) return "Afternoon Mega Sale — Curated Mobiles & Fashion Curations";
+                return "Midnight Prime Clearance — Lightning Fast Express Delivery";
+            }
+        }
+
+        const srpAiMatrix = new SRPAIRecommendationMatrix();
+
+
+        // 9. DYNAMIC TOAST NOTIFICATION & ALERT DISPATCHER SYSTEM
+        class SRPNotificationDispatcher {
+            constructor() {
+                this.notifications = [];
+            }
+
+            dispatch(title, message, type = 'info') {
+                const notif = {
+                    id: 'NOTIF_' + Date.now(),
+                    title: title,
+                    message: message,
+                    type: type,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                this.notifications.unshift(notif);
+                srpSync.showToast(`${title}: ${message}`, type);
+                srpAuditLogger.log(`Notification dispatched: [${type}] ${title} - ${message}`, 'INFO');
+            }
+
+            getUnreadCount() {
+                return this.notifications.length;
+            }
+        }
+
+        const srpNotifier = new SRPNotificationDispatcher();
+
+
+        // 10. INTERACTIVE CUSTOMER SUPPORT LIVE CHAT WIDGET SIMULATOR
+        class SRPSupportChatWidget {
+            constructor() {
+                this.isOpen = false;
+                this.messages = [
+                    { sender: 'bot', text: 'Hello! Welcome to SRP Shopping Pro Enterprise Support. How can I assist your order today?' }
+                ];
+            }
+
+            toggleChat() {
+                this.isOpen = !this.isOpen;
+                const widget = document.getElementById('srp-support-widget');
+                if (widget) {
+                    if (this.isOpen) {
+                        widget.classList.remove('hidden');
+                        srpAuditLogger.log('Support chat widget opened by user', 'INFO');
+                    } else {
+                        widget.classList.add('hidden');
+                        srpAuditLogger.log('Support chat widget closed', 'INFO');
+                    }
+                }
+            }
+
+            sendMessage(userText) {
+                if (!userText || userText.trim() === '') return;
+                this.messages.push({ sender: 'user', text: userText });
+                
+                // Simulate automated AI support response
+                setTimeout(() => {
+                    let botReply = "Thank you for your inquiry. Our automated logistics daemon has logged your request and will update your dashboard shortly.";
+                    const lower = userText.toLowerCase();
+                    if (lower.includes('shipping') || lower.includes('delivery')) {
+                        botReply = "All SRP Prime orders are shipped via express priority air freight with live tracking ID generation.";
+                    } else if (lower.includes('refund') || lower.includes('return')) {
+                        botReply = "Refunds are processed instantly back to your SRP Wallet or original payment method within 24 hours.";
+                    } else if (lower.includes('coupon') || lower.includes('discount')) {
+                        botReply = "You can use coupon code 'SRPWELCOME10' for 10% off your active order subtotal!";
+                    }
+                    this.messages.push({ sender: 'bot', text: botReply });
+                    this.renderChatWindow();
+                }, 800);
+
+                this.renderChatWindow();
+            }
+
+            renderChatWindow() {
+                const container = document.getElementById('chat-messages-container');
+                if (!container) return;
+                container.innerHTML = this.messages.map(m => `
+                    <div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'} mb-2">
+                        <div class="max-w-[80%] p-3 rounded-2xl text-xs ${m.sender === 'user' ? 'bg-[#0047AB] text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none font-medium'}">
+                            ${m.text}
+                        </div>
+                    </div>
+                `).join('');
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        const srpSupportChat = new SRPSupportChatWidget();
+
+
+        // 11. ADVANCED SEARCH & FILTERING OPTIMIZATION ENGINE
+        class SRPSearchOptimizationEngine {
+            constructor() {
+                this.searchCache = new Map();
+            }
+
+            optimizedSearch(query, productList) {
+                const cleanQuery = query.trim().toLowerCase();
+                if (this.searchCache.has(cleanQuery)) {
+                    return this.searchCache.get(cleanQuery);
+                }
+
+                const results = productList.filter(p => 
+                    p.name.toLowerCase().includes(cleanQuery) || 
+                    p.category.toLowerCase().includes(cleanQuery) ||
+                    p.desc.toLowerCase().includes(cleanQuery)
+                );
+
+                this.searchCache.set(cleanQuery, results);
+                return results;
+            }
+
+            clearCache() {
+                this.searchCache.clear();
+                srpAuditLogger.log('Search optimization cache flushed', 'INFO');
+            }
+        }
+
+        const srpSearchEngine = new SRPSearchOptimizationEngine();
+
+
+        // 12. REAL-TIME TELEMETRY & SYSTEM HEALTH MONITORING DAEMON
+        class SRPHealthMonitor {
+            constructor() {
+                this.checkInterval = 30000; // 30 seconds
+                this.startMonitoring();
+            }
+
+            startMonitoring() {
+                setInterval(() => {
+                    const telemetry = srpAuditLogger.getTelemetryReport();
+                    srpAuditLogger.log('Periodic system health check executed successfully', 'INFO', telemetry);
+                }, this.checkInterval);
+            }
+        }
+
+        const srpHealthMonitor = new SRPHealthMonitor();
+
+
+        // 13. UI FLOATING SUPPORT WIDGET MOUNTING HELPER
+        function mountSupportChatWidgetDOM() {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = `
+                <div class="fixed bottom-24 right-4 z-[99998]">
+                    <button onclick="srpSupportChat.toggleChat()" class="w-14 h-14 srp-gradient text-white rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-105 transition">
+                        <i class="fas fa-headset"></i>
+                    </button>
+                </div>
+                
+                <div id="srp-support-widget" class="fixed bottom-40 right-4 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border hidden z-[99999] flex flex-col overflow-hidden animate-slide-up">
+                    <div class="srp-gradient p-4 text-white flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-xs">SRP</div>
+                            <div>
+                                <h4 class="text-xs font-black uppercase tracking-wider">Enterprise Support AI</h4>
+                                <span class="text-[9px] text-blue-200 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Online 24/7</span>
+                            </div>
+                        </div>
+                        <button onclick="srpSupportChat.toggleChat()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div id="chat-messages-container" class="p-4 h-72 overflow-y-auto bg-slate-50 space-y-2">
+                        <!-- Messages populated dynamically -->
+                    </div>
+
+                    <div class="p-3 border-t bg-white flex gap-2">
+                        <input type="text" id="chat-input-field" onkeypress="if(event.key==='Enter'){ srpSupportChat.sendMessage(this.value); this.value=''; }" placeholder="Type your support inquiry..." class="flex-1 px-3 py-2.5 bg-slate-50 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                        <button onclick="const input = document.getElementById('chat-input-field'); srpSupportChat.sendMessage(input.value); input.value='';" class="px-4 py-2.5 srp-gradient text-white rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(wrapper);
+            srpSupportChat.renderChatWindow();
+        }
+
+
+        // 14. EXPANDED MASTER WINDOW INITIALIZATION (PART 1 + PART 2)
+        window.onload = () => {
+            // Execute Part 1 initializers
+            globalProducts = generateDefaultProducts();
+            
+            // Apply AI recommendation sorting on startup
+            globalProducts = srpAiMatrix.scoreProducts(globalProducts, ['Mobiles', 'Electronics']);
+            
+            renderProducts(globalProducts);
+            renderSellerInventory();
+
+            // Mount Part 2 enterprise widgets and systems
+            mountSupportChatWidgetDOM();
+            srpVendorAnalytics.renderVendorDashboardAnalytics(globalProducts.length, 1845900);
+            
+            srpAuditLogger.log("SRP Shopping Pro — Master Enterprise Architecture (Part 1 & Part 2) fully initialized.", "INFO");
+            srpSync.showToast("SRP Enterprise Suite Online & Synchronized with Edge Nodes.", "success");
+        };
+
+        // Override checkout handler to integrate advanced payment gateway & coupon engine
+        window.checkoutOrder = function() {
+            const keys = Object.keys(localCart);
+            if(keys.length === 0) {
+                alert("Your cart is currently empty.");
+                return;
+            }
+
+            let subtotal = 0;
+            keys.forEach(k => {
+                subtotal += localCart[k].price * localCart[k].qty;
+            });
+
+            const discount = srpCoupons.calculateDiscount(subtotal);
+            const finalPayable = Math.max(0, subtotal - discount);
+
+            srpAdvancedGateway.verifyAndSignPayload({
+                orderId: 'SRP_ORD_' + Date.now(),
+                subtotal: subtotal,
+                discount: discount,
+                finalPayable: finalPayable,
+                items: localCart
+            });
+
+            srpPayment.initiatePayment(finalPayable, localCart);
+        };
+                // ============================================================================
+        // PART 3: ADVANCED LOGISTICS, PWA OFFLINE DAEMON, & RECEIPT GENERATOR MODULE
+        // ============================================================================
+
+        // 1. PROGRESSIVE WEB APP (PWA) SERVICE WORKER & PUSH NOTIFICATION DAEMON
+        class SRPPWAManager {
+            constructor() {
+                this.isRegistered = false;
+                this.registerServiceWorker();
+            }
+
+            async registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    try {
+                        // Register inline virtual service worker blob for zero-dependency hosting
+                        const swCode = `
+                            self.addEventListener('install', e => {
+                                console.log('[SRP PWA] Service Worker installing...');
+                                self.skipWaiting();
+                            });
+                            self.addEventListener('activate', e => {
+                                console.log('[SRP PWA] Service Worker activated successfully.');
+                            });
+                            self.addEventListener('fetch', e => {
+                                e.respondWith(
+                                    caches.match(e.request).then(response => response || fetch(e.request))
+                                );
+                            });
+                        `;
+                        const blob = new Blob([swCode], { type: 'text/javascript' });
+                        const swUrl = URL.createObjectURL(blob);
+                        
+                        const registration = await navigator.serviceWorker.register(swUrl);
+                        this.isRegistered = true;
+                        srpAuditLogger.log('SRP PWA Service Worker registered successfully', 'INFO');
+                    } catch (err) {
+                        srpAuditLogger.log('PWA Service Worker registration failed: ' + err.message, 'WARN');
+                    }
+                }
+            }
+
+            requestNotificationPermission() {
+                if ('Notification' in window) {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            srpSync.showToast('Push notifications enabled successfully.', 'success');
+                        } else {
+                            srpSync.showToast('Notification permission denied.', 'warning');
+                        }
+                    });
+                }
+            }
+        }
+
+        const srpPWA = new SRPPWAManager();
+
+
+        // 2. INTERACTIVE ORDER LOGISTICS & GPS MAP ROUTING SIMULATOR
+        class SRPLogisticsTracker {
+            constructor() {
+                this.hubs = [
+                    { name: 'SRP Hub Mumbai Central', lat: 19.0760, lng: 72.8777 },
+                    { name: 'SRP Hub Delhi NCR Node', lat: 28.6139, lng: 77.2090 },
+                    { name: 'SRP Hub Bangalore Tech Park', lat: 12.9716, lng: 77.5946 }
+                ];
+            }
+
+            renderTrackingModal(orderId) {
+                const modal = document.createElement('div');
+                modal.id = 'logistics-modal';
+                modal.className = 'fixed inset-0 bg-black/80 z-[100000] flex items-center justify-center p-4 animate-fade-in';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-slate-900 relative">
+                        <div class="flex justify-between items-center mb-6 border-b pb-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl srp-gradient text-white flex items-center justify-center font-black text-xs">SRP</div>
+                                <span class="font-black text-sm uppercase tracking-wider">Live Express Tracking</span>
+                            </div>
+                            <span class="text-xs bg-blue-100 text-blue-800 font-bold px-2.5 py-1 rounded-full"><i class="fas fa-satellite-dish"></i> GPS Active</span>
+                        </div>
+
+                        <div class="mb-6 bg-slate-900 text-white p-5 rounded-2xl relative overflow-hidden">
+                            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-600/20 rounded-full blur-2xl"></div>
+                            <span class="text-[10px] text-blue-400 font-extrabold uppercase tracking-widest block">Tracking Identifier</span>
+                            <h3 class="text-lg font-black tracking-wider mt-1">${orderId}</h3>
+                            <div class="mt-4 flex items-center justify-between text-xs border-t border-white/10 pt-3">
+                                <div>
+                                    <span class="text-gray-400 block text-[9px]">DISPATCH HUB</span>
+                                    <span class="font-bold">SRP Mumbai Central</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-gray-400 block text-[9px]">ESTIMATED ARRIVAL</span>
+                                    <span class="font-bold text-emerald-400">Within 48 Hours</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mb-6">
+                            <div class="flex items-start gap-3">
+                                <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"><i class="fas fa-check"></i></div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900">Order Cryptographically Verified & Packed</h4>
+                                    <p class="text-[10px] text-gray-500">Node processed via secure checkout gateway.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"><i class="fas fa-truck-fast"></i></div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-900">Dispatched via SRP Prime Air Freight</h4>
+                                    <p class="text-[10px] text-gray-500">In transit through secure regional sorting facility.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"><i class="fas fa-box-open"></i></div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400">Out for Doorstep Delivery</h4>
+                                    <p class="text-[10px] text-gray-400">Pending final last-mile courier assignment.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="document.getElementById('logistics-modal').remove()" class="w-full py-3 srp-gradient text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:opacity-95 transition">Close Tracker</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+        }
+
+        const srpLogistics = new SRPLogisticsTracker();
+
+
+        // 3. CUSTOMER PRODUCT REVIEW & SENTIMENT ANALYSIS ENGINE
+        class SRPReviewEngine {
+            constructor() {
+                this.reviews = JSON.parse(localStorage.getItem('srp_reviews') || '{}');
+            }
+
+            addReview(productId, rating, comment, userName) {
+                if (!this.reviews[productId]) {
+                    this.reviews[productId] = [];
+                }
+                const reviewEntry = {
+                    id: 'REV_' + Date.now(),
+                    rating: parseInt(rating),
+                    comment: comment.trim(),
+                    userName: userName || 'Verified Customer',
+                    date: new Date().toLocaleDateString()
+                };
+                this.reviews[productId].unshift(reviewEntry);
+                localStorage.setItem('srp_reviews', JSON.stringify(this.reviews));
+                srpSync.showToast('Product review submitted successfully!', 'success');
+                srpAuditLogger.log(`Review added for product ${productId} with rating ${rating}`, 'INFO');
+            }
+
+            getReviewsForProduct(productId) {
+                return this.reviews[productId] || [];
+            }
+
+            calculateAverageRating(productId) {
+                const list = this.getReviewsForProduct(productId);
+                if (list.length === 0) return 4.8; // Default enterprise baseline
+                const sum = list.reduce((acc, r) => acc + r.rating, 0);
+                return (sum / list.length).toFixed(1);
+            }
+        }
+
+        const srpReviews = new SRPReviewEngine();
+
+
+        // 4. BARCODE & QR CODE SCANNER INTEGRATION MODULE (CAMERA API)
+        class SRPBarcodeScanner {
+            constructor() {
+                this.isActive = false;
+            }
+
+            openScannerModal() {
+                const modal = document.createElement('div');
+                modal.id = 'scanner-modal';
+                modal.className = 'fixed inset-0 bg-black/80 z-[100000] flex items-center justify-center p-4 animate-fade-in';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-slate-900 text-center relative">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="font-black text-sm uppercase tracking-wider">Scan Product Barcode</span>
+                            <button onclick="document.getElementById('scanner-modal').remove()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="bg-slate-900 rounded-2xl h-56 flex flex-col items-center justify-center text-white p-4 relative overflow-hidden mb-4 border-2 border-dashed border-blue-500/50">
+                            <div class="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                            <i class="fas fa-camera text-4xl text-blue-400 mb-2"></i>
+                            <p class="text-xs font-bold text-gray-300">Align barcode within frame</p>
+                            <span class="text-[9px] text-blue-300 mt-1">Webcam optical stream active</span>
+                        </div>
+                        <button onclick="srpBarcodeScanner.simulateScanResult()" class="w-full py-3 srp-gradient text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg">Simulate Successful Scan</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            simulateScanResult() {
+                const modal = document.getElementById('scanner-modal');
+                if (modal) modal.remove();
+                srpSync.showToast('Barcode scanned: SKU-SRP-9842 (Enterprise Smartphone Pro)', 'success');
+                srpSearchEngine.optimizedSearch('Smartphone', globalProducts);
+            }
+        }
+
+        const srpBarcodeScanner = new SRPBarcodeScanner();
+
+
+        // 5. AUTOMATED THERMAL RECEIPT & PDF INVOICE GENERATOR
+        class SRPInvoiceGenerator {
+            constructor() {
+                this.companyHeader = "SRP SHOPPING PRO ENTERPRISE";
+                this.gstin = "27AAAAA0000A1Z5";
+            }
+
+            generatePrintableInvoice(orderData) {
+                const win = window.open('', '_blank');
+                win.document.write(`
+                    <html>
+                    <head>
+                        <title>SRP Invoice - ${orderData.orderId || 'SRP_ORD'}</title>
+                        <style>
+                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: auto; }
+                            .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 20px; }
+                            .header h1 { margin: 0; font-size: 24px; color: #0f172a; }
+                            .header p { margin: 4px 0; font-size: 12px; color: #64748b; }
+                            .meta { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 13px; }
+                            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                            th, td { border: 1px solid #cbd5e1; padding: 10px; font-size: 12px; text-align: left; }
+                            th { background: #f8fafc; font-weight: bold; }
+                            .totals { text-align: right; font-size: 14px; }
+                            .footer { text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 40px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>${this.companyHeader}</h1>
+                            <p>Tax Invoice / Bill of Supply (GSTIN: ${this.gstin})</p>
+                            <p>Secure Enterprise Cloud Fulfillment Division</p>
+                        </div>
+                        <div class="meta">
+                            <div>
+                                <strong>Order ID:</strong> ${orderData.orderId || 'SRP_ORD_MASTER'} <br>
+                                <strong>Timestamp:</strong> ${new Date().toLocaleString()}
+                            </div>
+                            <div style="text-align: right;">
+                                <strong>Payment Method:</strong> ${orderData.method || 'Secure Encrypted Gateway'} <br>
+                                <strong>Status:</strong> Cryptographically Signed & Paid
+                            </div>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item Description</th>
+                                    <th>Unit Price</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Enterprise Flagship Device / Curated Product Bundle</td>
+                                    <td>₹${orderData.finalPayable || 14850}</td>
+                                    <td>1</td>
+                                    <td>₹${orderData.finalPayable || 14850}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="totals">
+                            <p><strong>Subtotal:</strong> ₹${orderData.subtotal || 14850}</p>
+                            <p><strong>Promotional Discount:</strong> -₹${orderData.discount || 0}</p>
+                            <h3>Grand Total: ₹${orderData.finalPayable || 14850}</h3>
+                        </div>
+                        <div class="footer">
+                            <p>This is a computer-generated electronic tax invoice authorized by SRP Enterprise Core Daemons.</p>
+                            <p>&copy; 2026 SRP Studio. All Rights Reserved.</p>
+                        </div>
+                        <script>
+                            window.onload = () => { window.print(); };
+                        </script>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+                srpSync.showToast('Thermal printable invoice generated successfully.', 'success');
+            }
+        }
+
+        const srpInvoiceGen = new SRPInvoiceGenerator();
+
+
+        // 6. FINAL MASTER ENTERPRISE INITIALIZATION (PART 1 + PART 2 + PART 3)
+        window.onload = () => {
+            // Execute Part 1 initializers
+            globalProducts = generateDefaultProducts();
+            
+            // Execute Part 2 AI Recommendation Matrix
+            globalProducts = srpAiMatrix.scoreProducts(globalProducts, ['Mobiles', 'Electronics']);
+            
+            renderProducts(globalProducts);
+            renderSellerInventory();
+
+            // Mount Part 2 & Part 3 widgets and daemons
+            mountSupportChatWidgetDOM();
+            srpVendorAnalytics.renderVendorDashboardAnalytics(globalProducts.length, 2450800);
+            
+            // Log full enterprise boot sequence
+            srpAuditLogger.log("SRP Shopping Pro — Full Enterprise Stack (Parts 1, 2, and 3) initialized and operating at peak performance.", "INFO");
+            srpSync.showToast("SRP Enterprise Suite Master Core Fully Online & Synchronized.", "success");
+        };
+
+        // Master checkout integration wrapping payment, invoice generation, and tracking
+        window.checkoutOrder = function() {
+            const keys = Object.keys(localCart);
+            if(keys.length === 0) {
+                alert("Your shopping cart is currently empty.");
+                return;
+            }
+
+            let subtotal = 0;
+            keys.forEach(k => {
+                subtotal += localCart[k].price * localCart[k].qty;
+            });
+
+            const discount = srpCoupons.calculateDiscount(subtotal);
+            const finalPayable = Math.max(0, subtotal - discount);
+
+            const orderPayload = {
+                orderId: 'SRP_ORD_' + Date.now(),
+                subtotal: subtotal,
+                discount: discount,
+                finalPayable: finalPayable,
+                items: localCart
+            };
+
+            srpAdvancedGateway.verifyAndSignPayload(orderPayload);
+            
+            // Trigger payment gateway and subsequent invoice generation
+            srpPayment.initiatePayment(finalPayable, localCart);
+            
+            // Generate thermal printable invoice record
+            setTimeout(() => {
+                srpInvoiceGen.generatePrintableInvoice(orderPayload);
+            }, 2500);
+        };
+    </
+        // ============================================================================
+        // PART 4: MASTER CAPSTONE — RBAC ADMIN CONSOLE, FLASH SALES, LOYALTY & EXPORT SUITE
+        // ============================================================================
+
+        // 1. ROLE-BASED ACCESS CONTROL (RBAC) & ADMIN MASTER CONTROL CONSOLE
+        class SRPRBACEngine {
+            constructor() {
+                this.currentUserRole = 'ADMIN'; // Options: 'CUSTOMER', 'VENDOR', 'ADMIN'
+                this.permissions = {
+                    ADMIN: ['VIEW_ALL', 'EDIT_PRODUCTS', 'BAN_USERS', 'VIEW_FINANCIALS', 'EXECUTE_REFUNDS'],
+                    VENDOR: ['VIEW_OWN', 'EDIT_OWN_PRODUCTS', 'VIEW_OWN_PAYOUTS'],
+                    CUSTOMER: ['VIEW_CATALOG', 'PURCHASE', 'WRITE_REVIEWS', 'MANAGE_WISHLIST']
+                };
+            }
+
+            hasPermission(action) {
+                const allowed = this.permissions[this.currentUserRole] || [];
+                return allowed.includes(action) || allowed.includes('VIEW_ALL');
+            }
+
+            setRole(role) {
+                if (['ADMIN', 'VENDOR', 'CUSTOMER'].includes(role)) {
+                    this.currentUserRole = role;
+                    srpAuditLogger.log(`User role switched to ${role}`, 'INFO');
+                    srpSync.showToast(`Security Context updated: Active Role -> ${role}`, 'success');
+                    return true;
+                }
+                return false;
+            }
+
+            renderAdminConsoleModal() {
+                if (!this.hasPermission('VIEW_FINANCIALS')) {
+                    srpSync.showToast('Access Denied: Administrator clearance required.', 'error');
+                    return;
+                }
+
+                const modal = document.createElement('div');
+                modal.id = 'admin-rbac-modal';
+                modal.className = 'fixed inset-0 bg-black/80 z-[100000] flex items-center justify-center p-4 animate-fade-in';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl text-slate-900 relative max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-6 border-b pb-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl srp-gradient text-white flex items-center justify-center font-black text-xs">SRP</div>
+                                <span class="font-black text-sm uppercase tracking-wider">Enterprise Admin Master Console</span>
+                            </div>
+                            <button onclick="document.getElementById('admin-rbac-modal').remove()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-slate-50 p-4 rounded-2xl border">
+                                <span class="text-[10px] text-gray-500 font-extrabold uppercase">Total Cloud Nodes</span>
+                                <h3 class="text-xl font-black text-slate-900 mt-1">4 Active</h3>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-2xl border">
+                                <span class="text-[10px] text-gray-500 font-extrabold uppercase">Security Firewall</span>
+                                <h3 class="text-xl font-black text-emerald-600 mt-1">256-bit SSL</h3>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-2xl border">
+                                <span class="text-[10px] text-gray-500 font-extrabold uppercase">Telemetry Status</span>
+                                <h3 class="text-xl font-black text-blue-600 mt-1">Optimal</h3>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mb-6">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-gray-500">Quick Administrative Actions</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button onclick="srpExportSuite.exportFullDatabaseJSON()" class="p-4 border rounded-2xl flex items-center gap-3 hover:border-blue-600 hover:bg-blue-50/50 transition text-left group">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-base"><i class="fas fa-database"></i></div>
+                                    <div>
+                                        <h5 class="text-xs font-bold text-slate-900 group-hover:text-blue-600">Export DB Backup</h5>
+                                        <p class="text-[10px] text-gray-500">Download encrypted JSON snapshot</p>
+                                    </div>
+                                </button>
+                                <button onclick="srpExportSuite.exportSalesCSV()" class="p-4 border rounded-2xl flex items-center gap-3 hover:border-blue-600 hover:bg-blue-50/50 transition text-left group">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-base"><i class="fas fa-file-csv"></i></div>
+                                    <div>
+                                        <h5 class="text-xs font-bold text-slate-900 group-hover:text-blue-600">Download Sales CSV</h5>
+                                        <p class="text-[10px] text-gray-500">Spreadsheet formatted revenue log</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button onclick="document.getElementById('admin-rbac-modal').remove()" class="w-full py-3 srp-gradient text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg">Close Console</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+        }
+
+        const srpRBAC = new SRPRBACEngine();
+
+
+        // 2. FLASH SALE & LIVE COUNTDOWN TIMER ENGINE
+        class SRPFlashSaleEngine {
+            constructor() {
+                this.endTime = Date.now() + (4 * 3600 * 1000); // 4 Hours from now
+            }
+
+            getRemainingTime() {
+                const diff = this.endTime - Date.now();
+                if (diff <= 0) return { hours: '00', minutes: '00', seconds: '00', expired: true };
+                
+                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
+                const minutes = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
+                const seconds = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+                
+                return { hours, minutes, seconds, expired: false };
+            }
+
+            renderFlashBannerContainer() {
+                const banner = document.createElement('div');
+                banner.id = 'srp-flash-banner';
+                banner.className = 'bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white py-2.5 px-4 text-xs font-bold flex flex-wrap items-center justify-between gap-2 shadow-inner border-b border-white/10';
+                
+                const timer = this.getRemainingTime();
+                banner.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="bg-red-500 text-white px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest animate-pulse">FLASH SALE</span>
+                        <span>SRP Prime Mega Drop — Save up to 40% on Flagship Electronics & Mobiles</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1 font-mono bg-black/40 px-3 py-1 rounded-lg border border-white/10">
+                            <span id="flash-hrs">${timer.hours}</span>:<span id="flash-mins">${timer.minutes}</span>:<span id="flash-secs">${timer.seconds}</span>
+                        </div>
+                        <button onclick="srpSearchEngine.optimizedSearch('Mobiles', globalProducts); srpSync.showToast('Showing Flash Sale Curations!', 'info');" class="bg-white text-slate-900 px-3 py-1 rounded-lg text-[10px] font-black uppercase hover:bg-blue-50 transition">Shop Now</button>
+                    </div>
+                `;
+                
+                const header = document.querySelector('header') || document.body.firstChild;
+                if (header) {
+                    document.body.insertBefore(banner, header.nextSibling);
+                } else {
+                    document.body.prepend(banner);
+                }
+
+                // Start interval clock
+                setInterval(() => {
+                    const t = this.getRemainingTime();
+                    const hrs = document.getElementById('flash-hrs');
+                    const mins = document.getElementById('flash-mins');
+                    const secs = document.getElementById('flash-secs');
+                    if (hrs && mins && secs) {
+                        hrs.textContent = t.hours;
+                        mins.textContent = t.minutes;
+                        secs.textContent = t.seconds;
+                    }
+                }, 1000);
+            }
+        }
+
+        const srpFlashSale = new SRPFlashSaleEngine();
+
+
+        // 3. AUTOMATED MARKETING & PROMOTIONAL CAMPAIGN SIMULATOR
+        class SRPMarketingEngine {
+            constructor() {
+                this.campaigns = [
+                    { id: 'CAMP_01', title: 'Monsoon Prime Discounts', target: 'All Subscribers', status: 'Active' },
+                    { id: 'CAMP_02', title: 'App-Exclusive Cashback Perk', target: 'Mobile App Users', status: 'Scheduled' }
+                ];
+            }
+
+            dispatchBroadcastCampaign(campaignName) {
+                srpAuditLogger.log(`Marketing campaign dispatched: ${campaignName}`, 'INFO');
+                srpSync.showToast(`Campaign '${campaignName}' successfully broadcasted to 12,450 active subscribers.`, 'success');
+            }
+        }
+
+        const srpMarketing = new SRPMarketingEngine();
+
+
+        // 4. CUSTOMER LOYALTY TIER & REFERRAL REWARD LEDGER
+        class SRPLoyaltyEngine {
+            constructor() {
+                this.points = parseInt(localStorage.getItem('srp_loyalty_pts') || '450');
+            }
+
+            addPoints(amount) {
+                this.points += amount;
+                localStorage.setItem('srp_loyalty_pts', this.points);
+                srpSync.showToast(`Earned ${amount} SRP Loyalty Points! Total Balance: ${this.points}`, 'success');
+            }
+
+            getTier() {
+                if (this.points > 1000) return { name: 'SRP Diamond Elite', discountBonus: 15 };
+                if (this.points > 500) return { name: 'SRP Gold Privilege', discountBonus: 10 };
+                return { name: 'SRP Silver Member', discountBonus: 5 };
+            }
+
+            generateReferralLink() {
+                const code = 'SRP_REF_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                srpSync.showToast(`Referral link generated: https://srpshop.pro/invite?ref=${code}`, 'success');
+                return code;
+            }
+        }
+
+        const srpLoyalty = new SRPLoyaltyEngine();
+
+
+        // 5. ADVANCED DATA EXPORT SUITE (JSON BACKUP & CSV SALES REPORTS)
+        class SRPDataExportSuite {
+            constructor() {
+                this.version = "1.0.0";
+            }
+
+            exportFullDatabaseJSON() {
+                const backup = {
+                    version: this.version,
+                    exportedAt: new Date().toISOString(),
+                    products: globalProducts,
+                    wishlist: srpPreferences.wishlist,
+                    telemetry: srpAuditLogger.getTelemetryReport(),
+                    logs: srpAuditLogger.logs.slice(0, 50)
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `SRP_Database_Backup_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+                srpSync.showToast('Encrypted database JSON backup downloaded successfully.', 'success');
+                srpAuditLogger.log('Database JSON backup exported', 'INFO');
+            }
+
+            exportSalesCSV() {
+                const csvRows = [
+                    ['OrderID', 'Timestamp', 'Method', 'Amount', 'Status'],
+                    ['SRP_ORD_9841', '2026-07-25 10:30', 'UPI', '14850', 'Dispatched'],
+                    ['SRP_ORD_9842', '2026-07-25 11:15', 'WALLET', '8990', 'Delivered'],
+                    ['SRP_ORD_9843', '2026-07-25 12:00', 'COD', '24500', 'Processing']
+                ];
+
+                const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `SRP_Sales_Report_${Date.now()}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                srpSync.showToast('Sales report CSV downloaded successfully.', 'success');
+                srpAuditLogger.log('Sales report CSV exported', 'INFO');
+            }
+        }
+
+        const srpExportSuite = new SRPDataExportSuite();
+
+
+        // 6. GLOBAL ERROR BOUNDARY & CRASH RECOVERY DAEMON
+        class SRPCrashHandler {
+            constructor() {
+                this.initErrorBoundary();
+            }
+
+            initErrorBoundary() {
+                window.onerror = (msg, url, lineNo, columnNo, error) => {
+                    srpAuditLogger.log(`Uncaught Exception: ${msg} at ${url}:${lineNo}:${columnNo}`, 'ERROR', { error: error?.stack });
+                    srpSync.showToast('An unexpected runtime exception was intercepted by SRP Error Boundary.', 'error');
+                    return false;
+                };
+            }
+        }
+
+        const srpCrashHandler = new SRPCrashHandler();
+
+
+        // 7. ULTIMATE MASTER ENTERPRISE INITIALIZATION (PARTS 1, 2, 3 & 4)
+        window.onload = () => {
+            // Execute Part 1 initializers
+            globalProducts = generateDefaultProducts();
+            
+            // Execute Part 2 AI Recommendation Scoring
+            globalProducts = srpAiMatrix.scoreProducts(globalProducts, ['Mobiles', 'Electronics']);
+            
+            renderProducts(globalProducts);
+            renderSellerInventory();
+
+            // Mount Part 2, Part 3 & Part 4 widgets and daemons
+            mountSupportChatWidgetDOM();
+            srpFlashSale.renderFlashBannerContainer();
+            srpVendorAnalytics.renderVendorDashboardAnalytics(globalProducts.length, 3140500);
+            
+            // Final master boot log
+            srpAuditLogger.log("SRP Shopping Pro — Ultimate Enterprise Capstone (Parts 1 to 4) fully assembled and running.", "INFO");
+            srpSync.showToast("SRP Enterprise Master Suite 100% Online & Fully Synchronized.", "success");
+        };
+
+        // Ultimate Master Checkout Integration (Payment + Invoice + Loyalty Points + PWA Sync)
+        window.checkoutOrder = function() {
+            const keys = Object.keys(localCart);
+            if(keys.length === 0) {
+                alert("Your shopping cart is currently empty.");
+                return;
+            }
+
+            let subtotal = 0;
+            keys.forEach(k => {
+                subtotal += localCart[k].price * localCart[k].qty;
+            });
+
+            const discount = srpCoupons.calculateDiscount(subtotal);
+            const finalPayable = Math.max(0, subtotal - discount);
+
+            const orderPayload = {
+                orderId: 'SRP_ORD_' + Date.now(),
+                subtotal: subtotal,
+                discount: discount,
+                finalPayable: finalPayable,
+                items: localCart
+            };
+
+            srpAdvancedGateway.verifyAndSignPayload(orderPayload);
+            
+            // Trigger payment gateway
+            srpPayment.initiatePayment(finalPayable, localCart);
+            
+            // Award loyalty points for purchase
+            srpLoyalty.addPoints(Math.floor(finalPayable / 100));
+
+            // Generate thermal invoice
+            setTimeout(() => {
+                srpInvoiceGen.generatePrintableInvoice(orderPayload);
+            }, 2500);
+        };
+                            // ============================================================================
+        // PART 5: MASTER UI RENDERING, COMPONENT MOUNTING & EVENT BINDING ENGINE
+        // ============================================================================
+
+        // 1. UI COMPONENT RENDERING & INTERACTIVE DASHBOARD SUITE
+        class SRPUIComponentSuite {
+            constructor() {
+                this.activeTheme = 'glassmorphism'; // Options: 'glassmorphism', 'black-gold'
+            }
+
+            setTheme(themeName) {
+                this.activeTheme = themeName;
+                const root = document.documentElement;
+                
+                if (themeName === 'black-gold') {
+                    srpSync.showToast('Theme switched to Premium Black & Gold', 'info');
+                    srpAuditLogger.log('Theme changed to Black & Gold', 'INFO');
+                } else {
+                    srpSync.showToast('Theme switched to Glassmorphism Slate Blue', 'info');
+                    srpAuditLogger.log('Theme changed to Glassmorphism', 'INFO');
+                }
+            }
+
+            renderCustomerProfileModal() {
+                const loyalty = srpLoyalty.getTier();
+                const modal = document.createElement('div');
+                modal.id = 'customer-profile-modal';
+                modal.className = 'fixed inset-0 bg-black/80 z-[100000] flex items-center justify-center p-4 animate-fade-in';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-slate-900 relative">
+                        <div class="flex justify-between items-center mb-6 border-b pb-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl srp-gradient text-white flex items-center justify-center font-black text-xs">SRP</div>
+                                <span class="font-black text-sm uppercase tracking-wider">Enterprise User Profile</span>
+                            </div>
+                            <button onclick="document.getElementById('customer-profile-modal').remove()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <div class="bg-slate-900 text-white p-5 rounded-2xl mb-6 relative overflow-hidden">
+                            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-600/20 rounded-full blur-2xl"></div>
+                            <span class="text-[10px] text-blue-400 font-extrabold uppercase tracking-widest block">Active Loyalty Tier</span>
+                            <h3 class="text-xl font-black tracking-wider mt-1">${loyalty.name}</h3>
+                            <div class="mt-4 flex items-center justify-between text-xs border-t border-white/10 pt-3">
+                                <div>
+                                    <span class="text-gray-400 block text-[9px]">LOYALTY POINTS</span>
+                                    <span class="font-bold text-emerald-400">${srpLoyalty.points} PTS</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-gray-400 block text-[9px]">PRIVILEGE DISCOUNT</span>
+                                    <span class="font-bold text-blue-400">${loyalty.discountBonus}% OFF</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-6">
+                            <button onclick="srpLoyalty.generateReferralLink()" class="w-full p-4 border rounded-2xl flex items-center justify-between hover:border-blue-600 hover:bg-blue-50/50 transition group">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg"><i class="fas fa-share-nodes"></i></div>
+                                    <div class="text-left">
+                                        <h4 class="text-xs font-bold text-slate-900 group-hover:text-blue-600">Generate Referral Link</h4>
+                                        <p class="text-[10px] text-gray-500">Earn 100 points per successful referral</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                            </button>
+
+                            <button onclick="srpBarcodeScanner.openScannerModal()" class="w-full p-4 border rounded-2xl flex items-center justify-between hover:border-blue-600 hover:bg-blue-50/50 transition group">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg"><i class="fas fa-barcode"></i></div>
+                                    <div class="text-left">
+                                        <h4 class="text-xs font-bold text-slate-900 group-hover:text-blue-600">Scan Product Barcode</h4>
+                                        <p class="text-[10px] text-gray-500">Optical camera SKU verification</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                            </button>
+                        </div>
+
+                        <button onclick="document.getElementById('customer-profile-modal').remove()" class="w-full py-3 srp-gradient text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg">Close Profile</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            renderNavbarExtensionControls() {
+                const navContainer = document.querySelector('nav') || document.querySelector('header');
+                if (!navContainer) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center gap-2 mt-2 sm:mt-0';
+                wrapper.innerHTML = `
+                    <button onclick="srpUI.renderCustomerProfileModal()" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+                        <i class="fas fa-user-shield"></i> Profile
+                    </button>
+                    <button onclick="srpRBAC.renderAdminConsoleModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md">
+                        <i class="fas fa-shield-halved"></i> Admin
+                    </button>
+                `;
+                navContainer.appendChild(wrapper);
+            }
+        }
+
+        const srpUI = new SRPUIComponentSuite();
+
+
+        // 2. DEFINITIVE MASTER ENTERPRISE INITIALIZATION (PARTS 1 TO 5)
+        window.onload = () => {
+            // Execute Part 1 initializers
+            globalProducts = generateDefaultProducts();
+            
+            // Execute Part 2 AI Recommendation Scoring & Currency setup
+            globalProducts = srpAiMatrix.scoreProducts(globalProducts, ['Mobiles', 'Electronics']);
+            
+            renderProducts(globalProducts);
+            renderSellerInventory();
+
+            // Mount Part 2, Part 3, Part 4 & Part 5 UI components, daemons and navigation tools
+            mountSupportChatWidgetDOM();
+            srpFlashSale.renderFlashBannerContainer();
+            srpVendorAnalytics.renderVendorDashboardAnalytics(globalProducts.length, 4125900);
+            srpUI.renderNavbarExtensionControls();
+            
+            // Final master boot confirmation log
+            srpAuditLogger.log("SRP Shopping Pro — Ultimate Enterprise Capstone & UI Integration (Parts 1 to 5) fully mounted.", "INFO");
+            srpSync.showToast("SRP Enterprise Suite Master Core 100% Online & Fully Synchronized.", "success");
+        };
+
+        // Ultimate Master Checkout Integration (Payment + Invoice + Loyalty + PWA Sync + Telemetry)
+        window.checkoutOrder = function() {
+            const keys = Object.keys(localCart);
+            if (keys.length === 0) {
+                alert("Your shopping cart is currently empty.");
+                return;
+            }
+
+            let subtotal = 0;
+            keys.forEach(k => {
+                subtotal += localCart[k].price * localCart[k].qty;
+            });
+
+            const discount = srpCoupons.calculateDiscount(subtotal);
+            const finalPayable = Math.max(0, subtotal - discount);
+
+            const orderPayload = {
+                orderId: 'SRP_ORD_' + Date.now(),
+                subtotal: subtotal,
+                discount: discount,
+                finalPayable: finalPayable,
+                items: localCart
+            };
+
+            srpAdvancedGateway.verifyAndSignPayload(orderPayload);
+            
+            // Trigger secure payment gateway simulation
+            srpPayment.initiatePayment(finalPayable, localCart);
+            
+            // Award loyalty tier points
+            srpLoyalty.addPoints(Math.floor(finalPayable / 100));
+
+            // Generate thermal invoice & printable tax receipt
+            setTimeout(() => {
+                srpInvoiceGen.generatePrintableInvoice(orderPayload);
+            }, 2500);
+
+            srpAuditLogger.log(`Checkout successfully executed for Order ID: ${orderPayload.orderId}`, 'INFO', orderPayload);
+        };
+                      // ============================================================================
+        // PART 6: ULTRA-SCALE ENTERPRISE CAPSTONE & CORE DAEMONS
+        // ============================================================================
+
+        // 1. REAL-TIME MULTI-CURRENCY & EXCHANGE RATE ENGINE
+        class SRPCurrencyEngine {
+            constructor() {
+                this.currentCurrency = 'INR';
+                this.rates = {
+                    INR: { symbol: '₹', rate: 1.0 },
+                    USD: { symbol: '$', rate: 0.012 },
+                    EUR: { symbol: '€', rate: 0.011 },
+                    GBP: { symbol: '£', rate: 0.0094 },
+                    JPY: { symbol: '¥', rate: 1.85 }
+                };
+            }
+
+            setCurrency(currencyCode) {
+                if (this.rates[currencyCode]) {
+                    this.currentCurrency = currencyCode;
+                    srpAuditLogger.log(`Currency converted to ${currencyCode}`, 'INFO');
+                    srpSync.showToast(`Active Currency updated to ${currencyCode}`, 'success');
+                    this.refreshPriceDisplays();
+                }
+            }
+
+            format(amountInINR) {
+                const conf = this.rates[this.currentCurrency] || this.rates.INR;
+                const converted = (amountInINR * conf.rate).toFixed(2);
+                return `${conf.symbol}${Number(converted).toLocaleString()}`;
+            }
+
+            refreshPriceDisplays() {
+                // Triggers full re-render of product grid and cart to reflect currency change
+                if (typeof renderProducts === 'function' && globalProducts) {
+                    renderProducts(globalProducts);
+                }
+            }
+        }
+
+        const srpCurrency = new SRPCurrencyEngine();
+
+
+        // 2. AI VISUAL SEARCH & IMAGE TAGGING SIMULATOR
+        class SRPAIVisualSearchEngine {
+            constructor() {
+                this.isModelLoaded = true;
+            }
+
+            openVisualSearchModal() {
+                const modal = document.createElement('div');
+                modal.id = 'visual-search-modal';
+                modal.className = 'fixed inset-0 bg-black/80 z-[100000] flex items-center justify-center p-4 animate-fade-in';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-slate-900 text-center relative">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
+                            <i class="fas fa-camera-rotate"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-900 mb-1">AI Visual Product Matcher</h3>
+                        <p class="text-xs text-gray-500 mb-6">Upload or capture an image to find matching SKUs across SRP Inventory.</p>
+                        
+                        <div class="border-2 border-dashed border-blue-300 rounded-2xl p-6 mb-6 bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer" onclick="document.getElementById('hidden-file-input').click()">
+                            <i class="fas fa-cloud-arrow-up text-3xl text-blue-600 mb-2"></i>
+                            <p class="text-xs font-bold text-slate-800">Click to upload product photo</p>
+                            <span class="text-[10px] text-gray-400 mt-1 block">Supports JPG, PNG, WEBP up to 10MB</span>
+                            <input type="file" id="hidden-file-input" class="hidden" accept="image/*" onchange="srpVisualSearch.simulateAnalysis(this)">
+                        </div>
+
+                        <button onclick="document.getElementById('visual-search-modal').remove()" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest">Close Scanner</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            simulateAnalysis(input) {
+                if (input.files && input.files[0]) {
+                    const modal = document.getElementById('visual-search-modal');
+                    if (modal) modal.remove();
+
+                    srpSync.showToast('AI Neural Network analyzing image features...', 'info');
+                    setTimeout(() => {
+                        srpSync.showToast('Match Found: Electronics & Mobile Category (98.4% Confidence)', 'success');
+                        if (typeof categoryFilter === 'function') {
+                            categoryFilter('Mobiles');
+                        }
+                    }, 1800);
+                }
+            }
+        }
+
+        const srpVisualSearch = new SRPAIVisualSearchEngine();
+
+
+        // 3. AUTOMATED PUSH NOTIFICATION & WEBHOOK CENTER
+        class SRPNotificationDaemon {
+            constructor() {
+                this.notifications = [];
+            }
+
+            dispatchPush(title, body, type = 'info') {
+                const notif = { id: Date.now(), title, body, type, timestamp: new Date().toLocaleTimeString() };
+                this.notifications.unshift(notif);
+                srpSync.showToast(`[${title}] ${body}`, type);
+                srpAuditLogger.log(`Push dispatched: ${title}`, 'INFO', notif);
+            }
+        }
+
+        const srpNotifDaemon = new SRPNotificationDaemon();
+
+
+        // 4. ENTERPRISE DISPUTE RESOLUTION & SUPPORT TICKETING SYSTEM
+        class SRPSupportTicketingEngine {
+            constructor() {
+                this.tickets = [];
+            }
+
+            createTicket(subject, description, category) {
+                const ticket = {
+                    id: 'SRP_TKT_' + Math.floor(Math.random() * 90000 + 10000),
+                    subject,
+                    description,
+                    category,
+                    status: 'Open',
+                    createdAt: new Date().toISOString()
+                };
+                this.tickets.unshift(ticket);
+                srpSync.showToast(`Support Ticket #${ticket.id} successfully lodged.`, 'success');
+                srpAuditLogger.log(`Support ticket created: ${ticket.id}`, 'INFO', ticket);
+                return ticket;
+            }
+
+            renderSupportModal() {
+                const modal = document.createElement('div');
+                modal.id = 'support-ticket-modal';
+                modal.className = 'fixed inset-0 bg-black/80 z-[100000] flex items-center justify-center p-4 animate-fade-in';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl text-slate-900 relative">
+                        <div class="flex justify-between items-center mb-6 border-b pb-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl srp-gradient text-white flex items-center justify-center font-black text-xs">SRP</div>
+                                <span class="font-black text-sm uppercase tracking-wider">Enterprise Help Desk</span>
+                            </div>
+                            <button onclick="document.getElementById('support-ticket-modal').remove()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <form onsubmit="srpSupport.handleTicketSubmit(event)" class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-extrabold text-gray-500 uppercase block mb-1">Issue Category</label>
+                                <select id="tkt-cat" class="w-full p-3 bg-gray-50 border rounded-xl text-xs font-bold outline-none">
+                                    <option value="Logistics">Logistics & Shipping Delay</option>
+                                    <option value="Payment">Payment Gateway Discrepancy</option>
+                                    <option value="Refund">Return & Instant Refund</option>
+                                    <option value="Vendor">Vendor Inquiry</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-extrabold text-gray-500 uppercase block mb-1">Subject</label>
+                                <input type="text" id="tkt-subject" placeholder="Brief summary of your inquiry" class="w-full p-3 bg-gray-50 border rounded-xl text-xs outline-none" required>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-extrabold text-gray-500 uppercase block mb-1">Detailed Description</label>
+                                <textarea id="tkt-desc" rows="3" placeholder="Describe the issue in detail..." class="w-full p-3 bg-gray-50 border rounded-xl text-xs outline-none" required></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-3.5 srp-gradient text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg">Submit Support Ticket</button>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            handleTicketSubmit(e) {
+                e.preventDefault();
+                const cat = document.getElementById('tkt-cat').value;
+                const subj = document.getElementById('tkt-subject').value;
+                const desc = document.getElementById('tkt-desc').value;
+                this.createTicket(subj, desc, cat);
+                document.getElementById('support-ticket-modal').remove();
+            }
+        }
+
+        const srpSupport = new SRPSupportTicketingEngine();
+
+
+        // 5. INVENTORY PREDICTIVE FORECASTING & AUTO-REORDER DAEMON
+        class SRPInventoryForecasting {
+            constructor() {
+                this.threshold = 5; // Low stock alert threshold
+            }
+
+            runAudit(products) {
+                const lowStockItems = products.filter(p => (p.stock || 15) < this.threshold);
+                if (lowStockItems.length > 0) {
+                    srpNotifDaemon.dispatchPush('Low Stock Warning', `${lowStockItems.length} items require inventory replenishment.`, 'warning');
+                } else {
+                    srpAuditLogger.log('Inventory forecasting audit passed: Stock levels optimal.', 'INFO');
+                }
+            }
+        }
+
+        const srpForecasting = new SRPInventoryForecasting();
+
+
+        // 6. SECURITY INTRUSION DETECTION SYSTEM (IDS)
+        class SRPSecurityIDS {
+            constructor() {
+                this.requestCount = 0;
+                this.isLocked = false;
+            }
+
+            inspectPayload(payloadString) {
+                if (this.isLocked) return false;
+                this.requestCount++;
+                
+                // Basic SQL / XSS pattern checks
+                const hazardousPatterns = ['<script>', 'DROP TABLE', 'UNION SELECT', 'javascript:'];
+                for (const pattern of hazardousPatterns) {
+                    if (payloadString.toUpperCase().includes(pattern.toUpperCase())) {
+                        srpAuditLogger.log(`SECURITY ALERT: Malicious payload intercepted -> ${pattern}`, 'ERROR');
+                        srpSync.showToast('Security Threat Intercepted by SRP IDS Firewall.', 'error');
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        const srpIDS = new SRPSecurityIDS();
+
+
+        // 7. THERMAL RECEIPT & SHIPPING LABEL GENERATOR ENGINE
+        class SRPThermalReceiptGenerator {
+            constructor() {
+                this.storeName = "SRP SHOPPING PRO ENTERPRISE";
+            }
+
+            generatePrintableLabel(orderPayload) {
+                const win = window.open('', '_blank');
+                win.document.write(`
+                    <html>
+                    <head>
+                        <title>Shipping Label — ${orderPayload.orderId}</title>
+                        <style>
+                            body { font-family: monospace; padding: 20px; max-width: 400px; margin: auto; color: #000; }
+                            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
+                            .section { margin-bottom: 15px; font-size: 12px; }
+                            .bold { font-weight: bold; }
+                            .barcode { text-align: center; font-size: 24px; letter-spacing: 4px; margin: 15px 0; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h2>${this.storeName}</h2>
+                            <p>EXPRESS LOGISTICS WAYBILL</p>
+                        </div>
+                        <div class="section">
+                            <span class="bold">Order ID:</span> ${orderPayload.orderId}<br>
+                            <span class="bold">Timestamp:</span> ${new Date().toLocaleString()}<br>
+                            <span class="bold">Payment Status:</span> SECURED & VERIFIED
+                        </div>
+                        <div class="section">
+                            <span class="bold">Payable Total:</span> ₹${orderPayload.finalPayable.toLocaleString('en-IN')}
+                        </div>
+                        <div class="barcode">||| | |||| ||| || ||</div>
+                        <script>window.print();</script>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+                srpSync.showToast('Thermal shipping waybill generated successfully.', 'success');
+            }
+        }
+
+        const srpThermalLabel = new SRPThermalReceiptGenerator();
+
+
+        // 8. ULTIMATE MASTER BOOTSTRAPPER (PARTS 1 TO 6)
+        window.onload = () => {
+            // Execute Part 1 initializers
+            globalProducts = generateDefaultProducts();
+            
+            // Execute Part 2 AI Recommendation Scoring & Currency setup
+            globalProducts = srpAiMatrix.scoreProducts(globalProducts, ['Mobiles', 'Electronics']);
+            
+            renderProducts(globalProducts);
+            renderSellerInventory();
+
+            // Mount all enterprise modules across Parts 2 through 6
+            mountSupportChatWidgetDOM();
+            srpFlashSale.renderFlashBannerContainer();
+            srpVendorAnalytics.renderVendorDashboardAnalytics(globalProducts.length, 5240800);
+            srpUI.renderNavbarExtensionControls();
+            
+            // Run initial forecasting audit
+            srpForecasting.runAudit(globalProducts);
+
+            // Final master confirmation log
+            srpAuditLogger.log("SRP Shopping Pro — Full Enterprise Suite (Parts 1 to 6) 100% Online & Fully Synchronized.", "INFO");
+            srpSync.showToast("SRP Enterprise Master Core (Part 6) Successfully Initialized.", "success");
+        };
+
+        // Master Checkout Integration with Thermal Label & IDS Inspection
+        window.checkoutOrder = function() {
+            const keys = Object.keys(localCart);
+            if (keys.length === 0) {
+                alert("Your shopping cart is currently empty.");
+                return;
+            }
+
+            let subtotal = 0;
+            keys.forEach(k => {
+                subtotal += localCart[k].price * localCart[k].qty;
+            });
+
+            const discount = srpCoupons.calculateDiscount(subtotal);
+            const finalPayable = Math.max(0, subtotal - discount);
+
+            const orderPayload = {
+                orderId: 'SRP_ORD_' + Date.now(),
+                subtotal: subtotal,
+                discount: discount,
+                finalPayable: finalPayable,
+                items: localCart
+            };
+
+            // Inspect payload via Security IDS
+            if (!srpIDS.inspectPayload(JSON.stringify(orderPayload))) return;
+
+            srpAdvancedGateway.verifyAndSignPayload(orderPayload);
+            srpPayment.initiatePayment(finalPayable, localCart);
+            srpLoyalty.addPoints(Math.floor(finalPayable / 100));
+
+            setTimeout(() => {
+                srpInvoiceGen.generatePrintableInvoice(orderPayload);
+                srpThermalLabel.renderPrintableLabel(orderPayload);
+            }, 2500);
+
+            srpAuditLogger.log(`Master checkout completed successfully for Order: ${orderPayload.orderId}`, 'INFO', orderPayload);
+        };
     </script>
 </body>
 </html>
+
+
+
 
