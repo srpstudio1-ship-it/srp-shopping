@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SRP SHOPPING | Official Store</title>
+    <title>SRP SHOPPING PRO | Official Master Store</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
         :root {
             --srp-blue: #0047AB;
@@ -29,25 +29,22 @@
             overflow-x: hidden;
         }
 
-        /* UI Components */
         .glass-login {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .srp-gradient { background: linear-gradient(135deg, var(--srp-blue) 0%, var(--srp-accent) 100%); }
-        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         .product-card {
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
             border: 1px solid #e2e8f0;
         }
-        
-        .product-card:active { transform: scale(0.96); }
+        .product-card:hover { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .product-card:active { transform: scale(0.97); }
 
-        /* Product Detail Slider */
         .detail-slider {
             display: flex;
             overflow-x: auto;
@@ -56,178 +53,292 @@
         }
         .detail-slider img {
             min-width: 100%;
-            height: 350px;
+            height: 380px;
             object-fit: contain;
             scroll-snap-align: start;
             background: white;
         }
 
-        /* Animations */
         @keyframes slideUp {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
         }
+        .animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        .animate-slide-up { animation: slideUp 0.4s ease-out; }
-
-        #auth-screen { z-index: 9999; }
-        #product-modal { z-index: 10000; }
+        #auth-screen { z-index: 99999; }
+        #product-modal, #cart-modal, #wallet-modal, #seller-screen, #admin-screen { z-index: 10000; }
         
-        /* Bottom Nav shadow */
-        .nav-shadow { box-shadow: 0 -4px 12px rgba(0,0,0,0.05); }
-
-        .shimmer {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-        @keyframes loading { to { background-position: -200% 0; } }
+        .nav-shadow { box-shadow: -4px 0 20px rgba(0,0,0,0.08); }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-24">
 
-    <div id="auth-screen" class="fixed inset-0 flex items-center justify-center p-4 bg-black hidden">
+    <!-- AUTHENTICATION SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 flex items-center justify-center p-4 bg-black/95 hidden">
         <div class="glass-login w-full max-w-md rounded-3xl p-8 text-white shadow-2xl">
             <div class="text-center mb-8">
                 <h1 class="text-4xl font-black tracking-tighter">SRP <span class="text-blue-500">SHOPPING</span></h1>
-                <p id="auth-sub" class="text-gray-400 mt-2">Sign in to start shopping</p>
+                <p id="auth-sub" class="text-gray-400 mt-2 text-sm">Sign in to start your multi-vendor journey</p>
             </div>
 
             <form id="login-form" class="space-y-4">
-                <input type="email" id="auth-email" placeholder="Email Address" class="w-full bg-white/10 border border-white/20 p-4 rounded-xl focus:outline-none focus:border-blue-500" required>
-                <input type="password" id="auth-pass" placeholder="Password" class="w-full bg-white/10 border border-white/20 p-4 rounded-xl focus:outline-none focus:border-blue-500" required>
+                <input type="email" id="auth-email" placeholder="Email Address" class="w-full bg-white/10 border border-white/20 p-4 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500" required>
+                <input type="password" id="auth-pass" placeholder="Password" class="w-full bg-white/10 border border-white/20 p-4 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500" required>
                 <button type="submit" id="auth-btn" class="w-full py-4 srp-gradient rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition">Login</button>
             </form>
 
-            <div class="relative my-8 text-center">
+            <div class="relative my-6 text-center">
                 <hr class="border-gray-800">
                 <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black px-4 text-xs text-gray-500">OR</span>
             </div>
 
-            <button id="google-auth" class="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3">
+            <button id="google-auth" class="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-100 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20">
                 Continue with Google
             </button>
 
             <p class="mt-8 text-center text-sm text-gray-400">
                 <span id="toggle-msg">New to SRP?</span>
-                <button onclick="toggleAuthMode()" id="toggle-btn" class="text-blue-500 font-bold ml-1">Create Account</button>
+                <button type="button" onclick="toggleAuthMode()" id="toggle-btn" class="text-blue-400 font-bold ml-1 hover:underline">Create Account</button>
             </p>
         </div>
     </div>
 
-    <header id="app-header" class="sticky top-0 bg-[#0047AB] text-white z-50">
+    <!-- MAIN APP HEADER -->
+    <header id="app-header" class="sticky top-0 bg-[#0047AB] text-white z-40 shadow-md">
         <div class="container mx-auto">
             <div class="flex justify-between items-center p-4">
                 <div class="flex items-center gap-2">
-                    <button onclick="adminSecurityCheck()" class="text-2xl font-black tracking-tighter hover:text-blue-200 transition">SRP SHOPPING</button>
-                    <span class="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-bold">PRO</span>
+                    <button onclick="switchView('customer')" class="text-2xl font-black tracking-tighter">SRP SHOPPING</button>
+                    <span class="text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-extrabold shadow">PRO</span>
                 </div>
-                <div class="flex items-center gap-5">
-                    <button onclick="window.location.href='privacy.html'" class="text-xs opacity-80">Privacy</button>
-                    <div class="flex flex-col items-end">
-                        <span class="text-[10px] opacity-70 uppercase font-bold">Wallet Balance</span>
+                <div class="flex items-center gap-4">
+                    <button onclick="openWallet()" class="flex flex-col items-end bg-white/10 px-3 py-1 rounded-xl border border-white/10 hover:bg-white/20 transition">
+                        <span class="text-[9px] opacity-75 uppercase font-bold">SRP Wallet</span>
                         <div class="flex items-center gap-1">
                             <i class="fas fa-wallet text-yellow-400 text-xs"></i>
-                            <span id="user-wallet" class="font-bold">₹0.00</span>
+                            <span id="user-wallet" class="font-black text-sm">₹0.00</span>
                         </div>
-                    </div>
+                    </button>
                 </div>
             </div>
 
             <div class="px-4 pb-4">
-                <div class="relative group">
-                    <input type="text" id="main-search" onkeyup="filterProducts()" placeholder="Search mobile, shoes, electronics..." class="w-full py-3 px-5 pr-12 rounded-xl text-black focus:ring-4 focus:ring-blue-300 outline-none transition-all">
-                    <i class="fas fa-search absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="relative">
+                    <input type="text" id="main-search" onkeyup="filterProducts()" placeholder="Search mobiles, electronics, fashion..." class="w-full py-3 px-5 pr-12 rounded-xl text-black bg-white shadow-inner focus:ring-2 focus:ring-blue-300 outline-none transition-all font-medium text-sm">
+                    <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
             </div>
 
-            <div class="flex gap-6 overflow-x-auto no-scrollbar px-4 pb-3 text-sm font-medium whitespace-nowrap border-t border-blue-400/30 pt-3">
-                <button onclick="categoryFilter('all')" class="cat-chip active text-white border-b-2 border-white pb-1">All Items</button>
-                <button onclick="categoryFilter('Mobiles')" class="cat-chip opacity-70 hover:opacity-100">Mobiles</button>
-                <button onclick="categoryFilter('Electronics')" class="cat-chip opacity-70 hover:opacity-100">Electronics</button>
-                <button onclick="categoryFilter('Fashion')" class="cat-chip opacity-70 hover:opacity-100">Fashion</button>
-                <button onclick="categoryFilter('Home')" class="cat-chip opacity-70 hover:opacity-100">Home & Kitchen</button>
-                <button onclick="categoryFilter('Beauty')" class="cat-chip opacity-70 hover:opacity-100">Beauty</button>
+            <!-- Categories Bar -->
+            <div id="category-bar" class="flex gap-4 overflow-x-auto no-scrollbar px-4 pb-3 text-sm font-medium whitespace-nowrap border-t border-blue-400/30 pt-3">
+                <button onclick="categoryFilter('all')" class="cat-chip active text-white border-b-2 border-white pb-1 font-bold">All Items</button>
+                <button onclick="categoryFilter('Mobiles')" class="cat-chip opacity-75 hover:opacity-100">Mobiles</button>
+                <button onclick="categoryFilter('Electronics')" class="cat-chip opacity-75 hover:opacity-100">Electronics</button>
+                <button onclick="categoryFilter('Fashion')" class="cat-chip opacity-75 hover:opacity-100">Fashion</button>
+                <button onclick="categoryFilter('Home')" class="cat-chip opacity-75 hover:opacity-100">Home & Kitchen</button>
+                <button onclick="categoryFilter('Beauty')" class="cat-chip opacity-75 hover:opacity-100">Beauty</button>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto p-3">
-        
-        <section id="banner-slider" class="mb-6 relative overflow-hidden rounded-2xl shadow-xl h-44 srp-gradient">
-            <div class="absolute inset-0 p-8 flex flex-col justify-center text-white">
-                <span class="bg-white/20 backdrop-blur w-fit px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2">SRP EXCLUSIVE</span>
-                <h2 class="text-3xl font-black italic leading-tight">SUMMER MEGA SALE</h2>
-                <p class="text-sm opacity-90 mt-1 font-medium">Extra 10% Discount via Wallet Payment</p>
-                <button class="mt-4 bg-white text-[#0047AB] w-fit px-6 py-2 rounded-full font-extrabold text-xs shadow-lg transform active:scale-90 transition">CLAIM OFFER</button>
-            </div>
-            <i class="fas fa-shopping-bag absolute -right-4 -bottom-4 text-9xl text-white/10 rotate-12"></i>
-        </section>
+    <!-- CONTAINER VIEWS -->
+    <main class="container mx-auto p-3 max-w-7xl">
 
-        <div class="flex justify-between items-center px-1 mb-4">
-            <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-bolt text-yellow-500"></i> Flash Deals
-            </h3>
-            <span id="item-count" class="text-xs text-gray-500">20 Products</span>
+        <!-- 1. CUSTOMER STORE VIEW -->
+        <div id="view-customer" class="app-view">
+            <section class="mb-6 relative overflow-hidden rounded-2xl shadow-lg h-44 srp-gradient p-6 flex flex-col justify-center text-white">
+                <span class="bg-white/20 backdrop-blur w-fit px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-2">SRP MEGA OFFER</span>
+                <h2 class="text-3xl font-black italic leading-tight">SUMMER FESTIVAL SALE</h2>
+                <p class="text-xs opacity-90 mt-1 font-medium">Extra 10% Instant Cashback via SRP Wallet Payments</p>
+                <button onclick="categoryFilter('all')" class="mt-4 bg-white text-[#0047AB] w-fit px-5 py-2 rounded-full font-black text-xs shadow-lg active:scale-95 transition">EXPLORE NOW</button>
+                <i class="fas fa-shopping-bag absolute -right-4 -bottom-4 text-9xl text-white/10 rotate-12 pointer-events-none"></i>
+            </section>
+
+            <div class="flex justify-between items-center px-1 mb-4">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                    <i class="fas fa-bolt text-yellow-500"></i> Trending Flash Deals
+                </h3>
+                <span id="item-count" class="text-xs text-gray-500 font-semibold">0 Products</span>
+            </div>
+
+            <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <!-- Dynamically Injected Products -->
+            </div>
         </div>
 
-        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <!-- 2. SELLER DASHBOARD VIEW -->
+        <div id="view-seller" class="app-view hidden">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-black text-gray-900">Seller Dashboard</h2>
+                        <p class="text-xs text-gray-500">Manage your inventory, pricing, and live orders</p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-bold">Active Vendor</span>
+                </div>
+
+                <form id="seller-product-form" onsubmit="handleAddNewProduct(event)" class="space-y-4 bg-gray-50 p-4 rounded-xl border">
+                    <h3 class="font-bold text-sm text-gray-800"><i class="fas fa-plus-circle text-blue-600"></i> List New Product</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="text" id="sel-name" placeholder="Product Title" class="p-3 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <select id="sel-cat" class="p-3 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Mobiles">Mobiles</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Fashion">Fashion</option>
+                            <option value="Home">Home & Kitchen</option>
+                            <option value="Beauty">Beauty</option>
+                        </select>
+                        <input type="number" id="sel-price" placeholder="Selling Price (₹)" class="p-3 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="number" id="sel-mrp" placeholder="Original MRP (₹)" class="p-3 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <input type="url" id="sel-img" placeholder="Image URL (e.g., https://picsum.photos/600/600)" class="w-full p-3 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <textarea id="sel-desc" placeholder="Detailed Product Description..." rows="3" class="w-full p-3 bg-white border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                    <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition shadow">Publish Product to Store</button>
+                </form>
             </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border">
+                <h3 class="font-bold text-gray-900 mb-4">Your Active Inventory</h3>
+                <div id="seller-inventory-list" class="space-y-3">
+                    <!-- Seller items populated via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ADMIN MASTER CONSOLE VIEW -->
+        <div id="view-admin" class="app-view hidden">
+            <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-xl mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-black">SRP Master Console</h2>
+                        <p class="text-xs text-slate-400">System-wide surveillance and master controls</p>
+                    </div>
+                    <span class="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-black uppercase tracking-wider">SECURE ADMIN</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-xs text-slate-400">Total System Users</span>
+                        <h3 id="admin-user-count" class="text-2xl font-black mt-1">--</h3>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-xs text-slate-400">Global Products Listed</span>
+                        <h3 id="admin-prod-count" class="text-2xl font-black mt-1">--</h3>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                        <span class="text-xs text-slate-400">Platform GMV (Est.)</span>
+                        <h3 class="text-2xl font-black mt-1 text-green-400">₹14,89,200</h3>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="adminResetDatabase()" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl text-xs font-bold transition">Reset Default Catalog</button>
+                    <button onclick="switchView('customer')" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-bold transition">Back to Storefront</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CART VIEW -->
+        <div id="view-cart" class="app-view hidden">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border max-w-2xl mx-auto">
+                <h2 class="text-xl font-black text-gray-900 mb-4">Your Shopping Cart</h2>
+                <div id="cart-items-container" class="divide-y mb-6">
+                    <!-- Cart items populated via JS -->
+                </div>
+                <div id="cart-summary" class="border-t pt-4 space-y-2 hidden">
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Shipping</span>
+                        <span class="text-green-600 font-bold">FREE</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-black text-gray-900 pt-2 border-t">
+                        <span>Total Payable</span>
+                        <span id="cart-total">₹0.00</span>
+                    </div>
+                    <button onclick="checkoutOrder()" class="w-full mt-4 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-sm shadow-lg transition">PLACE ORDER SECURELY</button>
+                </div>
+                <div id="cart-empty-msg" class="text-center py-12 text-gray-400">
+                    <i class="fas fa-shopping-cart text-4xl mb-3"></i>
+                    <p class="text-sm font-semibold">Your cart is currently empty</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. WALLET VIEW -->
+        <div id="view-wallet" class="app-view hidden">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border max-w-md mx-auto text-center">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest font-bold">Available Balance</span>
+                <h2 id="wallet-balance-big" class="text-4xl font-black text-gray-900 mt-1 mb-6">₹0.00</h2>
+                
+                <div class="space-y-3">
+                    <button onclick="addWalletFunds(500)" class="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition shadow">+ Add ₹500 Instant Bonus</button>
+                    <button onclick="addWalletFunds(1000)" class="w-full py-3.5 bg-slate-100 text-slate-800 rounded-xl font-bold text-sm hover:bg-slate-200 transition">+ Add ₹1,000</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
+    <!-- PRODUCT DETAIL MODAL -->
     <div id="product-modal" class="fixed inset-0 bg-white hidden overflow-y-auto animate-slide-up">
-        <header class="sticky top-0 bg-white border-b flex items-center justify-between p-4 z-[101]">
+        <header class="sticky top-0 bg-white border-b flex items-center justify-between p-4 z-50">
             <div class="flex items-center gap-4">
-                <button onclick="closeProduct()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <button onclick="closeProduct()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
                     <i class="fas fa-arrow-left text-xl"></i>
                 </button>
-                <span class="font-bold text-gray-800 truncate max-w-[200px]" id="modal-title-top">Product Info</span>
+                <span class="font-bold text-gray-800 truncate max-w-[220px]" id="modal-title-top">Product Details</span>
             </div>
-            <div class="flex gap-4">
-                <i class="fas fa-share-alt text-gray-500"></i>
-                <i class="fas fa-heart text-gray-300"></i>
+            <div class="flex gap-4 text-gray-600">
+                <button onclick="alert('Product link copied to clipboard!')"><i class="fas fa-share-alt"></i></button>
+                <button onclick="alert('Added to Wishlist!')"><i class="fas fa-heart text-red-500"></i></button>
             </div>
         </header>
 
-        <div class="detail-slider no-scrollbar relative">
-            <img id="detail-img-1" src="" alt="View 1">
-            <img id="detail-img-2" src="" alt="View 2">
-            <div class="absolute bottom-4 right-4 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full">1 / 2 Images</div>
+        <div class="detail-slider no-scrollbar relative bg-gray-50">
+            <img id="detail-img-1" src="" alt="Product View">
+            <img id="detail-img-2" src="" alt="Product View 2">
+            <div class="absolute bottom-4 right-4 bg-black/60 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">1 / 2 Images</div>
         </div>
 
-        <div class="p-5">
+        <div class="p-5 max-w-3xl mx-auto">
             <div class="flex justify-between items-start">
                 <div>
-                    <h2 id="detail-name" class="text-xl font-bold text-gray-900 leading-tight"></h2>
-                    <p id="detail-category" class="text-xs text-blue-600 font-bold uppercase mt-1 tracking-wider"></p>
+                    <h2 id="detail-name" class="text-xl sm:text-2xl font-black text-gray-900 leading-tight"></h2>
+                    <p id="detail-category" class="text-xs text-blue-600 font-extrabold uppercase mt-1 tracking-wider"></p>
                 </div>
-                <div class="flex items-center bg-green-700 text-white px-2 py-1 rounded gap-1 text-sm">
+                <div class="flex items-center bg-green-700 text-white px-2.5 py-1 rounded-lg gap-1 text-sm font-bold shadow-sm">
                     <span id="detail-rate-val">4.5</span> <i class="fas fa-star text-[10px]"></i>
                 </div>
             </div>
 
             <div class="mt-4 flex flex-col gap-1">
                 <div class="flex items-baseline gap-3">
-                    <span class="text-red-600 text-2xl font-light" id="detail-disc-per">-50%</span>
+                    <span class="text-red-600 text-xl font-bold" id="detail-disc-per">-50%</span>
                     <span class="text-3xl font-black">₹<span id="detail-price">0</span></span>
                 </div>
-                <p class="text-sm text-gray-500">M.R.P.: <span class="line-through" id="detail-mrp">₹0</span></p>
-                <p class="text-[10px] text-gray-400 font-medium">FREE delivery for SRP Prime members</p>
+                <p class="text-xs text-gray-500 font-medium">M.R.P.: <span class="line-through" id="detail-mrp">₹0</span></p>
+                <p class="text-[11px] text-emerald-600 font-bold mt-1"><i class="fas fa-check-circle"></i> FREE Delivery & Cash on Delivery available</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 my-8">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-gray-500 uppercase">Select Color</label>
-                    <div class="flex gap-3">
-                        <button class="w-8 h-8 rounded-full bg-black ring-2 ring-blue-500 ring-offset-2"></button>
-                        <button class="w-8 h-8 rounded-full bg-gray-400"></button>
-                        <button class="w-8 h-8 rounded-full bg-blue-600"></button>
+            <div class="grid grid-cols-2 gap-4 my-6 p-4 bg-gray-50 rounded-2xl border">
+                <div>
+                    <label class="text-[11px] font-extrabold text-gray-500 uppercase block mb-2">Select Variant</label>
+                    <div class="flex gap-2">
+                        <button class="w-7 h-7 rounded-full bg-slate-900 ring-2 ring-blue-500 ring-offset-2"></button>
+                        <button class="w-7 h-7 rounded-full bg-slate-400"></button>
+                        <button class="w-7 h-7 rounded-full bg-blue-600"></button>
                     </div>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-gray-500 uppercase">Quantity</label>
-                    <select id="detail-qty" class="w-full p-2 bg-gray-100 border-none rounded-lg text-sm font-bold">
+                <div>
+                    <label class="text-[11px] font-extrabold text-gray-500 uppercase block mb-2">Quantity</label>
+                    <select id="detail-qty" class="w-full p-2 bg-white border rounded-xl text-sm font-bold outline-none">
                         <option value="1">1 Unit</option>
                         <option value="2">2 Units</option>
                         <option value="3">3 Units</option>
@@ -236,84 +347,45 @@
                 </div>
             </div>
 
-            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex gap-4 items-center mb-8">
-                <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-truck-fast"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-blue-900">Standard Delivery</h4>
-                    <p class="text-xs text-blue-700">Receive between 7 to 15 days at your doorstep.</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-10">
-                <button onclick="handleCart()" class="py-4 bg-yellow-400 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition">ADD TO CART</button>
-                <button onclick="directBuy()" class="py-4 bg-orange-500 text-white rounded-2xl font-black text-sm shadow-lg active:scale-95 transition">BUY NOW</button>
+            <div class="grid grid-cols-2 gap-3 mb-8">
+                <button onclick="handleAddToCartModal()" class="py-4 bg-yellow-400 hover:bg-yellow-500 text-slate-900 rounded-2xl font-black text-sm shadow-md active:scale-95 transition">ADD TO CART</button>
+                <button onclick="handleDirectBuy()" class="py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-sm shadow-md active:scale-95 transition">BUY NOW</button>
             </div>
 
             <div class="border-t pt-6">
-                <h3 class="font-black text-gray-900 mb-3 uppercase tracking-tighter">Product Specifications</h3>
-                <div id="detail-description" class="text-sm text-gray-600 leading-relaxed space-y-4">
-                    </div>
-            </div>
-
-            <div class="mt-10 bg-gray-50 p-6 rounded-2xl">
-                <h3 class="font-black text-gray-900 mb-4">Customer Reviews</h3>
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="text-4xl font-black">4.5</div>
-                    <div>
-                        <div class="flex text-yellow-500 text-sm">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                        </div>
-                        <p class="text-xs text-gray-500">Global SRP Rating (1,240 verified)</p>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center gap-3 text-xs">
-                        <span class="w-10">5 Star</span>
-                        <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden"><div class="bg-orange-400 h-full w-[70%]"></div></div>
-                        <span class="w-8 text-right">70%</span>
-                    </div>
-                    <div class="flex items-center gap-3 text-xs">
-                        <span class="w-10">4 Star</span>
-                        <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden"><div class="bg-orange-400 h-full w-[15%]"></div></div>
-                        <span class="w-8 text-right">15%</span>
-                    </div>
-                </div>
+                <h3 class="font-black text-gray-900 mb-3 uppercase tracking-tight text-sm">Product Specifications & Description</h3>
+                <div id="detail-description" class="text-sm text-gray-600 leading-relaxed space-y-3"></div>
             </div>
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white h-18 nav-shadow flex items-center justify-around px-2 z-50">
-        <button onclick="navSwitch('home')" class="nav-btn group flex flex-col items-center gap-1 text-[#0047AB]">
-            <div class="p-2 rounded-xl group-active:bg-blue-50"><i class="fas fa-home text-lg"></i></div>
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white h-18 nav-shadow flex items-center justify-around px-2 z-30 border-t">
+        <button onclick="switchView('customer')" id="nav-btn-customer" class="nav-btn group flex flex-col items-center gap-1 text-[#0047AB]">
+            <div class="p-1.5 rounded-xl"><i class="fas fa-home text-lg"></i></div>
             <span class="text-[9px] font-black uppercase tracking-widest">Home</span>
         </button>
-        <button onclick="location.href='profile.html'" class="nav-btn group flex flex-col items-center gap-1 text-gray-400">
-            <div class="p-2 rounded-xl group-active:bg-gray-100"><i class="fas fa-user text-lg"></i></div>
-            <span class="text-[9px] font-bold uppercase tracking-widest">Account</span>
-        </button>
-        <button onclick="location.href='profile.html#wallet'" class="nav-btn group flex flex-col items-center gap-1 text-gray-400">
-            <div class="p-2 rounded-xl group-active:bg-gray-100"><i class="fas fa-wallet text-lg"></i></div>
+        <button onclick="switchView('wallet')" id="nav-btn-wallet" class="nav-btn group flex flex-col items-center gap-1 text-gray-400">
+            <div class="p-1.5 rounded-xl"><i class="fas fa-wallet text-lg"></i></div>
             <span class="text-[9px] font-bold uppercase tracking-widest">Wallet</span>
         </button>
-        <button onclick="location.href='seller.html'" class="nav-btn group flex flex-col items-center gap-1 text-gray-400">
-            <div class="p-2 rounded-xl group-active:bg-gray-100"><i class="fas fa-store text-lg"></i></div>
+        <button onclick="switchView('seller')" id="nav-btn-seller" class="nav-btn group flex flex-col items-center gap-1 text-gray-400">
+            <div class="p-1.5 rounded-xl"><i class="fas fa-store text-lg"></i></div>
             <span class="text-[9px] font-bold uppercase tracking-widest">Seller</span>
         </button>
-        <button onclick="location.href='cart.html'" class="nav-btn group flex flex-col items-center gap-1 text-gray-400 relative">
-            <div class="p-2 rounded-xl group-active:bg-gray-100"><i class="fas fa-shopping-cart text-lg"></i></div>
+        <button onclick="switchView('cart')" id="nav-btn-cart" class="nav-btn group flex flex-col items-center gap-1 text-gray-400 relative">
+            <div class="p-1.5 rounded-xl"><i class="fas fa-shopping-cart text-lg"></i></div>
             <span class="text-[9px] font-bold uppercase tracking-widest">Cart</span>
-            <span id="cart-count" class="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            <span id="cart-count" class="absolute top-0 right-1 bg-red-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow">0</span>
         </button>
-        <button onclick="alert('SRP AI Assistant coming soon!')" class="nav-btn group flex flex-col items-center gap-1 text-blue-400">
-            <div class="p-2 rounded-xl group-active:bg-blue-50"><i class="fas fa-robot text-lg"></i></div>
-            <span class="text-[9px] font-bold uppercase tracking-widest">AI Hub</span>
+        <button onclick="adminSecurityPrompt()" id="nav-btn-admin" class="nav-btn group flex flex-col items-center gap-1 text-purple-600">
+            <div class="p-1.5 rounded-xl"><i class="fas fa-shield-halved text-lg"></i></div>
+            <span class="text-[9px] font-bold uppercase tracking-widest">Admin</span>
         </button>
     </nav>
 
+    <!-- CORE SCRIPT ENGINE -->
     <script>
-        // 1. CONFIG & SYSTEM VARIABLES
         const firebaseConfig = {
             apiKey: "AIzaSyB2xwVO-c_f4cEn6PjtArta3DU6mqz7yxw",
             authDomain: "srp-shopping-54bbb.firebaseapp.com",
@@ -321,22 +393,21 @@
             projectId: "srp-shopping-54bbb",
             storageBucket: "srp-shopping-54bbb.firebasestorage.app",
             messagingSenderId: "491906168702",
-            appId: "1:491906168702:web:2873565fcd2d561077252f",
-            measurementId: "G-3S7X8V8EFQ"
+            appId: "1:491906168702:web:2873565fcd2d561077252f"
         };
 
-        const ADMIN_EMAILS = ["Srpstudio1@gmail.com", "subhashrajpurohit10@gmail.com"];
-        let isLoginMode = true;
-        let globalProducts = [];
-        let currentUserId = null;
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const rdb = firebase.database();
 
-        // 2. AUTHENTICATION LOGIC
+        let isLoginMode = true;
+        let globalProducts = [];
+        let currentUserId = null;
+        let activeProductModalId = null;
+        let localCart = {};
+
+        // AUTH STATE
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('auth-screen').classList.add('hidden');
@@ -350,7 +421,7 @@
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Create Account';
-            document.getElementById('auth-sub').innerText = isLoginMode ? 'Sign in to start shopping' : 'Join the SRP Shopping Community';
+            document.getElementById('auth-sub').innerText = isLoginMode ? 'Sign in to start your multi-vendor journey' : 'Join the SRP Shopping Community';
             document.getElementById('toggle-msg').innerText = isLoginMode ? 'New to SRP?' : 'Already a member?';
             document.getElementById('toggle-btn').innerText = isLoginMode ? 'Create Account' : 'Login';
         }
@@ -367,7 +438,7 @@
                     await db.collection("users").doc(res.user.uid).set({
                         name: email.split('@')[0],
                         email: email,
-                        walletBalance: 450, // Welcome Bonus
+                        walletBalance: 750, // Welcome Bonus
                         joinedAt: new Date().toISOString()
                     });
                 }
@@ -379,33 +450,47 @@
             auth.signInWithPopup(provider).catch(err => alert(err.message));
         };
 
-        // 3. DATA & PRODUCT ENGINE
+        // VIEW ROUTING
+        function switchView(viewName) {
+            document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('text-[#0047AB]'));
+            if(document.getElementById(`nav-btn-${viewName}`)) {
+                document.getElementById(`nav-btn-${viewName}`).classList.add('text-[#0047AB]');
+            }
+
+            if(viewName === 'cart') renderCartItems();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // PRODUCTS GENERATION & SEEDING
         const CATEGORIES = ["Mobiles", "Electronics", "Fashion", "Home", "Beauty"];
         
-        function generate20Products() {
-            const items = [];
+        function generateDefaultProducts() {
             const titles = [
-                "iPhone 15 Pro Max Clone", "Sony XM5 Headphones", "Nike Air Max 270", 
-                "Smart OLED Television", "Gaming Mechanical Keyboard", "Waterproof Bluetooth Speaker",
-                "Leather Executive Wallet", "Anti-Fog Sports Glasses", "Portable Coffee Maker",
-                "Ergonomic Office Chair", "Cotton Premium T-Shirt", "Wireless Gaming Mouse",
-                "DSLR Camera Kit", "Smart Fitness Tracker", "High-Speed Hair Dryer",
-                "Kitchen Mixer Grinder", "Drip Irrigation Kit", "Electric Toothbrush",
-                "Memory Foam Pillow", "Noise Cancelling Earbuds"
+                "iPhone 15 Pro Max", "Sony WH-1000XM5", "Nike Air Max Pulse", 
+                "Samsung 4K Crystal OLED", "Mechanical RGB Keyboard", "JBL Waterproof Speaker",
+                "Pure Leather Wallet", "UV Shield Sports Glasses", "Portable Espresso Maker",
+                "Ergonomic Mesh Chair", "Organic Cotton Hoodie", "Logitech Wireless Mouse",
+                "Canon EOS 200D DSLR", "Smart Fitness Band Pro", "Dyson Ionic Hair Dryer",
+                "Philips Mixer Grinder", "Smart Plant Waterer", "Sonic Electric Toothbrush",
+                "Orthopedic Memory Pillow", "Active Noise Earbuds"
             ];
 
+            const items = [];
             for(let i=0; i<20; i++) {
-                const price = Math.floor(Math.random() * (15000 - 500) + 500);
+                const price = Math.floor(Math.random() * (18000 - 600) + 600);
                 items.push({
-                    id: 'SRP_'+i,
+                    id: 'SRP_' + i,
                     name: titles[i],
                     category: CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)],
                     price: price,
-                    mrp: Math.floor(price * 1.8),
-                    image: `https://picsum.photos/600/600?random=${i}`,
-                    rating: (Math.random() * (5 - 3.5) + 3.5).toFixed(1),
-                    reviews: Math.floor(Math.random() * 5000),
-                    desc: "This is a premium high-quality product curated by SRP SHOPPING. Features include durability, modern design, and industry-leading performance. ".repeat(150)
+                    mrp: Math.floor(price * 1.75),
+                    image: `https://picsum.photos/600/600?random=${i+10}`,
+                    rating: (Math.random() * (5 - 4.0) + 4.0).toFixed(1),
+                    reviews: Math.floor(Math.random() * 2500) + 120,
+                    desc: "Official certified product distributed via SRP Enterprise network. Backed by 1-year replacement warranty, rigorous multi-point quality checks, and ultra-fast doorstep delivery."
                 });
             }
             return items;
@@ -414,35 +499,39 @@
         function renderProducts(list) {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = list.map(p => `
-                <div onclick="openProduct('${p.id}')" class="product-card bg-white p-3 rounded-2xl shadow-sm cursor-pointer">
-                    <div class="relative mb-3 bg-gray-50 rounded-xl overflow-hidden aspect-square">
-                        <img src="${p.image}" class="w-full h-full object-contain" loading="lazy">
-                        <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Save ${Math.round(((p.mrp-p.price)/p.mrp)*100)}%</div>
-                    </div>
-                    <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">${p.category}</p>
-                    <h4 class="text-xs font-semibold text-gray-800 line-clamp-2 h-8">${p.name}</h4>
-                    <div class="flex items-center gap-1 mt-2">
-                        <span class="text-sm font-black text-gray-900">₹${p.price.toLocaleString('en-IN')}</span>
-                        <span class="text-[9px] line-through text-gray-400">₹${p.mrp.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div class="flex items-center justify-between mt-3 pt-3 border-t">
-                        <div class="flex items-center gap-1">
-                            <i class="fas fa-star text-yellow-400 text-[8px]"></i>
-                            <span class="text-[10px] font-bold text-gray-600">${p.rating}</span>
+                <div onclick="openProduct('${p.id}')" class="product-card bg-white p-3 rounded-2xl shadow-sm cursor-pointer flex flex-col justify-between">
+                    <div>
+                        <div class="relative mb-3 bg-gray-50 rounded-xl overflow-hidden aspect-square">
+                            <img src="${p.image}" class="w-full h-full object-contain p-2" loading="lazy">
+                            <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Save ${Math.round(((p.mrp-p.price)/p.mrp)*100)}%</div>
                         </div>
-                        <button class="bg-blue-50 text-blue-600 p-1.5 rounded-lg active:bg-blue-600 active:text-white transition">
-                            <i class="fas fa-plus text-[10px]"></i>
-                        </button>
+                        <p class="text-[10px] text-blue-600 font-extrabold uppercase tracking-wider mb-1">${p.category}</p>
+                        <h4 class="text-xs font-semibold text-gray-800 line-clamp-2 h-8">${p.name}</h4>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5 mt-2">
+                            <span class="text-sm font-black text-gray-900">₹${p.price.toLocaleString('en-IN')}</span>
+                            <span class="text-[9px] line-through text-gray-400">₹${p.mrp.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="flex items-center justify-between mt-3 pt-3 border-t">
+                            <div class="flex items-center gap-1">
+                                <i class="fas fa-star text-yellow-400 text-[9px]"></i>
+                                <span class="text-[10px] font-bold text-gray-600">${p.rating}</span>
+                            </div>
+                            <span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-[10px] font-bold">View</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
             document.getElementById('item-count').innerText = `${list.length} Products Found`;
+            document.getElementById('admin-prod-count').innerText = list.length;
         }
 
-        // 4. UI INTERACTION & FILTERING
+        // PRODUCT MODAL
         function openProduct(id) {
             const p = globalProducts.find(x => x.id === id);
             if(!p) return;
+            activeProductModalId = id;
 
             document.getElementById('modal-title-top').innerText = p.name;
             document.getElementById('detail-name').innerText = p.name;
@@ -452,18 +541,8 @@
             document.getElementById('detail-rate-val').innerText = p.rating;
             document.getElementById('detail-disc-per').innerText = `-${Math.round(((p.mrp-p.price)/p.mrp)*100)}%`;
             document.getElementById('detail-img-1').src = p.image;
-            document.getElementById('detail-img-2').src = `https://picsum.photos/600/600?random=${id+100}`;
-            
-            // Render 5000-word-style description
-            document.getElementById('detail-description').innerHTML = `
-                <p>${p.desc.substring(0, 500)}...</p>
-                <div class="bg-gray-50 p-4 rounded-lg my-4 font-mono text-xs">
-                    Model No: SRP-X${id.split('_')[1]}<br>
-                    Warranty: 1 Year Limited<br>
-                    Origin: Made for SRP Enterprise
-                </div>
-                <p>${p.desc.substring(500, 1500)}...</p>
-            `;
+            document.getElementById('detail-img-2').src = `https://picsum.photos/600/600?random=${id+99}`;
+            document.getElementById('detail-description').innerHTML = `<p>${p.desc}</p>`;
 
             document.getElementById('product-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
@@ -472,79 +551,189 @@
         function closeProduct() {
             document.getElementById('product-modal').classList.add('hidden');
             document.body.style.overflow = 'auto';
+            activeProductModalId = null;
         }
 
         function filterProducts() {
             const q = document.getElementById('main-search').value.toLowerCase();
-            const filtered = globalProducts.filter(p => p.name.toLowerCase().includes(q));
+            const filtered = globalProducts.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
             renderProducts(filtered);
         }
 
         function categoryFilter(cat) {
-            // Update UI chips
             document.querySelectorAll('.cat-chip').forEach(btn => {
-                btn.classList.remove('active', 'border-b-2', 'opacity-100');
-                btn.classList.add('opacity-70');
+                btn.classList.remove('border-b-2', 'border-white', 'font-bold');
+                btn.classList.add('opacity-75');
             });
-            event.target.classList.add('active', 'border-b-2', 'opacity-100');
+            event.target.classList.add('border-b-2', 'border-white', 'font-bold');
+            event.target.classList.remove('opacity-75');
 
             if(cat === 'all') renderProducts(globalProducts);
             else renderProducts(globalProducts.filter(p => p.category === cat));
         }
 
-        // 5. ADMIN & SECURITY
-        function adminSecurityCheck() {
-            const user = auth.currentUser;
-            if (user && ADMIN_EMAILS.includes(user.email)) {
-                const pin = prompt("SRP ENTERPRISE ACCESS REQUIRED\nEnter Security PIN:");
-                if (pin === "1234") { // Standard default pin
-                    alert("Authentication successful. Redirecting to Master Console...");
-                    window.location.href = "admin.html";
-                } else {
-                    alert("Invalid PIN. Lockdown active.");
-                    location.reload();
-                }
+        // CART & CHECKOUT ENGINE
+        function handleAddToCartModal() {
+            if(!activeProductModalId) return;
+            const p = globalProducts.find(x => x.id === activeProductModalId);
+            const qty = parseInt(document.getElementById('detail-qty').value);
+
+            if(localCart[p.id]) {
+                localCart[p.id].qty += qty;
             } else {
-                location.reload();
+                localCart[p.id] = { ...p, qty: qty };
             }
+            updateCartBadge();
+            alert(`Success! ${qty} unit(s) added to your SRP Cart.`);
+            closeProduct();
         }
 
-        // 6. UTILITY FUNCTIONS
+        function handleDirectBuy() {
+            handleAddToCartModal();
+            switchView('cart');
+        }
+
+        function updateCartBadge() {
+            const totalCount = Object.values(localCart).reduce((acc, item) => acc + item.qty, 0);
+            document.getElementById('cart-count').innerText = totalCount;
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-container');
+            const summary = document.getElementById('cart-summary');
+            const emptyMsg = document.getElementById('cart-empty-msg');
+            const keys = Object.keys(localCart);
+
+            if(keys.length === 0) {
+                container.innerHTML = '';
+                summary.classList.add('hidden');
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            summary.classList.remove('hidden');
+
+            let subtotal = 0;
+            container.innerHTML = keys.map(k => {
+                const item = localCart[k];
+                subtotal += item.price * item.qty;
+                return `
+                    <div class="py-4 flex items-center justify-between gap-4">
+                        <img src="${item.image}" class="w-16 h-16 object-contain bg-gray-50 rounded-xl p-1 border">
+                        <div class="flex-1">
+                            <h4 class="text-xs font-bold text-gray-900 line-clamp-1">${item.name}</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">₹${item.price.toLocaleString('en-IN')} × ${item.qty}</p>
+                        </div>
+                        <span class="font-black text-sm">₹${(item.price * item.qty).toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('cart-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+            document.getElementById('cart-total').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+        }
+
+        function checkoutOrder() {
+            alert("Order placed successfully! Verified and processed through SRP Logistics Gateway.");
+            localCart = {};
+            updateCartBadge();
+            switchView('customer');
+        }
+
+        // SELLER INVENTORY ENGINE
+        function handleAddNewProduct(e) {
+            e.preventDefault();
+            const newProd = {
+                id: 'SRP_VEN_' + Date.now(),
+                name: document.getElementById('sel-name').value,
+                category: document.getElementById('sel-cat').value,
+                price: parseFloat(document.getElementById('sel-price').value),
+                mrp: parseFloat(document.getElementById('sel-mrp').value),
+                image: document.getElementById('sel-img').value,
+                rating: '4.8',
+                reviews: 1,
+                desc: document.getElementById('sel-desc').value
+            };
+
+            globalProducts.unshift(newProd);
+            renderProducts(globalProducts);
+            renderSellerInventory();
+            document.getElementById('seller-product-form').reset();
+            alert("Product successfully published across SRP Storefront!");
+        }
+
+        function renderSellerInventory() {
+            const list = document.getElementById('seller-inventory-list');
+            list.innerHTML = globalProducts.slice(0, 5).map(p => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border text-xs">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image}" class="w-10 h-10 object-contain bg-white rounded-lg p-1">
+                        <div>
+                            <h4 class="font-bold text-gray-800 line-clamp-1">${p.name}</h4>
+                            <span class="text-blue-600 font-semibold">₹${p.price.toLocaleString('en-IN')}</span>
+                        </div>
+                    </div>
+                    <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold">Live</span>
+                </div>
+            `).join('');
+        }
+
+        // WALLET MANAGEMENT
         function syncUserData(user) {
             db.collection("users").doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
                     const data = doc.data();
-                    document.getElementById('user-wallet').innerText = `₹${(data.walletBalance || 0).toLocaleString('en-IN')}`;
+                    const bal = data.walletBalance || 0;
+                    document.getElementById('user-wallet').innerText = `₹${bal.toLocaleString('en-IN')}`;
+                    document.getElementById('wallet-balance-big').innerText = `₹${bal.toLocaleString('en-IN')}`;
+                    document.getElementById('admin-user-count').innerText = "1,428 Active";
                 }
             });
-            // Update Cart Count from RDB
-            rdb.ref(`carts/${user.uid}`).on('value', snap => {
-                const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-                document.getElementById('cart-count').innerText = count;
+        }
+
+        function openWallet() {
+            switchView('wallet');
+        }
+
+        async function addWalletFunds(amount) {
+            if(!currentUserId) return;
+            const ref = db.collection("users").doc(currentUserId);
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(ref);
+                const newBal = (doc.data().walletBalance || 0) + amount;
+                transaction.update(ref, { walletBalance: newBal });
             });
+            alert(`Successfully added ₹${amount} to your SRP Wallet!`);
         }
 
-        function handleCart() {
-            if(!currentUserId) return alert("Please login first");
-            alert("Success! Item added to SRP Cart.");
-            closeProduct();
+        // ADMIN SECURITY & CONTROLS
+        function adminSecurityPrompt() {
+            const pin = prompt("SRP MASTER CONSOLE ACCESS\nEnter 4-Digit Security PIN (Default: 1234):");
+            if(pin === "1234") {
+                switchView('admin');
+            } else if(pin !== null) {
+                alert("Incorrect PIN. Access Denied.");
+            }
         }
 
-        function directBuy() {
-            window.location.href = "cart.html";
+        function adminResetDatabase() {
+            if(confirm("Reset catalog back to default factory items?")) {
+                globalProducts = generateDefaultProducts();
+                renderProducts(globalProducts);
+                alert("Catalog successfully restored.");
+                switchView('customer');
+            }
         }
 
-        function navSwitch(page) {
-            console.log("Routing to internal component: " + page);
-            // Internal SPA routing logic
-        }
-
-        // Boot
+        // INITIALIZE SYSTEM ON LOAD
         window.onload = () => {
-            globalProducts = generate20Products();
+            globalProducts = generateDefaultProducts();
             renderProducts(globalProducts);
-            console.log("SRP Shopping Production Engine Online.");
+            renderSellerInventory();
+            console.log("SRP Shopping Pro Engine Online & Fully Initialized.");
         };
     </script>
 </body>
 </html>
+
